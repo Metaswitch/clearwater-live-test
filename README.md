@@ -8,19 +8,21 @@ Pre-Requisites
 
 The test framework requires Ruby 1.9.3 and bundler to be installed.
 
-    sudo aptitude update
-    sudo aptitude install ruby1.9.1 ruby1.9.1-dev build-essential git
-    sudo gem install bundler rubygems-bundler
-    sudo gem regenerate_binstubs
+    sudo apt-get install build-essential git --yes
+    curl -L https://get.rvm.io | bash -s stable
+    source ~/.rvm/scripts/rvm
+    rvm autolibs enable
+    rvm install 1.9.3
+    rvm use 1.9.3
 
 Installation
 ------------
 
 To install the framework, clone the repository:
 
-    git clone git@bitbucket.org:metaswitch/clearwater-live-test.git
+    git clone git@github.com:Metaswitch/clearwater-live-test.git
 
-Then type `bundle install` inside the clearwater-live-test folder to install the required gems.
+Then type `bundle install` inside the newly-created `clearwater-live-test` folder to install the required gems.
 
 Running The Tests
 -----------------
@@ -91,7 +93,7 @@ To create a PSTN number use `test.add_pstn_endpoint`.  These numbers can make ca
 
 When using Clearwater endpoints, a common thing to need to do is to (un)register the endpoint and so `ep.register` and `ep.unregister` have been supplied that return the scenario entries needed to do this (see _Basic Call - Mainline_ for an example of how this is used).
 
-> Due to the bug where Clearwater never challenges REGISTER messages sent on a validated TCP connection (even for new endpoints), the register script needs to only expect to perform authentication if it is the first registered endpoint.  Other endpoints should call `ep.register(false)` until this bug is fixed.
+> Due to Clearwater behaviour where Sprout never challenges REGISTER messages sent on a validated TCP connection (even for new endpoints), the register script needs to only expect to perform authentication if it is the first registered endpoint.  Other endpoints should call `ep.register(false)` until this is improved.
 
 Modifying Simservs
 ------------------
