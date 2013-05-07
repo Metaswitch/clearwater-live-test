@@ -1,0 +1,30 @@
+  <send retrans="500">
+    <![CDATA[
+
+      REGISTER sip:<%= sender.username %>@<%= sender.domain %> SIP/2.0
+      Via: SIP/2.0/[transport] [local_ip]:[local_port];rport;branch=[branch]
+      Route: <sip:<%= sender.domain %>;transport=[transport];lr>
+      Max-Forwards: 70
+      From: <sip:<%= sender.username %>@<%= sender.domain %>>;tag=[pid]SIPpTag00[call_number]
+      To: <sip:<%= sender.username %>@<%= sender.domain %>>
+      Call-ID: [call_id]
+      CSeq: [cseq] REGISTER
+      User-Agent: Clearwater Live Test Agent
+      Supported: outbound, path
+      <% if defined?(nat_contact_header) and nat_contact_header %>
+      Contact: <sip:<%= sender.username %>@[$nat_ip_addr]:[$nat_port];transport=[transport];ob>;reg-id=1;+sip.instance="<urn:uuid:00000000-0000-0000-0000-00001>"
+      <% end %>
+      Contact: <sip:<%= sender.username %>@[local_ip]:[local_port];transport=[transport];ob>;reg-id=1;+sip.instance="<urn:uuid:00000000-0000-0000-0000-00001>"
+      <% if defined?(expires) %>
+      Expires: <%= expires %>
+      <% else %>
+      Expires: 3600
+      <% end %>
+      <% if defined?(auth_header) and auth_header %>
+      [authentication username=<%= sender.username %>@<%= sender.domain %> password=<%= sender.password %>]
+      <% end%>
+      Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
+      Content-Length:  0
+
+    ]]>
+  </send>

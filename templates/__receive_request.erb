@@ -1,0 +1,21 @@
+  <% refs = [] %>
+  <recv timeout="<%= timeout rescue 3000 %>" request="<%= request %>" >
+    <% if defined? check_trusted and check_trusted %>
+    <action>
+      <ereg regexp="." search_in="hdr" header="P-Access-Network-Info:" case_indep="true" check_it<%= trusted_present ? "" : "_inverse" %>="true" assign_to="1"/>
+      <% refs.push("1") %>
+    </action>
+    <% end %>
+  </recv>
+
+  <% if defined? extract_uas_via and extract_uas_via %>
+  <nop>
+    <action>
+      <assignstr assign_to="uas_via" value="[last_Via:]" />
+    </action>
+  </nop>
+  <% end %>
+
+  <% if !refs.empty? %>
+  <Reference variables="<%= refs.join(",") %>" /> <!-- Unused variables are a SIPp error -->
+  <% end %>

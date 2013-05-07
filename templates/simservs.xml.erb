@@ -1,0 +1,58 @@
+<simservs xmlns="http://uri.etsi.org/ngn/params/xml/simservs/xcap" xmlns:cp="urn:ietf:params:xml:ns:common-policy">
+  <originating-identity-presentation active="<%= oip[:active] %>" />
+  <originating-identity-presentation-restriction active="<%= oir[:active] %>">
+    <default-behaviour><%= oir[:restricted] ? "presentation-restricted" : "presentation-not-restricted" %></default-behaviour>
+  </originating-identity-presentation-restriction>
+  <communication-diversion active="<%= cdiv[:active] %>">
+    <NoReplyTimer><%= cdiv[:timeout] || 60 %></NoReplyTimer>
+    <cp:ruleset>
+      <% cdiv[:rules].each_with_index do |rule, i| %>
+      <cp:rule id="rule<%= i %>">
+        <cp:conditions>
+          <% rule[:conditions].each do |cond| %>
+          <<%= cond %> />
+          <% end %>
+        </cp:conditions>
+        <cp:actions>
+          <forward-to>
+            <target><%= rule[:target] %></target>
+          </forward-to>
+        </cp:actions>
+      </cp:rule>
+      <% end %>
+    </cp:ruleset>
+  </communication-diversion>
+  <incoming-communication-barring active="<%= icb[:active] %>">
+    <cp:ruleset>
+      <% icb[:rules].each_with_index do |rule, i| %>
+      <cp:rule id="rule<%= i %>">
+        <cp:conditions>
+          <% rule[:conditions].each do |cond|%>
+          <<%= cond %> />
+          <% end %>
+        </cp:conditions>
+        <cp:actions>
+          <allow><%= rule[:allow] %></allow>
+        </cp:actions>
+      </cp:rule>
+      <% end %>
+    </cp:ruleset>
+  </incoming-communication-barring>
+  <outgoing-communication-barring active="<%= ocb[:active] %>">
+    <cp:ruleset>
+      <% ocb[:rules].each_with_index do |rule, i| %>
+      <cp:rule id="rule<%= i %>">
+        <cp:conditions>
+          <% rule[:conditions].each do |cond|%>
+          <<%= cond %> />
+          <% end %>
+        </cp:conditions>
+        <cp:actions>
+          <allow><%= rule[:allow] %></allow>
+        </cp:actions>
+      </cp:rule>
+      <% end %>
+    </cp:ruleset>
+  </outgoing-communication-barring>
+</simservs>
+

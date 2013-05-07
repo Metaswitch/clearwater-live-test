@@ -1,0 +1,48 @@
+GIT
+  remote: https://github.com/karottenreibe/joker
+  revision: a7d44e571e67d62cb097689d5a687804e2ddaae4
+  specs:
+    joker (1.0.0)
+      jeweler
+      rake-compiler
+      rake-tester
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    coderay (1.0.9)
+    erubis (2.7.0)
+    git (1.2.5)
+    jeweler (1.8.4)
+      bundler (~> 1.0)
+      git (>= 1.2.5)
+      rake
+      rdoc
+    json (1.7.7)
+    method_source (0.8.1)
+    mime-types (1.21)
+    pry (0.9.12)
+      coderay (~> 1.0.5)
+      method_source (~> 0.8)
+      slop (~> 3.4)
+    rake (10.0.3)
+    rake-compiler (0.8.3)
+      rake
+    rake-tester (0.0.1)
+    rdoc (4.0.0)
+      json (~> 1.4)
+    require_all (1.2.1)
+    rest-client (1.6.7)
+      mime-types (>= 1.16)
+    slop (3.4.3)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  erubis
+  joker!
+  pry
+  rake
+  require_all
+  rest-client

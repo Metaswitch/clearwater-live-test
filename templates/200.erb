@@ -1,0 +1,14 @@
+  <send>
+    <![CDATA[
+      SIP/2.0 200 OK
+      [last_Via:]
+      [last_Record-Route:]
+      From: <sip:<%= target.username %>@<%= target.domain %>>;tag=[pid]SIPpTag00[call_number]1234
+      To: <sip:<%= sender.username %>@<%= sender.domain %>>;tag=[pid]SIPpTag00[call_number]4321
+      Call-ID: [call_id]
+      CSeq: <%= defined?(cseq) ? cseq : "[cseq]" %> <%= method %>
+      Contact: <sip:<%= sender.username %>@[$nat_ip_addr]:[$nat_port];transport=[transport];ob>;+sip.ice
+      <% if defined? emit_trusted and emit_trusted %>P-Access-Network-Info: IEEE-802.11;i-wlan-node-id=SecretBunker42
+      <% end %>Content-Length: 0
+    ]]>
+  </send>
