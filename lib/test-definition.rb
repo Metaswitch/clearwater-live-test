@@ -184,7 +184,7 @@ class TestDefinition
     @deployment = ENV['PROXY'] if ENV['PROXY']
     transport_flag = { udp: "u1", tcp: "t1" }[@transport]
 
-    @sipp_pid = Process.spawn("sudo ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{@scenario_file}\" #{@deployment}",
+    @sipp_pid = Process.spawn("sudo TERM=xterm ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{@scenario_file}\" #{@deployment}",
                               :out => "/dev/null", :err => "#{@scenario_file}.err")
   end
 
