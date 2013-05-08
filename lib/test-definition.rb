@@ -40,6 +40,7 @@ class TestDefinition
 
   @@tests = []
   @@current_test = nil
+  @@failures = 0
 
   def self.add_instance(i)
     @@tests << i
@@ -47,6 +48,14 @@ class TestDefinition
 
   def self.tests
     @@tests
+  end
+
+  def record_failure
+    @@failures += 1
+  end
+
+  def self.failures
+    @@failures
   end
 
   def self.run_all(deployment, glob)
@@ -60,6 +69,7 @@ class TestDefinition
           print "#{test.name} (#{trans.to_s.upcase}) - "
           test.run(deployment, trans)
         rescue Exception => e
+          record_failure
           puts RedGreen::Color.red("Failed")
           puts "  #{e.class} thrown:"
           puts "   - #{e}"
@@ -179,6 +189,7 @@ class TestDefinition
     rc = Process.wait2(@sipp_pid)[1].exitstatus
     @sipp_pid = nil
     if rc != 0
+      record_failure
       puts RedGreen::Color.red("ERROR (#{rc})")
       puts "  Diags can be found at:"
       get_diags.each do |d|
