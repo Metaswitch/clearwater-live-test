@@ -38,6 +38,8 @@ def run_tests(domain, glob="*")
   TestDefinition.run_all($domain, Wildcard[glob, true])
 
   destroy_leaked_numbers
+
+  exit (TestDefinition.failures == 0) ? 0 : 1
 end
 
 def destroy_leaked_numbers
