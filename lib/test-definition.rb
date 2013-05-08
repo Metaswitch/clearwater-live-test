@@ -42,12 +42,12 @@ module RedGreen
       color(color_name) + args.first + color(:clear)
     end
     def self.color(color)
-      if ENV['NOCOLOR']
-        ""
-      else
+      if ENV['TERM']
         fg_color = FG_COLORS["for_#{color}".to_sym]
         bg_color = BG_COLORS[color.to_sym]
         "\e[#{fg_color};#{bg_color}m"
+      else
+        ""
       end
     end
   end
