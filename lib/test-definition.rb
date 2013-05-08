@@ -42,9 +42,13 @@ module RedGreen
       color(color_name) + args.first + color(:clear)
     end
     def self.color(color)
-      fg_color = FG_COLORS["for_#{color}".to_sym]
-      bg_color = BG_COLORS[color.to_sym]
-      "\e[#{fg_color};#{bg_color}m"
+      if ENV['TERM']
+        fg_color = FG_COLORS["for_#{color}".to_sym]
+        bg_color = BG_COLORS[color.to_sym]
+        "\e[#{fg_color};#{bg_color}m"
+      else
+        ""
+      end
     end
   end
 end
@@ -184,7 +188,7 @@ class TestDefinition
     @deployment = ENV['PROXY'] if ENV['PROXY']
     transport_flag = { udp: "u1", tcp: "t1" }[@transport]
 
-    @sipp_pid = Process.spawn("sudo ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{@scenario_file}\" #{@deployment}",
+    @sipp_pid = Process.spawn("sudo TERM=xterm ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{@scenario_file}\" #{@deployment}",
                               :out => "/dev/null", :err => "#{@scenario_file}.err")
   end
 
