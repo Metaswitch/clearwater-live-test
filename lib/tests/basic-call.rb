@@ -79,7 +79,7 @@ end
 
 TestDefinition.new("Basic Call - Off-net number rejection") do |t|
   sip_caller = t.add_sip_endpoint
-  sip_callee = t.add_fake_endpoint("+16505551234", "cw-ngv.com")
+  sip_callee = t.add_fake_endpoint("+16505551234", $domain)
 
   t.set_scenario(
     sip_caller.register +

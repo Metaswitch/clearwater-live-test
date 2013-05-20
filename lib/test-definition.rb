@@ -68,7 +68,7 @@ class TestDefinition
     @@tests
   end
 
-  def record_failure
+  def self.record_failure
     @@failures += 1
   end
 
