@@ -68,7 +68,7 @@ class TestDefinition
     @@tests
   end
 
-  def record_failure
+  def self.record_failure
     @@failures += 1
   end
 
@@ -207,7 +207,7 @@ class TestDefinition
     rc = Process.wait2(@sipp_pid)[1].exitstatus
     @sipp_pid = nil
     if rc != 0
-      record_failure
+      TestDefinition.record_failure
       puts RedGreen::Color.red("ERROR (#{rc})")
       puts "  Diags can be found at:"
       get_diags.each do |d|
