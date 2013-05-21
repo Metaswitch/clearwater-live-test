@@ -41,9 +41,9 @@ class SIPpEndpoint
   attr_accessor :username, :password, :sip_uri, :domain
 
   def initialize(pstn, deployment, transport)
-    @@security_cookie ||= get_security_cookie
     @domain = deployment
     @transport = transport
+    @@security_cookie ||= get_security_cookie
     get_number(pstn)
   end
 
@@ -176,11 +176,11 @@ private
   end
 
   def ellis_url path
-    "http://ellis.#{$domain}/#{path}"
+    "http://ellis.#{@domain}/#{path}"
   end
 
   def account_username
-    "system.test@cw-ngv.com"
+    "system.test@#{@domain}"
   end
 
   def account_password

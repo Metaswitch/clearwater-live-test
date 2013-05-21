@@ -34,7 +34,7 @@
 
 LiveTestDefinition.new("Live Call - Dial out to a real number") do |t|
   sip_caller = t.add_pstn_endpoint
-  live_callee = t.add_fake_endpoint(ENV['LIVENUMBER'], $domain)
+  live_callee = t.add_fake_endpoint(ENV['LIVENUMBER'])
 
   t.set_scenario(
     sip_caller.register +
