@@ -91,7 +91,7 @@ PSTNTestDefinition.new("Call Barring - Reject international call") do |t|
                                  rules: [ { conditions: ["international"],
                                             allow: false } ]
                                }
-  sip_callee = t.add_fake_endpoint("011447854481549", $domain)
+  sip_callee = t.add_fake_endpoint("011447854481549")
   t.set_scenario(
     sip_caller.register +
     [

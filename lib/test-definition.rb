@@ -139,8 +139,8 @@ class TestDefinition
     return new_endpoint
   end
 
-  def add_fake_endpoint(username, domain)
-    new_endpoint = FakeEndpoint.new(username, domain)
+  def add_fake_endpoint(username)
+    new_endpoint = FakeEndpoint.new(username, @deployment)
     @endpoints << new_endpoint
     return new_endpoint
   end
