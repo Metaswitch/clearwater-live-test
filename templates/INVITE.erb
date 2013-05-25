@@ -9,8 +9,7 @@
       Contact: <sip:<%= sender.username %>@[$nat_ip_addr]:[$nat_port];transport=[transport];ob>
       Call-ID: [call_id]
       CSeq: <%= defined?(cseq) ? cseq : "[cseq]" %> INVITE
-      Route: <sip:<%= sender.domain %>;transport=[transport];lr;orig>
-      Route: <sip:sprout.<%= sender.domain %>:5058;transport=[transport];lr;orig>
+      Route: <sip:<%= sender.domain %>;transport=[transport];lr>
       Allow: INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
       Supported: replaces
       <% if defined? emit_trusted and emit_trusted %>P-Access-Network-Info: IEEE-802.11;i-wlan-node-id=SecretBunker42
