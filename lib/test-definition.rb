@@ -172,6 +172,7 @@ class TestDefinition
     TestDefinition.set_current_test(self)
     begin
       @blk.call(self)
+      print "(#{@endpoints.map { |e| e.username }.join ", "}) "
       create_sipp_script
       launch_sipp
       wait_for_sipp
