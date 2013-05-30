@@ -43,7 +43,7 @@ TestDefinition.new("Call Diversion - Not registered") do |t|
                                 }
   t.set_scenario(
     sip_caller.register +
-    sip_callee2.register(false) +
+    sip_callee2.register +
     [
       sip_caller.send("INVITE", target: sip_callee1),
       sip_caller.recv("100"),
@@ -78,8 +78,8 @@ TestDefinition.new("Call Diversion - Busy") do |t|
                                 }
   t.set_scenario(
     sip_caller.register +
-    sip_callee1.register(false) +
-    sip_callee2.register(false) +
+    sip_callee1.register +
+    sip_callee2.register +
     [
       sip_caller.send("INVITE", target: sip_callee1),
       sip_caller.recv("100"),
@@ -120,8 +120,8 @@ TestDefinition.new("Call Diversion - No answer") do |t|
                                 }
   t.set_scenario(
     sip_caller.register +
-    sip_callee1.register(false) +
-    sip_callee2.register(false) +
+    sip_callee1.register +
+    sip_callee2.register +
     [
       sip_caller.send("INVITE", target: sip_callee1),
       sip_caller.recv("100"),
