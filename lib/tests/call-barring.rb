@@ -41,7 +41,7 @@ TestDefinition.new("Call Barring - Outbound Rejection") do |t|
   sip_callee = t.add_sip_endpoint
   t.set_scenario(
     sip_caller.register +
-    sip_callee.register(false) +
+    sip_callee.register +
     [
       sip_caller.send("INVITE", target: sip_callee),
       sip_caller.recv("100"),
@@ -62,7 +62,7 @@ PSTNTestDefinition.new("Call Barring - Allow non-international call") do |t|
   sip_callee = t.add_sip_endpoint
   t.set_scenario(
     sip_caller.register +
-    sip_callee.register(false) +
+    sip_callee.register +
     [
       sip_caller.send("INVITE", target: sip_callee),
       sip_caller.recv("100"),
@@ -113,7 +113,7 @@ TestDefinition.new("Call Barring - Inbound Rejection") do |t|
                                }
   t.set_scenario(
     sip_caller.register +
-    sip_callee.register(false) +
+    sip_callee.register +
     [
       sip_caller.send("INVITE", target: sip_callee),
       sip_caller.recv("100"),
