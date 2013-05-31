@@ -93,7 +93,7 @@ class TestDefinition
         begin
           print "#{test.name} (#{trans.to_s.upcase}) - "
           test.run(deployment, trans)
-        rescue Exception => e
+        rescue StandardError => e
           record_failure
           puts RedGreen::Color.red("Failed")
           puts "  #{e.class} thrown:"

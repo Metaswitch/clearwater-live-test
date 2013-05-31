@@ -135,7 +135,7 @@ private
                           username: account_username,
                           password: account_password)
       r.cookies
-    rescue
+    rescue StandardError
       # This is most likely caused by the System Test user not existing.  Create it now and retry.
       RestClient.post(ellis_url("accounts"),
                       username: "System Test",
