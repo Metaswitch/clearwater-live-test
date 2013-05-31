@@ -137,20 +137,27 @@ class TestDefinition
   def add_sip_endpoint
     new_endpoint = SIPpEndpoint.new(false, @deployment, @transport)
     @endpoints << new_endpoint
-    return new_endpoint
+    new_endpoint
   end
 
   # @@TODO - Don't pass transport in once UDP authentication is fixed
   def add_pstn_endpoint
     new_endpoint = SIPpEndpoint.new(true, @deployment, @transport)
     @endpoints << new_endpoint
-    return new_endpoint
+    new_endpoint
   end
 
   def add_fake_endpoint(username)
     new_endpoint = FakeEndpoint.new(username, @deployment)
     @endpoints << new_endpoint
-    return new_endpoint
+    new_endpoint
+  end
+  
+  def add_mock_as
+    # TODO - pass in actual domain
+    new_endpoint = MockAS.new("felix.cw-ngv.com")
+    @endpoints << new_endpoint
+    new_endpoint
   end
 
   def set_scenario(scenario)
@@ -160,17 +167,17 @@ class TestDefinition
   def create_sipp_scripts
     sipp_scripts = []
     # Filter out AS scenario as it will go into a separate SIPp file
-    as_scripts = @scenario.select { |s| s.sender.instance_of? String }
+    as_scripts = @scenario.select { |s| s.sender.instance_of? MockAS }
     endpoint_scripts = @scenario.select { |s| s.sender.instance_of? SIPpEndpoint or s.sender.instance_of? FakeEndpoint }
-    sipp_scripts.push(create_sipp_script(as_scripts, "endpoint")) unless as_scripts.empty?
-    sipp_scripts.push(create_sipp_script(endpoint_scripts, "endpoint")) unless endpoint_scripts.empty?
+    sipp_scripts.push(create_sipp_script(as_scripts, :as)) unless as_scripts.empty?
+    sipp_scripts.push(create_sipp_script(endpoint_scripts, :endpoint)) unless endpoint_scripts.empty?
     sipp_scripts
   end
   
   def create_sipp_script(scenario, element_type)
     sipp_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
-      "<scenario name=\"#{@name} - #{element_type}\">\n" +
-      @scenario.each { |s| s.to_s }.join("\n") +
+      "<scenario name=\"#{@name} - #{element_type.to_s}\">\n" +
+      scenario.each { |s| s.to_s }.join("\n") +
       "\n" +
       "  <ResponseTimeRepartition value=\"10, 20, 30, 40, 50, 100, 150, 200\" />\n" +
       "  <CallLengthRepartition value=\"10, 50, 100, 500, 1000, 5000, 10000\" />\n" +
@@ -178,9 +185,9 @@ class TestDefinition
     output_file_name = File.join(File.dirname(__FILE__),
                                  "..",
                                  "scripts",
-                                 "#{@name} - #{element_type} - #{@transport.to_s.upcase}.xml")
+                                 "#{@name} - #{@transport.to_s.upcase} - #{element_type.to_s}.xml")
     File.write(output_file_name, sipp_xml)
-    output_file_name
+    { scenario_file: output_file_name, element_type: element_type }
   end
 
   def run(deployment, transport)
@@ -201,20 +208,19 @@ class TestDefinition
   end
 
   def launch_sipp(sipp_scripts)
-    sipp_pids = sipp_scripts.each do |scenario_file|
-      fail "No scenario file" if scenario_file.nil?
+    sipp_pids = sipp_scripts.each do |s|
+      fail "No scenario file" if s[:scenario_file].nil?
 
       @deployment = ENV['PROXY'] if ENV['PROXY']
-      transport_flag = { udp: "u1", tcp: "t1" }[@transport]
-
-      Process.spawn("sudo TERM=xterm ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{scenario_file}\" #{@deployment}",
-                                :out => "/dev/null", :err => "#{scenario_file}.err")
+      transport_flag = s[:element_type] == :as ? "t1" : { udp: "u1", tcp: "t1" }[@transport]
+      cmd = "sudo TERM=xterm ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{s[:scenario_file]}\" #{@deployment}"
+      cmd += " -p 5070" if s[:element_type] == :as
+      Process.spawn(cmd, :out => "/dev/null", :err => "#{s[:scenario_file]}.err")
     end
     fail if sipp_pids.any? { |pid| pid.nil? }
   end
 
   def get_diags
-    # TODO make work with AS
     Dir["scripts/#{@name} - #{@transport.to_s.upcase}*"]
   end
 

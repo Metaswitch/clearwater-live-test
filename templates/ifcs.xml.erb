@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ServiceProfile>
+  <InitialFilterCriteria>
+    <TriggerPoint>
+      <ConditionTypeCNF>0</ConditionTypeCNF>
+      <SPT>
+        <ConditionNegated>0</ConditionNegated>
+        <Group>0</Group>
+        <Method>INVITE</Method>
+        <Extension></Extension>
+      </SPT>
+    </TriggerPoint>
+    <ApplicationServer>
+      <ServerName>sip:<%= server_name %></ServerName>
+      <DefaultHandling>0</DefaultHandling>
+    </ApplicationServer>
+  </InitialFilterCriteria>
+</ServiceProfile>

@@ -1,6 +1,4 @@
-#!/usr/bin/env ruby
-
-# @file live-test.rb
+# @file isc-interface.rb
 #
 # Project Clearwater - IMS in the Cloud
 # Copyright (C) 2013  Metaswitch Networks Ltd
@@ -34,41 +32,23 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-require 'rubygems'
-require 'require_all'
-require 'rest-client'
-require 'joker'
-require_relative 'test-definition'
-require_relative 'sipp-phase'
-require_relative 'sipp-endpoint'
-require_relative 'fake-endpoint'
-require_relative 'mock-as'
+TestDefinition.new("ISC Interface - Redirect") do |t|
+  sip_caller = t.add_sip_endpoint
+  sip_callee = t.add_sip_endpoint
+  mock_as = t.add_mock_as
 
-def run_tests(domain, glob="*")
-  # Load and run all the tests
-  require_all 'lib/tests'
-  TestDefinition.run_all(domain, Wildcard[glob, true])
-
-  destroy_leaked_numbers(domain)
-
-  exit (TestDefinition.failures == 0) ? 0 : 1
+  sip_caller.set_ifc server_name: "felix.cw-ngv.com:5070"
+  
+  t.set_scenario(
+    sip_caller.register +
+    sip_callee.register +
+    [
+      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
+      mock_as.recv("INVITE"),
+      sip_caller.recv("100"),
+    ] +
+    sip_caller.unregister +
+    sip_callee.unregister
+  )
 end
 
-def destroy_leaked_numbers(domain)
-  # Despite trying to clean up numbers, we seem to leak them pretty fast, destroy them now
-  r = RestClient.post("http://ellis.#{domain}/session",
-                      username: "system.test@#{domain}",
-                      password: "Please enter your details")
-  cookie = r.cookies
-  r = RestClient::Request.execute(method: :get,
-                                  url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers",
-                                  cookies: cookie)
-  j = JSON.parse(r)
-
-  j["numbers"].each do |n|
-    puts "Deleting leaked number: #{n["sip_uri"]}"
-    RestClient::Request.execute(method: :delete,
-                                url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
-                                cookies: cookie)
-  end
-end
