@@ -34,21 +34,43 @@
 
 TestDefinition.new("ISC Interface - Redirect") do |t|
   sip_caller = t.add_sip_endpoint
-  sip_callee = t.add_sip_endpoint
+  sip_callee1 = t.add_sip_endpoint
+  sip_callee2 = t.add_sip_endpoint
   mock_as = t.add_mock_as
 
-  sip_caller.set_ifc server_name: "felix.cw-ngv.com:5070"
+  sip_callee1.set_ifc server_name: "felix.cw-ngv.com:5070"
   
   t.set_scenario(
     sip_caller.register +
-    sip_callee.register +
+    sip_callee1.register +
+    sip_callee2.register +
     [
-      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
-      mock_as.recv("INVITE"),
+      sip_caller.send("INVITE", target: sip_callee1, emit_trusted: true),
       sip_caller.recv("100"),
+      mock_as.recv("INVITE", extract_uas_via: true),
+      mock_as.send("302", from: sip_caller, to: sip_callee1, redirect_target: sip_callee2, method: "INVITE"),
+      sip_caller.recv("302", from: sip_caller, to: sip_callee1, redirect_target: sip_callee2, method: "INVITE", rrs: true),
+      sip_caller.send("ACK", target: sip_callee1),
+      # Basic call
+      sip_caller.send("INVITE", target: sip_callee2, emit_trusted: true),
+      sip_caller.recv("100"),
+      sip_callee2.recv("INVITE", extract_uas_via: true, check_trusted: true, trusted_present: false),
+      sip_callee2.send("100", target: sip_caller, method: "INVITE"),
+      sip_callee2.send("180", target: sip_caller, method: "INVITE"),
+      sip_caller.recv("180"),
+      sip_callee2.send("200-SDP", target: sip_caller, method: "INVITE"),
+      sip_caller.recv("200", rrs: true),
+      sip_caller.send("ACK", target: sip_callee2, in_dialog: true),
+      sip_callee2.recv("ACK"),
+      SIPpPhase.new("pause", nil, timeout: 1000),
+      sip_caller.send("BYE", target: sip_callee2, in_dialog: true),
+      sip_callee2.recv("BYE", extract_uas_via: true),
+      sip_callee2.send("200", target: sip_caller, method: "BYE", emit_trusted: true),
+      sip_caller.recv("200", check_trusted: true, trusted_present: false),
     ] +
     sip_caller.unregister +
-    sip_callee.unregister
+    sip_callee1.unregister +
+    sip_callee2.unregister
   )
 end
 
