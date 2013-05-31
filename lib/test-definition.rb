@@ -157,9 +157,19 @@ class TestDefinition
     @scenario = scenario
   end
 
-  def create_sipp_script
+  def create_sipp_scripts
+    sipp_scripts = []
+    # Filter out AS scenario as it will go into a separate SIPp file
+    as_scripts = @scenario.select { |s| s.sender.instance_of? String }
+    endpoint_scripts = @scenario.select { |s| s.sender.instance_of? SIPpEndpoint or s.sender.instance_of? FakeEndpoint }
+    sipp_scripts.push(create_sipp_script(as_scripts, "endpoint")) unless as_scripts.empty?
+    sipp_scripts.push(create_sipp_script(endpoint_scripts, "endpoint")) unless endpoint_scripts.empty?
+    sipp_scripts
+  end
+  
+  def create_sipp_script(scenario, element_type)
     sipp_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
-      "<scenario name=\"#{@test_name}\">\n" +
+      "<scenario name=\"#{@name} - #{element_type}\">\n" +
       @scenario.each { |s| s.to_s }.join("\n") +
       "\n" +
       "  <ResponseTimeRepartition value=\"10, 20, 30, 40, 50, 100, 150, 200\" />\n" +
@@ -168,9 +178,9 @@ class TestDefinition
     output_file_name = File.join(File.dirname(__FILE__),
                                  "..",
                                  "scripts",
-                                 "#{@name} - #{@transport.to_s.upcase}.xml")
+                                 "#{@name} - #{element_type} - #{@transport.to_s.upcase}.xml")
     File.write(output_file_name, sipp_xml)
-    @scenario_file = output_file_name
+    output_file_name
   end
 
   def run(deployment, transport)
@@ -181,8 +191,8 @@ class TestDefinition
     begin
       @blk.call(self)
       print "(#{@endpoints.map { |e| e.username }.join ", "}) "
-      create_sipp_script
-      launch_sipp
+      sipp_scripts = create_sipp_scripts
+      sipp_pids = launch_sipp sipp_scripts
       wait_for_sipp
     ensure
       cleanup
@@ -190,18 +200,21 @@ class TestDefinition
     end
   end
 
-  def launch_sipp
-    fail "No scenario file" if @scenario_file.nil?
-    fail "SIPp is already running" if not @sipp_pid.nil?
+  def launch_sipp(sipp_scripts)
+    sipp_pids = sipp_scripts.each do |scenario_file|
+      fail "No scenario file" if scenario_file.nil?
 
-    @deployment = ENV['PROXY'] if ENV['PROXY']
-    transport_flag = { udp: "u1", tcp: "t1" }[@transport]
+      @deployment = ENV['PROXY'] if ENV['PROXY']
+      transport_flag = { udp: "u1", tcp: "t1" }[@transport]
 
-    @sipp_pid = Process.spawn("sudo TERM=xterm ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{@scenario_file}\" #{@deployment}",
-                              :out => "/dev/null", :err => "#{@scenario_file}.err")
+      Process.spawn("sudo TERM=xterm ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{scenario_file}\" #{@deployment}",
+                                :out => "/dev/null", :err => "#{scenario_file}.err")
+    end
+    fail if sipp_pids.any? { |pid| pid.nil? }
   end
 
   def get_diags
+    # TODO make work with AS
     Dir["scripts/#{@name} - #{@transport.to_s.upcase}*"]
   end
 
@@ -212,12 +225,10 @@ class TestDefinition
   end
 
   def wait_for_sipp
-    fail if @sipp_pid.nil?
-    rc = Process.wait2(@sipp_pid)[1].exitstatus
-    @sipp_pid = nil
-    if rc != 0
+    return_codes = Process.waitall.map { |p| p[1].exitstatus }
+    if return_codes.any? { |rc| rc != 0 }
       TestDefinition.record_failure
-      puts RedGreen::Color.red("ERROR (#{rc})")
+      puts RedGreen::Color.red("ERROR (#{return_codes.join ", "})")
       puts "  Diags can be found at:"
       get_diags.each do |d|
         puts "   - #{d}"
