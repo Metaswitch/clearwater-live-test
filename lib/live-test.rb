@@ -44,33 +44,30 @@ require_relative 'sipp-endpoint'
 require_relative 'fake-endpoint'
 
 def run_tests(domain, glob="*")
-  # Set the global domain
-  @domain = domain
-
   # Load and run all the tests
   require_all 'lib/tests'
-  TestDefinition.run_all(@domain, Wildcard[glob, true])
+  TestDefinition.run_all(domain, Wildcard[glob, true])
 
-  destroy_leaked_numbers
+  destroy_leaked_numbers(domain)
 
   exit (TestDefinition.failures == 0) ? 0 : 1
 end
 
-def destroy_leaked_numbers
+def destroy_leaked_numbers(domain)
   # Despite trying to clean up numbers, we seem to leak them pretty fast, destroy them now
-  r = RestClient.post("http://ellis.#{@domain}/session",
-                      username: "system.test@#{@domain}",
+  r = RestClient.post("http://ellis.#{domain}/session",
+                      username: "system.test@#{domain}",
                       password: "Please enter your details")
   cookie = r.cookies
   r = RestClient::Request.execute(method: :get,
-                                  url: "http://ellis.#{@domain}/accounts/system.test@#{@domain}/numbers",
+                                  url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers",
                                   cookies: cookie)
   j = JSON.parse(r)
 
   j["numbers"].each do |n|
     puts "Deleting leaked number: #{n["sip_uri"]}"
     RestClient::Request.execute(method: :delete,
-                                url: "http://ellis.#{@domain}/accounts/system.test@#{@domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
+                                url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
                                 cookies: cookie)
   end
 end

@@ -78,11 +78,18 @@ class TestDefinition
 
   def self.run_all(deployment, glob)
     ENV['REPEAT'] ||= "1"
+    ENV['TRANSPORT'] ||= "tcp,udp"
     repeat = ENV['REPEAT'].to_i
+    req_transports = ENV['TRANSPORT'].downcase.split(',').map { |t| t.to_sym }
+    transports = [:tcp, :udp].select { |t| req_transports.include? t }
+    unless req_transports == transports
+      STDERR.puts "ERROR: Unsupported transports #{req_transports - transports} requested"
+      exit 2
+    end
     tests_to_run = @@tests.select { |t| t.name =~ glob }
     repeat.times do |r|
       puts "Test iteration #{r + 1}" if repeat != 1
-      tests_to_run.product([:tcp, :udp]).collect do |test, trans|
+      tests_to_run.product(transports).collect do |test, trans|
         begin
           print "#{test.name} (#{trans.to_s.upcase}) - "
           test.run(deployment, trans)
