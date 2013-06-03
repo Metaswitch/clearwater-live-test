@@ -2,7 +2,7 @@
     <![CDATA[
 
       INVITE sip:<%= target.username %>@<%= target.domain %> SIP/2.0
-      Via: SIP/2.0/[transport] [$nat_ip_addr]:[$nat_port];rport;branch=z9hG4bK-[pid]-[call_number]
+      Via: SIP/2.0/[transport] [$nat_ip_addr]:[$nat_port];rport;branch=z9hG4bK-[pid]-[call_number]<%= defined?(call_number) ? "-#{call_number}" : "" %>
       Max-Forwards: 70
       From: sip:<%= sender.username %>@<%= sender.domain %>;tag=[pid]SIPpTag00[call_number]1234
       To: sip:<%= target.username %>@<%= target.domain %>
