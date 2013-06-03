@@ -1,11 +1,15 @@
   <% refs = [] %>
   <recv timeout="<%= timeout rescue 3000 %>" request="<%= request %>" >
-    <% if defined? check_trusted and check_trusted %>
     <action>
+      <% if defined?(save_remote_ip) and save_remote_ip %>
+      <ereg regexp="SIP/2.0/.* ([^:]*):([^;]*);" search_in="hdr" header="Via:" assign_to="dummy,nat_ip_addr,nat_port" />
+      <% refs.push("dummy", "nat_ip_addr", "nat_port") %>
+      <% end %>
+      <% if defined? check_trusted and check_trusted %>
       <ereg regexp="." search_in="hdr" header="P-Access-Network-Info:" case_indep="true" check_it<%= trusted_present ? "" : "_inverse" %>="true" assign_to="1"/>
       <% refs.push("1") %>
+      <% end %>
     </action>
-    <% end %>
   </recv>
 
   <% if defined? extract_uas_via and extract_uas_via %>

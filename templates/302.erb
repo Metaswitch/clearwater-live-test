@@ -7,7 +7,7 @@
       To: <sip:<%= to.username %>@<%= to.domain %>>;tag=[pid]SIPpTag00[call_number]4321
       Call-ID: [call_id]
       CSeq: <%= defined?(cseq) ? cseq : "[cseq]" %> <%= method %>
-      Contact: <sip:<%= redirect_target.username %>;transport=[transport];ob>;+sip.ice
+      Contact: <sip:<%= redirect_target.username %>@[$nat_ip_addr]:[$nat_port];transport=[transport];ob>;+sip.ice
       Content-Length: 0
     ]]>
   </send>
