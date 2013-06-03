@@ -36,10 +36,11 @@ require 'json'
 require 'erubis'
 
 class MockAS
-  attr_accessor :domain
+  attr_accessor :domain, :username
 
   def initialize(domain)
     @domain = domain
+    @username = "<MOCK AS>#{domain}"
   end
 
   def cleanup
