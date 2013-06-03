@@ -41,6 +41,7 @@ There are various modifiers you can use to determine which subset of tests you w
  - `REPEATS=<number>` - to allow the suite of tests to be run multiple times.
  - `TRANSPORT=<transports>` - Comma-separated transports to test with.  Allowed tranports are `TCP` and `UDP`.  If not specified, all tests will be run twice, for each transport type.
  - `PROXY=<host>` - to force the tests to run against a particular Bono instance.
+ - `HOSTNAME=<host>` - publicly accessible hostname of the machine running the tests, used for the dummy AS.
 
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
 
@@ -100,6 +101,11 @@ Modifying Simservs
 ------------------
 
 To change a simservs document for a Clearwater endpoint, use `ep.set_simservs` which takes a hash of options for the document.  See `templates/simsers.xml.erb` for how the options are used and see `SIPpEndpoint::default_simservs` for the options that will be used if not specified in your call to `set_simservs`.
+
+Modifying iFCs
+------------------
+
+To change the iFC document for a Clearwater endpoint, use `ep.set_ifcs` which takes a hash of options for the document.  See `templates/ifcs.xml.erb` for how the options are used and see `SIPpEndpoint::default_ifcs` for the options that will be used if not specified in your call to `set_ifcs`.
 
 Sending Messages
 ----------------
