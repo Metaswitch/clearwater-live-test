@@ -155,7 +155,7 @@ class TestDefinition
   
   def add_mock_as
     # TODO - pass in actual domain
-    new_endpoint = MockAS.new("felix.cw-ngv.com")
+    new_endpoint = MockAS.new ENV['HOSTNAME'] 
     @endpoints << new_endpoint
     new_endpoint
   end
@@ -273,6 +273,18 @@ class LiveTestDefinition < PSTNTestDefinition
     else
       puts RedGreen::Color.yellow("Skipped") + " (No live number given)"
       puts "   - Call with LIVENUMBER=<number>"
+    end
+  end
+end
+
+class ASTestDefinition < TestDefinition
+  def run(*args)
+    clear_diags
+    if ENV['HOSTNAME']
+      super
+    else
+      puts RedGreen::Color.yellow("Skipped") + " (No hostname given)"
+      puts "   - Call with HOSTNAME=<publicly accessible hostname/IP of this machine>"
     end
   end
 end

@@ -32,13 +32,13 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-TestDefinition.new("ISC Interface - Redirect") do |t|
+ASTestDefinition.new("ISC Interface - Redirect") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee1 = t.add_sip_endpoint
   sip_callee2 = t.add_sip_endpoint
   mock_as = t.add_mock_as
 
-  sip_callee1.set_ifc server_name: "felix.cw-ngv.com:5070"
+  sip_callee1.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   
   t.set_scenario(
     sip_caller.register +
