@@ -40,7 +40,7 @@ class MockAS
   attr_accessor :domain, :port, :username
 
   def initialize(domain, port)
-    Resolv::DNS.open { |dns| dns.getaddress(domain).to_s } rescue fail "Could not resolve AS server: #{domain}" 
+    Resolv::DNS.new.getaddress(domain).to_s rescue fail "Could not resolve AS server: #{domain}" 
     @domain = domain
     @port = port
     @username = "mock_as"

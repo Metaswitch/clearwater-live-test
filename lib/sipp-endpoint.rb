@@ -149,8 +149,7 @@ class SIPpEndpoint
   end
   
   def default_ifcs
-    {
-    }
+    {}
   end
     
 private
