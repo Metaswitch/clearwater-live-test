@@ -153,9 +153,9 @@ class TestDefinition
     new_endpoint
   end
   
-  def add_mock_as
+  def add_mock_as(domain, port)
     # TODO - pass in actual domain
-    new_endpoint = MockAS.new ENV['HOSTNAME'] 
+    new_endpoint = MockAS.new(domain, port)
     @endpoints << new_endpoint
     new_endpoint
   end

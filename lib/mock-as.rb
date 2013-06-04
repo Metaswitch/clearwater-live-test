@@ -37,12 +37,13 @@ require 'erubis'
 require 'resolv'
 
 class MockAS
-  attr_accessor :domain, :username
+  attr_accessor :domain, :port, :username
 
-  def initialize(domain)
+  def initialize(domain, port)
     Resolv::DNS.open { |dns| dns.getaddress(domain).to_s } rescue fail "Could not resolve AS server: #{domain}" 
     @domain = domain
-    @username = "<MOCK AS>#{domain}"
+    @port = port
+    @username = "mock_as"
   end
 
   def cleanup
