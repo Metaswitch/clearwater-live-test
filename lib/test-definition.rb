@@ -32,6 +32,8 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
+require 'timeout'
+
 # Source: RedGreen gem - https://github.com/kule/redgreen
 module RedGreen
   module Color
@@ -231,10 +233,15 @@ class TestDefinition
   end
 
   def wait_for_sipp
-    return_codes = Process.waitall.map { |p| p[1].exitstatus }
-    if return_codes.any? { |rc| rc != 0 }
+    # Limit test execution to 10 seconds
+    return_codes = ( Timeout::timeout(10) { Process.waitall.map { |p| p[1].exitstatus } } rescue nil )
+    if return_codes.nil? or return_codes.any? { |rc| rc != 0 }
       TestDefinition.record_failure
-      puts RedGreen::Color.red("ERROR (#{return_codes.join ", "})")
+      if return_codes.nil?
+        puts RedGreen::Color.red("ERROR (TIMED OUT)")
+      else
+        puts RedGreen::Color.red("ERROR (#{return_codes.join ", "})")
+      end
       puts "  Diags can be found at:"
       get_diags.each do |d|
         puts "   - #{d}"
