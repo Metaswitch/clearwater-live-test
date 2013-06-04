@@ -62,7 +62,7 @@ ASTestDefinition.new("ISC Interface - Redirect") do |t|
       sip_caller.recv("200", rrs: true),
       sip_caller.send("ACK", target: sip_callee2, in_dialog: true, call_number: 2),
       sip_callee2.recv("ACK"),
-      SIPpPhase.new("pause", nil, timeout: 1000),
+      SIPpPhase.new("pause", sip_caller, timeout: 1000),
       sip_caller.send("BYE", target: sip_callee2, in_dialog: true, call_number: 2),
       sip_callee2.recv("BYE", extract_uas_via: true),
       sip_callee2.send("200", target: sip_caller, method: "BYE", emit_trusted: true, call_number: 2),
@@ -93,7 +93,7 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
       sip_caller.send("ACK", in_dialog: true),
       # Subsequent requests do not make it back to the mock_as
       #mock_as.recv("ACK"),
-      #SIPpPhase.new("pause", nil, timeout: 1000),
+      #SIPpPhase.new("pause", sip_caller, timeout: 1000),
       #sip_caller.send("BYE", in_dialog: true),
       #mock_as.recv("BYE", extract_uas_via: true),
       #sip_callee2.send("200", target: sip_caller, method: "BYE", emit_trusted: true, call_number: 2),

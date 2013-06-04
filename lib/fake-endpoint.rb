@@ -40,6 +40,10 @@ class FakeEndpoint
     @domain = domain
     @sip_uri = "sip:#{username}@#{domain}"
   end
+  
+  def element_type
+    :endpoint
+  end
 
   def register
     []

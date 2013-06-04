@@ -46,6 +46,10 @@ class SIPpEndpoint
     @@security_cookie ||= get_security_cookie
     get_number(pstn)
   end
+  
+  def element_type
+    :endpoint
+  end
 
   def cleanup
     delete_number

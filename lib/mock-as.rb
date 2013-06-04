@@ -45,6 +45,10 @@ class MockAS
     @port = port
     @username = "mock_as"
   end
+  
+  def element_type
+    :as
+  end
 
   def cleanup
   end

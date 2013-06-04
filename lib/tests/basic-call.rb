@@ -49,7 +49,7 @@ TestDefinition.new("Basic Call - Mainline") do |t|
       sip_caller.recv("200", rrs: true),
       sip_caller.send("ACK", target: sip_callee, in_dialog: true),
       sip_callee.recv("ACK"),
-      SIPpPhase.new("pause", nil, timeout: 1000),
+      SIPpPhase.new("pause", sip_caller, timeout: 1000),
       sip_caller.send("BYE", target: sip_callee, in_dialog: true),
       sip_callee.recv("BYE", extract_uas_via: true),
       sip_callee.send("200", target: sip_caller, method: "BYE", emit_trusted: true),

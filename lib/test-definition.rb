@@ -167,10 +167,10 @@ class TestDefinition
   def create_sipp_scripts
     sipp_scripts = []
     # Filter out AS scenario as it will go into a separate SIPp file
-    as_scripts = @scenario.select { |s| s.sender.instance_of? MockAS }
-    endpoint_scripts = @scenario.select { |s| s.sender.instance_of? SIPpEndpoint or s.sender.instance_of? FakeEndpoint }
-    sipp_scripts.push(create_sipp_script(as_scripts, :as)) unless as_scripts.empty?
-    sipp_scripts.push(create_sipp_script(endpoint_scripts, :endpoint)) unless endpoint_scripts.empty?
+    grouped_scripts = @scenario.group_by { |s| s.sender.element_type }
+    grouped_scripts.each do |element_type, scenario|
+      sipp_scripts.push(create_sipp_script(scenario, element_type)) unless scenario.empty?
+    end
     sipp_scripts
   end
   

@@ -122,9 +122,11 @@ To receive a SIP message, simple add `ep.recv(<message>)` to the scenario.
 Pausing
 -------
 
-To add a pause in the script (for example to mimic the call progress), use the following incantation (which may also be used for other, non-endpoint-specific actions).
+To add a pause in the script (for example to mimic the call progress), use the following incantation (which may also be used for other, non-endpoint-specific actions). 
+It is necessary to specify an endpoint so it is clear which sipp script to place the
+pause into (in the case of multiple endpoints)
 
-    SIPpPhase.new("pause", nil, timeout: <ms>)
+    SIPpPhase.new("pause", sip_caller, timeout: <ms>)
 
 Acknowledgements
 ----------------
