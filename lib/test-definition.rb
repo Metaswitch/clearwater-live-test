@@ -201,7 +201,7 @@ class TestDefinition
       @blk.call(self)
       print "(#{@endpoints.map { |e| e.username }.join ", "}) "
       sipp_scripts = create_sipp_scripts
-      sipp_pids = launch_sipp sipp_scripts
+      @sipp_pids = launch_sipp sipp_scripts
       wait_for_sipp
     ensure
       cleanup
@@ -210,7 +210,7 @@ class TestDefinition
   end
 
   def launch_sipp(sipp_scripts)
-    sipp_pids = sipp_scripts.each do |s|
+    sipp_pids = sipp_scripts.map do |s|
       fail "No scenario file" if s[:scenario_file].nil?
 
       @deployment = ENV['PROXY'] if ENV['PROXY']
@@ -220,6 +220,7 @@ class TestDefinition
       Process.spawn(cmd, :out => "/dev/null", :err => "#{s[:scenario_file]}.err")
     end
     fail if sipp_pids.any? { |pid| pid.nil? }
+    sipp_pids
   end
 
   def get_diags
@@ -239,6 +240,7 @@ class TestDefinition
       TestDefinition.record_failure
       if return_codes.nil?
         puts RedGreen::Color.red("ERROR (TIMED OUT)")
+        @sipp_pids.each { |pid| Process.kill("SIGKILL", pid) rescue puts "Could not kill process with pid #{pid}" }
       else
         puts RedGreen::Color.red("ERROR (#{return_codes.join ", "})")
       end
