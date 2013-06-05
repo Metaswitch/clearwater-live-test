@@ -1,0 +1,13 @@
+  <send>
+    <![CDATA[
+      SIP/2.0 302 Moved Temporarily
+      [$uas_via]
+      [last_Record-Route:]
+      From: <sip:<%= from.username %>@<%= from.domain %>>;tag=[pid]SIPpTag00[call_number]1234
+      To: <sip:<%= to.username %>@<%= to.domain %>>;tag=[pid]SIPpTag00[call_number]4321
+      Call-ID: [call_id]
+      CSeq: <%= defined?(cseq) ? cseq : "[cseq]" %> <%= method %>
+      Contact: <sip:<%= redirect_target.username %>@[$nat_ip_addr]:[$nat_port];transport=[transport];ob>;+sip.ice
+      Content-Length: 0
+    ]]>
+  </send>

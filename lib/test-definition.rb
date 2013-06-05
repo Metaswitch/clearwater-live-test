@@ -32,6 +32,8 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
+require 'timeout'
+
 # Source: RedGreen gem - https://github.com/kule/redgreen
 module RedGreen
   module Color
@@ -137,30 +139,47 @@ class TestDefinition
   def add_sip_endpoint
     new_endpoint = SIPpEndpoint.new(false, @deployment, @transport)
     @endpoints << new_endpoint
-    return new_endpoint
+    new_endpoint
   end
 
   # @@TODO - Don't pass transport in once UDP authentication is fixed
   def add_pstn_endpoint
     new_endpoint = SIPpEndpoint.new(true, @deployment, @transport)
     @endpoints << new_endpoint
-    return new_endpoint
+    new_endpoint
   end
 
   def add_fake_endpoint(username)
     new_endpoint = FakeEndpoint.new(username, @deployment)
     @endpoints << new_endpoint
-    return new_endpoint
+    new_endpoint
+  end
+  
+  def add_mock_as(domain, port)
+    # TODO - pass in actual domain
+    new_endpoint = MockAS.new(domain, port)
+    @endpoints << new_endpoint
+    new_endpoint
   end
 
   def set_scenario(scenario)
     @scenario = scenario
   end
 
-  def create_sipp_script
+  def create_sipp_scripts
+    sipp_scripts = []
+    # Filter out AS scenario as it will go into a separate SIPp file
+    grouped_scripts = @scenario.group_by { |s| s.sender.element_type }
+    grouped_scripts.each do |element_type, scenario|
+      sipp_scripts.push(create_sipp_script(scenario, element_type)) unless scenario.empty?
+    end
+    sipp_scripts
+  end
+  
+  def create_sipp_script(scenario, element_type)
     sipp_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
-      "<scenario name=\"#{@test_name}\">\n" +
-      @scenario.each { |s| s.to_s }.join("\n") +
+      "<scenario name=\"#{@name} - #{element_type.to_s}\">\n" +
+      scenario.each { |s| s.to_s }.join("\n") +
       "\n" +
       "  <ResponseTimeRepartition value=\"10, 20, 30, 40, 50, 100, 150, 200\" />\n" +
       "  <CallLengthRepartition value=\"10, 50, 100, 500, 1000, 5000, 10000\" />\n" +
@@ -168,9 +187,9 @@ class TestDefinition
     output_file_name = File.join(File.dirname(__FILE__),
                                  "..",
                                  "scripts",
-                                 "#{@name} - #{@transport.to_s.upcase}.xml")
+                                 "#{@name} - #{@transport.to_s.upcase} - #{element_type.to_s}.xml")
     File.write(output_file_name, sipp_xml)
-    @scenario_file = output_file_name
+    { scenario_file: output_file_name, element_type: element_type }
   end
 
   def run(deployment, transport)
@@ -181,8 +200,8 @@ class TestDefinition
     begin
       @blk.call(self)
       print "(#{@endpoints.map { |e| e.username }.join ", "}) "
-      create_sipp_script
-      launch_sipp
+      sipp_scripts = create_sipp_scripts
+      @sipp_pids = launch_sipp sipp_scripts
       wait_for_sipp
     ensure
       cleanup
@@ -190,15 +209,18 @@ class TestDefinition
     end
   end
 
-  def launch_sipp
-    fail "No scenario file" if @scenario_file.nil?
-    fail "SIPp is already running" if not @sipp_pid.nil?
+  def launch_sipp(sipp_scripts)
+    sipp_pids = sipp_scripts.map do |s|
+      fail "No scenario file" if s[:scenario_file].nil?
 
-    @deployment = ENV['PROXY'] if ENV['PROXY']
-    transport_flag = { udp: "u1", tcp: "t1" }[@transport]
-
-    @sipp_pid = Process.spawn("sudo TERM=xterm ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{@scenario_file}\" #{@deployment}",
-                              :out => "/dev/null", :err => "#{@scenario_file}.err")
+      @deployment = ENV['PROXY'] if ENV['PROXY']
+      transport_flag = s[:element_type] == :as ? "t1" : { udp: "u1", tcp: "t1" }[@transport]
+      cmd = "sudo TERM=xterm ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{s[:scenario_file]}\" #{@deployment}"
+      cmd += " -p 5070" if s[:element_type] == :as
+      Process.spawn(cmd, :out => "/dev/null", :err => "#{s[:scenario_file]}.err")
+    end
+    fail if sipp_pids.any? { |pid| pid.nil? }
+    sipp_pids
   end
 
   def get_diags
@@ -212,12 +234,16 @@ class TestDefinition
   end
 
   def wait_for_sipp
-    fail if @sipp_pid.nil?
-    rc = Process.wait2(@sipp_pid)[1].exitstatus
-    @sipp_pid = nil
-    if rc != 0
+    # Limit test execution to 10 seconds
+    return_codes = ( Timeout::timeout(10) { Process.waitall.map { |p| p[1].exitstatus } } rescue nil )
+    if return_codes.nil? or return_codes.any? { |rc| rc != 0 }
       TestDefinition.record_failure
-      puts RedGreen::Color.red("ERROR (#{rc})")
+      if return_codes.nil?
+        puts RedGreen::Color.red("ERROR (TIMED OUT)")
+        @sipp_pids.each { |pid| Process.kill("SIGKILL", pid) rescue puts "Could not kill process with pid #{pid}" }
+      else
+        puts RedGreen::Color.red("ERROR (#{return_codes.join ", "})")
+      end
       puts "  Diags can be found at:"
       get_diags.each do |d|
         puts "   - #{d}"
@@ -256,6 +282,18 @@ class LiveTestDefinition < PSTNTestDefinition
     else
       puts RedGreen::Color.yellow("Skipped") + " (No live number given)"
       puts "   - Call with LIVENUMBER=<number>"
+    end
+  end
+end
+
+class ASTestDefinition < TestDefinition
+  def run(*args)
+    clear_diags
+    if ENV['HOSTNAME']
+      super
+    else
+      puts RedGreen::Color.yellow("Skipped") + " (No hostname given)"
+      puts "   - Call with HOSTNAME=<publicly accessible hostname/IP of this machine>"
     end
   end
 end
