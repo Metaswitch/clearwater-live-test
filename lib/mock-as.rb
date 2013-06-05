@@ -1,4 +1,4 @@
-# @file fake-endpoint.rb
+# @file mock-as.rb
 #
 # Project Clearwater - IMS in the Cloud
 # Copyright (C) 2013  Metaswitch Networks Ltd
@@ -32,27 +32,39 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-class FakeEndpoint
-  attr_accessor :username, :domain, :sip_uri
+require 'json'
+require 'erubis'
+require 'resolv'
 
-  def initialize(username, domain)
-    @username = username
+class MockAS
+  attr_accessor :domain, :port, :username
+
+  def initialize(domain, port)
+    Resolv::DNS.new.getaddress(domain).to_s rescue fail "Could not resolve AS server: #{domain}" 
     @domain = domain
-    @sip_uri = "sip:#{username}@#{domain}"
+    @port = port
+    @username = "mock_as"
   end
   
   def element_type
-    :endpoint
-  end
-
-  def register
-    []
-  end
-
-  def unregister
-    []
+    :as
   end
 
   def cleanup
   end
+
+  def send(message, options={})
+    SIPpPhase.new(message, self, options)
+  end
+
+  def recv(message, options={})
+    if (Integer(message) rescue false)
+      SIPpPhase.new("__receive_response", self, options.merge(response: message))
+    else
+      SIPpPhase.new("__receive_request", self, options.merge(request: message))
+    end
+  end
+
+private
+
 end

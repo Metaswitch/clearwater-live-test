@@ -46,4 +46,8 @@ class SIPpPhase
     erb = Erubis::Eruby.new(erb_src)
     erb.result(@options)
   end
+
+  def sender
+    @options[:sender]
+  end
 end

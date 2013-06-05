@@ -46,6 +46,10 @@ class SIPpEndpoint
     @@security_cookie ||= get_security_cookie
     get_number(pstn)
   end
+  
+  def element_type
+    :endpoint
+  end
 
   def cleanup
     delete_number
@@ -127,6 +131,27 @@ class SIPpEndpoint
              rules: [] } }
   end
 
+  def set_ifc(options={})
+    options = default_ifcs.merge(options)
+    erb_src = File.read(File.join(File.dirname(__FILE__),
+                                  "..",
+                                  "templates",
+                                  "ifcs.xml.erb"))
+    erb = Erubis::Eruby.new(erb_src)
+    ifcs = erb.result(options)
+
+    RestClient::Request.execute(
+      method: :put,
+      url: ellis_url("accounts/#{account_username}/numbers/#{CGI.escape(@sip_uri)}/ifcs"),
+      cookies: @@security_cookie,
+      payload: ifcs
+    )
+  end
+  
+  def default_ifcs
+    {}
+  end
+    
 private
 
   def get_security_cookie
