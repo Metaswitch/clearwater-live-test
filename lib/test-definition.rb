@@ -57,6 +57,7 @@ end
 
 class TestDefinition
   attr_accessor :name, :current_label_id
+  attr_writer :timeout
 
   @@tests = []
   @@current_test = nil
@@ -126,6 +127,7 @@ class TestDefinition
     @endpoints = []
     @blk = blk
     @current_label_id = 0
+    @timeout = 10
   end
 
   def cleanup
@@ -235,7 +237,7 @@ class TestDefinition
 
   def wait_for_sipp
     # Limit test execution to 10 seconds
-    return_codes = ( Timeout::timeout(10) { Process.waitall.map { |p| p[1].exitstatus } } rescue nil )
+    return_codes = ( Timeout::timeout(@timeout) { Process.waitall.map { |p| p[1].exitstatus } } rescue nil )
     if return_codes.nil? or return_codes.any? { |rc| rc != 0 }
       TestDefinition.record_failure
       if return_codes.nil?
@@ -278,6 +280,9 @@ class LiveTestDefinition < PSTNTestDefinition
   def run(*args)
     clear_diags
     if ENV['LIVENUMBER']
+      # The live call takes approximately 10 seconds to run so extend the timeout
+      # for this test.
+      @timeout = 20
       super
     else
       puts RedGreen::Color.yellow("Skipped") + " (No live number given)"
