@@ -280,7 +280,7 @@ class LiveTestDefinition < PSTNTestDefinition
   def run(*args)
     clear_diags
     if ENV['LIVENUMBER']
-      # The live call take approximately 10 seconds to run so extend the timeout
+      # The live call takes approximately 10 seconds to run so extend the timeout
       # for this test.
       @timeout = 20
       super
