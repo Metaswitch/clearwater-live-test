@@ -65,10 +65,18 @@ def destroy_leaked_numbers(domain)
                                   cookies: cookie)
   j = JSON.parse(r)
 
-  j["numbers"].each do |n|
+  # Destroy default SIP URIs last
+  default_numbers = j["numbers"].select { |n| is_default_public_id? n }
+  ordered_numbers = (j["numbers"] - default_numbers) + default_numbers
+  puts ordered_numbers
+  ordered_numbers.each do |n|
     puts "Deleting leaked number: #{n["sip_uri"]}"
     RestClient::Request.execute(method: :delete,
                                 url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
                                 cookies: cookie)
   end
+end
+
+def is_default_public_id? number
+  /#{number["private_id"]}/ =~ number["sip_uri"]
 end

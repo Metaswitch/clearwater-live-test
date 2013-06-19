@@ -131,7 +131,9 @@ class TestDefinition
   end
 
   def cleanup
-    @endpoints.each do |e|
+    # Reverse the endpoints list so that extra public IDs are
+    # deleted before the special, original prublic ID.
+    @endpoints.reverse.each do |e|
       e.cleanup
     end
     @endpoints = []
