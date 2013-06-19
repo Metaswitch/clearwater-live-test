@@ -55,7 +55,7 @@ def run_tests(domain, glob="*")
 end
 
 def destroy_leaked_numbers(domain)
-  # Despite trying to clean up numbers, we seem to leak them pretty fast, destroy them now
+  # Despite trying to clean up numbers, we might occasionally leak them (for example if we get caught out by Cassandra's eventual consistency limitation), attempt to destroy them now.
   r = RestClient.post("http://ellis.#{domain}/session",
                       username: "system.test@#{domain}",
                       password: "Please enter your details")
@@ -70,10 +70,14 @@ def destroy_leaked_numbers(domain)
   ordered_numbers = (j["numbers"] - default_numbers) + default_numbers
   puts ordered_numbers
   ordered_numbers.each do |n|
-    puts "Deleting leaked number: #{n["sip_uri"]}"
-    RestClient::Request.execute(method: :delete,
-                                url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
-                                cookies: cookie)
+    begin
+      puts "Deleting leaked number: #{n["sip_uri"]}"
+      RestClient::Request.execute(method: :delete,
+                                  url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
+                                  cookies: cookie)
+    rescue StandardError
+      next
+    end
   end
 end
 
