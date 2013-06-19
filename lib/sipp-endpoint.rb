@@ -125,18 +125,6 @@ class SIPpEndpoint
     )
   end
 
-  def default_simservs
-    { oip: { active: true },
-      oir: { active: true,
-             restricted: false },
-      cdiv: { active: false,
-              rules: [] },
-      ocb: { active: false,
-             rules: [] },
-      icb: { active: false,
-             rules: [] } }
-  end
-
   def set_ifc(options={})
     options = default_ifcs.merge(options)
     erb_src = File.read(File.join(File.dirname(__FILE__),
@@ -154,10 +142,6 @@ class SIPpEndpoint
     )
   end
   
-  def default_ifcs
-    {}
-  end
-    
 private
 
   def get_security_cookie
@@ -202,6 +186,22 @@ private
     end
   end
 
+  def default_simservs
+    { oip: { active: true },
+      oir: { active: true,
+             restricted: false },
+      cdiv: { active: false,
+              rules: [] },
+      ocb: { active: false,
+             rules: [] },
+      icb: { active: false,
+             rules: [] } }
+  end
+
+  def default_ifcs
+    {}
+  end
+    
   def ellis_url path
     "http://ellis.#{@domain}/#{path}"
   end
