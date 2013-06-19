@@ -38,7 +38,13 @@ require 'erubis'
 require 'cgi'
 
 class SIPpEndpoint
-  attr_accessor :username, :password, :sip_uri, :domain
+  attr_reader :username,
+              :password,
+              :sip_uri,
+              :domain,
+              :private_id,
+              :pstn,
+              :transport
 
   def initialize(pstn, deployment, transport)
     @domain = deployment
