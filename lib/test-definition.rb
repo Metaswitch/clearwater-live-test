@@ -151,6 +151,16 @@ class TestDefinition
     new_endpoint
   end
 
+  def add_public_identity(ep)
+    new_endpoint = SIPpEndpoint.new(ep.pstn,
+                                    ep.domain,
+                                    ep.transport,
+                                    ep)
+    fail "Added public identity does not share private ID" unless new_endpoint.private_id == ep.private_id
+    @endpoints << new_endpoint
+    new_endpoint
+  end
+
   def add_fake_endpoint(username)
     new_endpoint = FakeEndpoint.new(username, @deployment)
     @endpoints << new_endpoint
