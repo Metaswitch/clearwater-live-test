@@ -32,10 +32,21 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-TestDefinition.new("Simple Registration") do |t|
+TestDefinition.new("Basic Registration") do |t|
   sip_ep = t.add_sip_endpoint
   t.set_scenario(
     sip_ep.register + 
     sip_ep.unregister
+  )
+end
+
+TestDefinition.new("Multiple Identities") do |t|
+  ep1 = t.add_sip_endpoint
+  ep2 = t.add_public_identity(ep1)
+  t.set_scenario(
+    ep1.register +
+    ep2.register +
+    ep1.unregister +
+    ep2.unregister
   )
 end
