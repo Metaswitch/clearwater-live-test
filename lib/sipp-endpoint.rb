@@ -46,11 +46,18 @@ class SIPpEndpoint
               :pstn,
               :transport
 
-  def initialize(pstn, deployment, transport)
+  def initialize(pstn, deployment, transport, shared_identity = nil)
     @domain = deployment
     @transport = transport
+    @pstn = pstn
     @@security_cookie ||= get_security_cookie
-    get_number(pstn)
+    if shared_identity.nil?
+      get_number(pstn, nil)
+    else
+      get_number(pstn, shared_identity.private_id)
+      @password = shared_identity.password
+    end
+    verify!
   end
   
   def element_type
@@ -144,6 +151,13 @@ class SIPpEndpoint
   
 private
 
+  def verify!
+    fail "SIP endpoint has no username" if @username.nil?
+    fail "SIP endpoint has no password" if @password.nil?
+    fail "SIP endpoint has no private_id" if @private_id.nil?
+    fail "SIP endpoint has no domain" if @domain.nil?
+  end
+
   def get_security_cookie
     begin
       r = RestClient.post(ellis_url("session"),
@@ -162,17 +176,20 @@ private
     end
   end
 
-  def get_number(pstn)
+  def get_number(pstn, private_id)
     fail "Cannot create more than one number per SIP endpoint" if not @username.nil?
 
+    payload = { pstn: pstn }
+    payload.merge!(private_id: private_id) unless private_id.nil?
     r = RestClient::Request.execute(method: :post,
                                     url: ellis_url("accounts/#{account_username}/numbers/"),
                                     cookies: @@security_cookie,
-                                    payload: { pstn: pstn } )
+                                    payload: payload )
     r = JSON.parse(r.body)
     @username = r["sip_username"]
-    @password = r["sip_password"]
+    @password = r["sip_password"] if r["sip_password"]
     @sip_uri = r["sip_uri"]
+    @private_id = r["private_id"]
   end
 
   def delete_number
