@@ -187,7 +187,7 @@ private
                                     payload: payload )
     r = JSON.parse(r.body)
     @username = r["sip_username"]
-    @password = r["sip_password"] if r["sip_password"]
+    @password = r["sip_password"] unless r["sip_password"].nil?
     @sip_uri = r["sip_uri"]
     @private_id = r["private_id"]
   end
