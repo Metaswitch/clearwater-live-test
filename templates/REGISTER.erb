@@ -21,7 +21,7 @@
       Expires: 3600
       <% end %>
       <% if defined?(auth_header) and auth_header %>
-      [authentication username=<%= sender.username %>@<%= sender.domain %> password=<%= sender.password %>]
+      [authentication username=<%= sender.private_id %> password=<%= sender.password %>]
       <% end%>
       Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
       Content-Length:  0

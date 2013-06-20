@@ -93,9 +93,9 @@ As you saw above, a test can create an endpoint in ellis with `test.add_sip_endp
 
 To create a PSTN number use `test.add_pstn_endpoint`.  These numbers can make calls out to the PSTN and should be used for live calling/international number dialing tests.  When using these numbers, mark the test as a `PSTNTestDefinition` to ensure it is skipped if PSTN numbers are not available on the system under test.
 
-When using Clearwater endpoints, a common thing to need to do is to (un)register the endpoint and so `ep.register` and `ep.unregister` have been supplied that return the scenario entries needed to do this (see _Basic Call - Mainline_ for an example of how this is used).
+To create a new public identity for a line, use the `test.add_public_identity` function.  The returned endpoint will share a private ID with the passed in one but will have its own public identity.
 
-> Due to Clearwater behaviour where Sprout never challenges REGISTER messages sent on a validated TCP connection (even for new endpoints), the register script needs to only expect to perform authentication if it is the first registered endpoint.  Other endpoints should call `ep.register(false)` until this is improved.
+When using Clearwater endpoints, a common thing to need to do is to (un)register the endpoint and so `ep.register` and `ep.unregister` have been supplied that return the scenario entries needed to do this (see _Basic Call - Mainline_ for an example of how this is used).
 
 Modifying Simservs
 ------------------
@@ -110,7 +110,7 @@ To change the iFC document for a Clearwater endpoint, use `ep.set_ifcs` which ta
 Sending Messages
 ----------------
 
-To send a SIP message, use the `ep.send(<template>, target: <endpoint>, ...)` command passing the name of the template to use, a target and any other parameters you like.  These parameters will be made available as functions in the template.  If the parameter is optional, it's presence should be tested for with:
+To send a SIP message, use the `ep.send(<template>, target: <endpoint>, ...)` command passing the name of the template to use, a target and any other parameters you like.  These parameters will be made available as functions in the template.  If the parameter is optional, its presence should be tested for with:
 
     <% if defined? <function> %>
 
