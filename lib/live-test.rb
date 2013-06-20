@@ -76,6 +76,7 @@ def destroy_leaked_numbers(domain)
                                   url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
                                   cookies: cookie)
     rescue StandardError
+      puts "Failed to delete leaked number, check Ellis logs"
       next
     end
   end
