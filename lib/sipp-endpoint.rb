@@ -38,13 +38,26 @@ require 'erubis'
 require 'cgi'
 
 class SIPpEndpoint
-  attr_accessor :username, :password, :sip_uri, :domain
+  attr_reader :username,
+              :password,
+              :sip_uri,
+              :domain,
+              :private_id,
+              :pstn,
+              :transport
 
-  def initialize(pstn, deployment, transport)
+  def initialize(pstn, deployment, transport, shared_identity = nil)
     @domain = deployment
     @transport = transport
+    @pstn = pstn
     @@security_cookie ||= get_security_cookie
-    get_number(pstn)
+    if shared_identity.nil?
+      get_number(pstn, nil)
+    else
+      get_number(pstn, shared_identity.private_id)
+      @password = shared_identity.password
+    end
+    verify!
   end
   
   def element_type
@@ -119,18 +132,6 @@ class SIPpEndpoint
     )
   end
 
-  def default_simservs
-    { oip: { active: true },
-      oir: { active: true,
-             restricted: false },
-      cdiv: { active: false,
-              rules: [] },
-      ocb: { active: false,
-             rules: [] },
-      icb: { active: false,
-             rules: [] } }
-  end
-
   def set_ifc(options={})
     options = default_ifcs.merge(options)
     erb_src = File.read(File.join(File.dirname(__FILE__),
@@ -148,11 +149,14 @@ class SIPpEndpoint
     )
   end
   
-  def default_ifcs
-    {}
-  end
-    
 private
+
+  def verify!
+    fail "SIP endpoint has no username" if @username.nil?
+    fail "SIP endpoint has no password" if @password.nil?
+    fail "SIP endpoint has no private_id" if @private_id.nil?
+    fail "SIP endpoint has no domain" if @domain.nil?
+  end
 
   def get_security_cookie
     begin
@@ -172,17 +176,20 @@ private
     end
   end
 
-  def get_number(pstn)
+  def get_number(pstn, private_id)
     fail "Cannot create more than one number per SIP endpoint" if not @username.nil?
 
+    payload = { pstn: pstn }
+    payload.merge!(private_id: private_id) unless private_id.nil?
     r = RestClient::Request.execute(method: :post,
                                     url: ellis_url("accounts/#{account_username}/numbers/"),
                                     cookies: @@security_cookie,
-                                    payload: { pstn: pstn } )
+                                    payload: payload )
     r = JSON.parse(r.body)
     @username = r["sip_username"]
-    @password = r["sip_password"]
+    @password = r["sip_password"] unless r["sip_password"].nil?
     @sip_uri = r["sip_uri"]
+    @private_id = r["private_id"]
   end
 
   def delete_number
@@ -196,6 +203,22 @@ private
     end
   end
 
+  def default_simservs
+    { oip: { active: true },
+      oir: { active: true,
+             restricted: false },
+      cdiv: { active: false,
+              rules: [] },
+      ocb: { active: false,
+             rules: [] },
+      icb: { active: false,
+             rules: [] } }
+  end
+
+  def default_ifcs
+    {}
+  end
+    
   def ellis_url path
     "http://ellis.#{@domain}/#{path}"
   end

@@ -55,7 +55,7 @@ def run_tests(domain, glob="*")
 end
 
 def destroy_leaked_numbers(domain)
-  # Despite trying to clean up numbers, we seem to leak them pretty fast, destroy them now
+  # Despite trying to clean up numbers, we might occasionally leak them (for example if we get caught out by Cassandra's eventual consistency limitation), attempt to destroy them now.
   r = RestClient.post("http://ellis.#{domain}/session",
                       username: "system.test@#{domain}",
                       password: "Please enter your details")
@@ -65,10 +65,23 @@ def destroy_leaked_numbers(domain)
                                   cookies: cookie)
   j = JSON.parse(r)
 
-  j["numbers"].each do |n|
-    puts "Deleting leaked number: #{n["sip_uri"]}"
-    RestClient::Request.execute(method: :delete,
-                                url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
-                                cookies: cookie)
+  # Destroy default SIP URIs last
+  default_numbers = j["numbers"].select { |n| is_default_public_id? n }
+  ordered_numbers = (j["numbers"] - default_numbers) + default_numbers
+  puts ordered_numbers
+  ordered_numbers.each do |n|
+    begin
+      puts "Deleting leaked number: #{n["sip_uri"]}"
+      RestClient::Request.execute(method: :delete,
+                                  url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
+                                  cookies: cookie)
+    rescue StandardError
+      puts "Failed to delete leaked number, check Ellis logs"
+      next
+    end
   end
+end
+
+def is_default_public_id? number
+  /#{number["private_id"]}/ =~ number["sip_uri"]
 end

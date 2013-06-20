@@ -131,7 +131,9 @@ class TestDefinition
   end
 
   def cleanup
-    @endpoints.each do |e|
+    # Reverse the endpoints list so that associated public IDs are
+    # deleted before the default public ID (which was created first).
+    @endpoints.reverse.each do |e|
       e.cleanup
     end
     @endpoints = []
@@ -147,6 +149,16 @@ class TestDefinition
   # @@TODO - Don't pass transport in once UDP authentication is fixed
   def add_pstn_endpoint
     new_endpoint = SIPpEndpoint.new(true, @deployment, @transport)
+    @endpoints << new_endpoint
+    new_endpoint
+  end
+
+  def add_public_identity(ep)
+    new_endpoint = SIPpEndpoint.new(ep.pstn,
+                                    ep.domain,
+                                    ep.transport,
+                                    ep)
+    fail "Added public identity does not share private ID" unless new_endpoint.private_id == ep.private_id
     @endpoints << new_endpoint
     new_endpoint
   end
