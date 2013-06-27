@@ -45,7 +45,7 @@ TestDefinition.new("Multiple Identities") do |t|
   ep2 = t.add_public_identity(ep1)
   t.set_scenario(
     ep1.register +
-    ep2.register +
+    ep2.register(false) +
     ep1.unregister +
     ep2.unregister
   )
