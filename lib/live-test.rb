@@ -68,7 +68,6 @@ def destroy_leaked_numbers(domain)
   # Destroy default SIP URIs last
   default_numbers = j["numbers"].select { |n| is_default_public_id? n }
   ordered_numbers = (j["numbers"] - default_numbers) + default_numbers
-  puts ordered_numbers
   ordered_numbers.each do |n|
     begin
       puts "Deleting leaked number: #{n["sip_uri"]}"
