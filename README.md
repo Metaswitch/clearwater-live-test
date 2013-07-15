@@ -43,6 +43,7 @@ There are various modifiers you can use to determine which subset of tests you w
  - `REPEATS=<number>` - to allow the suite of tests to be run multiple times.
  - `TRANSPORT=<transports>` - Comma-separated transports to test with.  Allowed tranports are `TCP` and `UDP`.  If not specified, all tests will be run twice, for each transport type.
  - `PROXY=<host>` - to force the tests to run against a particular Bono instance.
+ - `ELLIS=<host>` - to override the default FQDN for Ellis.  Useful when running against an AIO node.
  - `HOSTNAME=<host>` - publicly accessible hostname of the machine running the tests, used for the dummy AS.
 
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
