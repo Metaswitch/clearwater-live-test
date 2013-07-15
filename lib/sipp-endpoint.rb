@@ -226,7 +226,11 @@ private
   end
     
   def ellis_url path
-    "http://ellis.#{@domain}/#{path}"
+    if ENV['ELLIS']
+      "http://#{ENV['ELLIS']}/#{path}"
+    else
+      "http://ellis.#{@domain}/#{path}"
+    end 
   end
 
   def account_username

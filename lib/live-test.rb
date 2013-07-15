@@ -56,12 +56,20 @@ end
 
 def destroy_leaked_numbers(domain)
   # Despite trying to clean up numbers, we might occasionally leak them (for example if we get caught out by Cassandra's eventual consistency limitation), attempt to destroy them now.
-  r = RestClient.post("http://ellis.#{domain}/session",
+
+  ellis=
+    if ENV['ELLIS']
+      "http://#{ENV['ELLIS']}"
+    else
+      "http://ellis.#{domain}"
+    end
+
+  r = RestClient.post("#{ellis}/session",
                       username: "system.test@#{domain}",
                       password: "Please enter your details")
   cookie = r.cookies
   r = RestClient::Request.execute(method: :get,
-                                  url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers",
+                                  url: "#{ellis}/accounts/system.test@#{domain}/numbers",
                                   cookies: cookie)
   j = JSON.parse(r)
 
@@ -72,7 +80,7 @@ def destroy_leaked_numbers(domain)
     begin
       puts "Deleting leaked number: #{n["sip_uri"]}"
       RestClient::Request.execute(method: :delete,
-                                  url: "http://ellis.#{domain}/accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
+                                  url: "#{ellis}/accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
                                   cookies: cookie)
     rescue StandardError
       puts "Failed to delete leaked number, check Ellis logs"
