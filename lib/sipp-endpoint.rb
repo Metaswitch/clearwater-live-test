@@ -44,14 +44,12 @@ class SIPpEndpoint
               :domain,
               :private_id,
               :pstn,
-              :transport,
-              :instance_id
+              :transport
 
   def initialize(pstn, deployment, transport, shared_identity = nil)
     @domain = deployment
     @transport = transport
     @pstn = pstn
-    @instance_id = SecureRandom.uuid
     @@security_cookie ||= get_security_cookie
     if shared_identity.nil?
       get_number(pstn, nil)
@@ -155,6 +153,16 @@ class SIPpEndpoint
     )
   end
   
+  # Algorithmically determined from the public identity (using algorithm in RFC4122)
+  def instance_id
+    return @instance_id if @instance_id
+
+    ary = Digest::SHA1.new.digest("sip:andy@home.net").unpack("NnnnnN")
+    ary[2] = (ary[2] & 0x0fff) | 0x4000
+    ary[3] = (ary[3] & 0x3fff) | 0x8000
+    @instance_id = "%08x-%04x-%04x-%04x-%04x%08x" % ary
+  end
+
 private
 
   def verify!
