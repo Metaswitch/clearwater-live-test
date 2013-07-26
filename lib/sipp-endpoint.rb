@@ -158,7 +158,7 @@ class SIPpEndpoint
     return @instance_id if @instance_id
 
     ary = Digest::SHA1.new.digest(@sip_uri).unpack("NnnnnN")
-    ary[2] = (ary[2] & 0x0fff) | 0x4000
+    ary[2] = (ary[2] & 0x0fff) | 0x5000
     ary[3] = (ary[3] & 0x3fff) | 0x8000
     @instance_id = "%08x-%04x-%04x-%04x-%04x%08x" % ary
   end
