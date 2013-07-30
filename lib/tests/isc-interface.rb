@@ -31,7 +31,7 @@
 # "OpenSSL Licenses" means the OpenSSL License and Original SSLeay License
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
-
+=begin
 ASTestDefinition.new("ISC Interface - Redirect") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee1 = t.add_sip_endpoint
@@ -76,27 +76,88 @@ end
 
 ASTestDefinition.new("ISC Interface - Terminating") do |t|
   sip_caller = t.add_sip_endpoint
+  mock_as = t.add_mock_as(ENV['HOSTNAME'], 5070)
+
+  sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  
+  t.set_mock_as_script([
+      mock_as.recv("INVITE", extract_uas_via: true),
+      mock_as.send("200", target: sip_caller, to: sip_callee, contact: mock_as, method: "INVITE"),
+      mock_as.recv("ACK"),
+      mock_as.recv("BYE", extract_uas_via: true),
+      mock_as.send("200", target: sip_caller, method: "BYE", emit_trusted: true, call_number: 2),
+  ])
+
+  t.set_scenario(
+    sip_caller.register +
+    [
+      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
+      sip_caller.recv("100"),
+      sip_caller.recv("200", rrs: true),
+      sip_caller.send("ACK", in_dialog: true),
+      SIPpPhase.new("pause", sip_caller, timeout: 1000),
+      sip_caller.send("BYE", in_dialog: true),
+      sip_caller.recv("200"),
+    ] +
+    sip_caller.unregister +
+  )
+end
+
+ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
+  sip_caller = t.add_sip_endpoint
+  mock_as = t.add_mock_as(ENV['HOSTNAME'], 5070)
+
+  sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  
+  t.set_mock_as_script([
+      mock_as.recv("INVITE", extract_uas_via: true),
+      mock_as.send("500", target: sip_caller, to: sip_callee, contact: mock_as, method: "INVITE"),
+      mock_as.recv("ACK"),
+  ])
+
+  t.set_scenario(
+    sip_caller.register +
+    [
+      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
+      sip_caller.recv("100"),
+      sip_caller.recv("500", rrs: true),
+      sip_caller.send("ACK", in_dialog: true),
+    ] +
+    sip_caller.unregister
+  )
+end
+=end
+ASTestDefinition.new("ISC Interface - B2BUA") do |t|
+  sip_caller = t.add_sip_endpoint
   sip_callee = t.add_sip_endpoint
   mock_as = t.add_mock_as(ENV['HOSTNAME'], 5070)
 
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   
+  Thread.new do
+      mock_as.recv("INVITE", extract_uas_via: true),
+      mock_as.send("INVITE", target: sip_callee),
+      mock_as.recv("200"),
+      mock_as.send("ACK", target: sip_callee),
+      mock_as.send("200", target: sip_caller, to: sip_callee, contact: mock_as, method: "INVITE"),
+      mock_as.recv("ACK"), # comes from Bono
+      mock_as.recv("BYE", extract_uas_via: true), # comes from Bono
+      mock_as.send("200", target: , method: "BYE", emit_trusted: true, call_number: 2),
+      mock_as.send("BYE", target: sip_callee, extract_uas_via: true), # comes from Bono
+      mock_as.send("200", target: bono, method: "BYE", emit_trusted: true, call_number: 2),
+  end
+
   t.set_scenario(
     sip_caller.register +
     sip_callee.register +
     [
       sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
       sip_caller.recv("100"),
-      mock_as.recv("INVITE", extract_uas_via: true),
-      mock_as.send("200-SDP", target: sip_caller, to: sip_callee, contact: mock_as, method: "INVITE"),
       sip_caller.recv("200", rrs: true),
       sip_caller.send("ACK", in_dialog: true),
-      # Subsequent requests do not make it back to the mock_as
-      #mock_as.recv("ACK"),
-      #SIPpPhase.new("pause", sip_caller, timeout: 1000),
-      #sip_caller.send("BYE", in_dialog: true),
-      #mock_as.recv("BYE", extract_uas_via: true),
-      #sip_callee2.send("200", target: sip_caller, method: "BYE", emit_trusted: true, call_number: 2),
+      SIPpPhase.new("pause", sip_caller, timeout: 1000),
+      sip_caller.send("BYE", in_dialog: true),
+      sip_caller.recv("200"),
     ] +
     sip_caller.unregister +
     sip_callee.unregister

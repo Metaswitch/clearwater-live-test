@@ -35,6 +35,7 @@
 require 'json'
 require 'erubis'
 require 'resolv'
+require '../quaff/quaff.rb'
 
 class MockAS
   attr_accessor :domain, :port, :username
@@ -54,16 +55,21 @@ class MockAS
   end
 
   def send(message, options={})
-    SIPpPhase.new(message, self, options)
+    if (Integer(message) rescue false)
+      @call.send_response message
+    else
+      @call.send_request message
+    end
   end
 
   def recv(message, options={})
     if (Integer(message) rescue false)
-      SIPpPhase.new("__receive_response", self, options.merge(response: message))
+      @call.recv_response message
     else
-      SIPpPhase.new("__receive_request", self, options.merge(request: message))
+      @call.recv_request message
     end
   end
+
 
 private
 
