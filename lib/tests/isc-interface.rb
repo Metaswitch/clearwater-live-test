@@ -31,6 +31,8 @@
 # "OpenSSL Licenses" means the OpenSSL License and Original SSLeay License
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
+require_relative '../quaff'
+
 =begin
 ASTestDefinition.new("ISC Interface - Redirect") do |t|
   sip_caller = t.add_sip_endpoint
@@ -130,21 +132,40 @@ end
 ASTestDefinition.new("ISC Interface - B2BUA") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee = t.add_sip_endpoint
-  mock_as = t.add_mock_as(ENV['HOSTNAME'], 5070)
 
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   
   Thread.new do
-      mock_as.recv("INVITE", extract_uas_via: true),
-      mock_as.send("INVITE", target: sip_callee),
-      mock_as.recv("200"),
-      mock_as.send("ACK", target: sip_callee),
-      mock_as.send("200", target: sip_caller, to: sip_callee, contact: mock_as, method: "INVITE"),
-      mock_as.recv("ACK"), # comes from Bono
-      mock_as.recv("BYE", extract_uas_via: true), # comes from Bono
-      mock_as.send("200", target: , method: "BYE", emit_trusted: true, call_number: 2),
-      mock_as.send("BYE", target: sip_callee, extract_uas_via: true), # comes from Bono
-      mock_as.send("200", target: bono, method: "BYE", emit_trusted: true, call_number: 2),
+    c = TCPSIPConnection.new(5070)
+
+    incoming_cid = c.get_new_call_id
+    incoming_call = Call.new(c, incoming_cid)
+
+    incoming_call.recv_request("INVITE")
+
+    # Send a new call back to Sprout
+    outgoing_call = Call.new(c, call_id=incoming_cid+"///2")
+    outgoing_call.setdest(incoming_call.get_next_hop, recv_from_this: true)
+
+    outgoing_call.clone_details(incoming_call, new_tags: true) # Copy To, From headers etc.
+    outgoing_call.send_request("INVITE")
+    outgoing_call.recv_response("200")
+
+    # Switch over to talking to Bono now the dialog is established
+    outgoing_call.setdest(outgoing_call.get_next_hop)
+    outgoing_call.send_request("ACK")
+
+    incoming_call.send_response("200 OK", headers={"Contact": mock_as})
+    incoming_call.recv_request("ACK")  # Comes from Bono
+    incoming_call.recv_request("BYE")  # Also comes from Bono
+
+    # We automatically switch to Bono now, as that's where the BYE came from
+    incoming_call.send_response("200 OK")
+    incoming_call.end_call
+
+    outgoing_call.send_request("BYE")
+    outgoing_call.recv_response("200")
+    outgoing_call.end_call
   end
 
   t.set_scenario(
@@ -153,11 +174,18 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
     [
       sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
       sip_caller.recv("100"),
+      sip_callee.recv("INVITE"),
+
+      sip_callee.send("200"),
+      sip_callee.recv("ACK"),
       sip_caller.recv("200", rrs: true),
       sip_caller.send("ACK", in_dialog: true),
+
       SIPpPhase.new("pause", sip_caller, timeout: 1000),
       sip_caller.send("BYE", in_dialog: true),
       sip_caller.recv("200"),
+      sip_callee.recv("BYE"),
+      sip_callee.send("200"),
     ] +
     sip_caller.unregister +
     sip_callee.unregister

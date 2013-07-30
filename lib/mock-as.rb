@@ -35,7 +35,7 @@
 require 'json'
 require 'erubis'
 require 'resolv'
-require '../quaff/quaff.rb'
+require_relative '../quaff/quaff.rb'
 
 class MockAS
   attr_accessor :domain, :port, :username
