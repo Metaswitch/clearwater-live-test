@@ -56,7 +56,7 @@ module RedGreen
 end
 
 class TestDefinition
-  attr_accessor :name, :current_label_id
+  attr_accessor :name, :current_label_id, :quaff_threads
   attr_writer :timeout
 
   @@tests = []
@@ -137,6 +137,7 @@ class TestDefinition
       e.cleanup
     end
     @endpoints = []
+    @actual_quaff_threads.each do |t| t.join end
   end
 
   # @@TODO - Don't pass transport in once UDP authentication is fixed
@@ -209,11 +210,13 @@ class TestDefinition
   def run(deployment, transport)
     @deployment = deployment
     @transport = transport
-    clear_diags
+    @quaff_threads = []
+    @actual_quaff_threads = []
     TestDefinition.set_current_test(self)
     begin
       @blk.call(self)
-      print "(#{@endpoints.map { |e| e.username }.join ", "}) "
+      @quaff_threads.each do |thr| @actual_quaff_threads.push Thread.new {thr.call} end
+      #print "(#{@endpoints.map { |e| e.username }.join ", "}) "
       sipp_scripts = create_sipp_scripts
       @sipp_pids = launch_sipp sipp_scripts
       wait_for_sipp

@@ -33,7 +33,6 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 require_relative '../../quaff/quaff.rb'
 
-=begin
 ASTestDefinition.new("ISC Interface - Redirect") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee1 = t.add_sip_endpoint
@@ -75,7 +74,8 @@ ASTestDefinition.new("ISC Interface - Redirect") do |t|
     sip_callee2.unregister
   )
 end
-=end
+
+Thread.abort_on_exception = true
 ASTestDefinition.new("ISC Interface - Terminating") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee = t.add_sip_endpoint
@@ -83,8 +83,8 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
-  Thread.new do
-
+  thr = lambda do
+    begin
     c = TCPSIPConnection.new(5070)
     incoming_cid = c.get_new_call_id
     incoming_call = Call.new(c, incoming_cid)
@@ -99,7 +99,13 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
 
     incoming_call.send_response("200 OK", nil, {"CSeq" => "4 BYE"})
     incoming_call.end_call
+    c.terminate
+    ensure
+    sleep 1
+    end
   end
+
+  t.quaff_threads = [thr]
 
   t.set_scenario(
     sip_caller.register +
@@ -122,9 +128,9 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
-  Thread.new do
+  thr = lambda do
+    begin
     c = TCPSIPConnection.new(5070)
-
     incoming_cid = c.get_new_call_id
     incoming_call = Call.new(c, incoming_cid)
 
@@ -135,7 +141,12 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
     })
     incoming_call.recv_request("ACK")  # Comes from Bono
     incoming_call.end_call
+    c.terminate
+    ensure
+    sleep 1
+    end
   end 
+  t.quaff_threads = [thr]
  
   t.set_scenario(
     sip_caller.register +
