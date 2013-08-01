@@ -31,6 +31,88 @@
 # "OpenSSL Licenses" means the OpenSSL License and Original SSLeay License
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
+require_relative '../../quaff/quaff.rb'
+
+ASTestDefinition.new("ISC Interface - Terminating") do |t|
+  sip_caller = t.add_sip_endpoint
+  sip_callee = t.add_sip_endpoint
+
+  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+
+  t.add_quaff_endpoint do
+    c = TCPSIPConnection.new(5070)
+    begin
+      incoming_cid = c.get_new_call_id
+      incoming_call = Call.new(c, incoming_cid)
+
+      invite_data = incoming_call.recv_request("INVITE")
+      incoming_call.send_response("100 Trying")
+      incoming_call.send_response("200 OK")
+      
+      # This is received from Bono, so our sending destination automatically switches
+      ack_data = incoming_call.recv_request("ACK")
+      raise "Expecting INVITE from Sprout and ACK from Bono!" unless invite_data['source'].sock != ack_data['source'].sock
+      
+      bye_data = incoming_call.recv_request("BYE")
+      raise "Expecting ACK and BYE to both come from Bono!" unless bye_data['source'].sock == ack_data['source'].sock
+
+      incoming_call.send_response("200 OK", nil, {"CSeq" => "4 BYE"})
+      sleep 2 # Ensure that the 200 OK is sent to Bono before the socket is closed
+      incoming_call.end_call
+    ensure
+      c.terminate
+    end
+  end
+
+  t.set_scenario(
+    sip_caller.register +
+    [
+      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
+      sip_caller.recv("100"),
+      sip_caller.recv("200", rrs: true),
+      sip_caller.send("ACK", target: sip_callee, in_dialog: true, method: "INVITE"),
+      sip_caller.send("BYE", target: sip_callee, in_dialog: true),
+      sip_caller.recv("200"),
+    ] +
+    sip_caller.unregister 
+  )
+end
+
+ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
+  sip_caller = t.add_sip_endpoint
+  sip_callee = t.add_sip_endpoint
+
+  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+
+  t.add_quaff_endpoint do
+    c = TCPSIPConnection.new(5070)
+    begin
+      incoming_cid = c.get_new_call_id
+      incoming_call = Call.new(c, incoming_cid)
+
+      idata = incoming_call.recv_request("INVITE")
+      incoming_call.send_response("100 Trying")
+      incoming_call.send_response("404 Not Found")
+      incoming_call.recv_request("ACK")  # Comes from Bono
+      incoming_call.end_call
+    ensure
+      c.terminate
+    end
+  end
+ 
+  t.set_scenario(
+    sip_caller.register +
+    [
+      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
+      sip_caller.recv("100"),
+      sip_caller.recv("404", rrs: true),
+      sip_caller.send("ACK", in_dialog: true),
+    ] +
+    sip_caller.unregister
+  )
+end
 
 ASTestDefinition.new("ISC Interface - Redirect") do |t|
   sip_caller = t.add_sip_endpoint
@@ -73,33 +155,3 @@ ASTestDefinition.new("ISC Interface - Redirect") do |t|
     sip_callee2.unregister
   )
 end
-
-ASTestDefinition.new("ISC Interface - Terminating") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee = t.add_sip_endpoint
-  mock_as = t.add_mock_as(ENV['HOSTNAME'], 5070)
-
-  sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
-  
-  t.set_scenario(
-    sip_caller.register +
-    sip_callee.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
-      sip_caller.recv("100"),
-      mock_as.recv("INVITE", extract_uas_via: true),
-      mock_as.send("200-SDP", target: sip_caller, to: sip_callee, contact: mock_as, method: "INVITE"),
-      sip_caller.recv("200", rrs: true),
-      sip_caller.send("ACK", in_dialog: true),
-      # Subsequent requests do not make it back to the mock_as
-      #mock_as.recv("ACK"),
-      #SIPpPhase.new("pause", sip_caller, timeout: 1000),
-      #sip_caller.send("BYE", in_dialog: true),
-      #mock_as.recv("BYE", extract_uas_via: true),
-      #sip_callee2.send("200", target: sip_caller, method: "BYE", emit_trusted: true, call_number: 2),
-    ] +
-    sip_caller.unregister +
-    sip_callee.unregister
-  )
-end
-
