@@ -83,29 +83,29 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
-  thr = lambda do
-    begin
+  quaff_lambda = lambda do
     c = TCPSIPConnection.new(5070)
+    begin
     incoming_cid = c.get_new_call_id
     incoming_call = Call.new(c, incoming_cid)
 
     idata = incoming_call.recv_request("INVITE")
     incoming_call.send_response("100 Trying")
     incoming_call.send_response("200 OK", nil, {
-        "Record-Route" => ["<sip:ec2-54-221-53-208.compute-1.amazonaws.com:5070;transport=TCP>"]+idata['message'].headers["Record-Route"],
+        "Record-Route" => ["<sip:#{ENV['HOSTNAME']}:5070;transport=TCP>"]+idata['message'].headers["Record-Route"],
     })
     incoming_call.recv_request("ACK")
     incoming_call.recv_request("BYE")
 
     incoming_call.send_response("200 OK", nil, {"CSeq" => "4 BYE"})
     incoming_call.end_call
-    c.terminate
     ensure
+    c.terminate
     sleep 1
     end
   end
 
-  t.quaff_threads = [thr]
+  t.quaff_lambdass = [quaff_lambda]
 
   t.set_scenario(
     sip_caller.register +
@@ -128,25 +128,25 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
-  thr = lambda do
-    begin
+  quaff_lambda = lambda do
     c = TCPSIPConnection.new(5070)
+    begin
     incoming_cid = c.get_new_call_id
     incoming_call = Call.new(c, incoming_cid)
 
     idata = incoming_call.recv_request("INVITE")
     incoming_call.send_response("100 Trying")
     incoming_call.send_response("404 Not Found", nil, {
-        "Record-Route" => ["<sip:ec2-54-221-53-208.compute-1.amazonaws.com:5070;transport=TCP>"]+idata['message'].headers["Record-Route"],
+        "Record-Route" => ["<sip:#{ENV['HOSTNAME']}:5070;transport=TCP>"]+idata['message'].headers["Record-Route"],
     })
     incoming_call.recv_request("ACK")  # Comes from Bono
     incoming_call.end_call
-    c.terminate
     ensure
+    c.terminate
     sleep 1
     end
   end 
-  t.quaff_threads = [thr]
+  t.quaff_lambdas = [quaff_lambda]
  
   t.set_scenario(
     sip_caller.register +
@@ -159,6 +159,7 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
     sip_caller.unregister
   )
 end
+
 =begin
 ASTestDefinition.new("ISC Interface - B2BUA") do |t|
   sip_caller = t.add_sip_endpoint
