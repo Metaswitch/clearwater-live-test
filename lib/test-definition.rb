@@ -95,7 +95,9 @@ class TestDefinition
       tests_to_run.product(transports).collect do |test, trans|
         begin
           print "#{test.name} (#{trans.to_s.upcase}) - "
-          test.run(deployment, trans)
+          if test.run(deployment, trans)
+            puts RedGreen::Color.green("Passed")
+          end
         rescue StandardError => e
           record_failure
           puts RedGreen::Color.red("Failed")
@@ -137,6 +139,19 @@ class TestDefinition
       e.cleanup
     end
     @endpoints = []
+
+    retval = true
+    @quaff_threads.each do |t| 
+      result_of_join = t.join(3)
+      unless result_of_join 
+        puts RedGreen::Color.red("Failed")
+        puts "Quaff thread still had work outstanding"
+        puts t.backtrace
+        t.kill
+        retval = false
+      end
+    end
+    retval
   end
 
   # @@TODO - Don't pass transport in once UDP authentication is fixed
@@ -151,6 +166,10 @@ class TestDefinition
     new_endpoint = SIPpEndpoint.new(true, @deployment, @transport)
     @endpoints << new_endpoint
     new_endpoint
+  end
+
+  def add_quaff_endpoint &blk
+    @quaff_threads.push Thread.new {blk.call}
   end
 
   def add_public_identity(ep)
@@ -210,17 +229,20 @@ class TestDefinition
     @deployment = deployment
     @transport = transport
     clear_diags
+    @quaff_threads = []
     TestDefinition.set_current_test(self)
+    retval = false
     begin
       @blk.call(self)
       print "(#{@endpoints.map { |e| e.username }.join ", "}) "
       sipp_scripts = create_sipp_scripts
       @sipp_pids = launch_sipp sipp_scripts
-      wait_for_sipp
+      retval = wait_for_sipp
     ensure
-      cleanup
+      retval &= cleanup
       TestDefinition.unset_current_test
     end
+     return retval
   end
 
   def launch_sipp(sipp_scripts)
@@ -262,9 +284,10 @@ class TestDefinition
       get_diags.each do |d|
         puts "   - #{d}"
       end
+      return false
     else
-      puts RedGreen::Color.green("Passed")
       clear_diags
+      return true
     end
   end
 end
