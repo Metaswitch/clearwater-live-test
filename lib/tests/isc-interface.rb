@@ -114,6 +114,33 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
   )
 end
 
+ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
+  sip_caller = t.add_sip_endpoint
+
+  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070", method: "REGISTER"
+
+  t.add_quaff_endpoint do
+    c = TCPSIPConnection.new(5070)
+    begin
+      incoming_cid = c.get_new_call_id
+      incoming_call = Call.new(c, incoming_cid)
+
+      register_data = incoming_call.recv_request("REGISTER")
+      
+      sleep 2 # Ensure that the 200 OK is sent to Bono before the socket is closed
+      incoming_call.end_call
+    ensure
+      c.terminate
+    end
+  end
+
+  t.set_scenario(
+    sip_caller.register +
+    sip_caller.unregister 
+  )
+end
+
+
 ASTestDefinition.new("ISC Interface - Redirect") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee1 = t.add_sip_endpoint
