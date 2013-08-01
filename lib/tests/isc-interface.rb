@@ -40,18 +40,22 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
-  quaff_lambda = lambda do
+  t.add_quaff_endpoint {
     c = TCPSIPConnection.new(5070)
     begin
       incoming_cid = c.get_new_call_id
       incoming_call = Call.new(c, incoming_cid)
 
-      idata = incoming_call.recv_request("INVITE")
+      invite_data = incoming_call.recv_request("INVITE")
       incoming_call.send_response("100 Trying")
       incoming_call.send_response("200 OK")
-      incoming_call.recv_request("ACK")
+      
       # This is received from Bono, so our sending destination automatically switches
-      incoming_call.recv_request("BYE")
+      ack_data = incoming_call.recv_request("ACK")
+      raise "Expecting INVITE from Sprout and ACK from Bono!" unless invite_data['source'].sock != ack_data['source'].sock
+      
+      bye_data = incoming_call.recv_request("BYE")
+      raise "Expecting ACK and BYE to both come from Bono!" unless bye_data['source'].sock == ack_data['source'].sock
 
       incoming_call.send_response("200 OK", nil, {"CSeq" => "4 BYE"})
       sleep 2 # Ensure that the 200 OK is sent to Bono before the socket is closed
@@ -59,9 +63,7 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
     ensure
       c.terminate
     end
-  end
-
-  t.quaff_lambdas = [quaff_lambda]
+  }
 
   t.set_scenario(
     sip_caller.register +
@@ -84,7 +86,7 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
-  quaff_lambda = lambda do
+  t.add_quaff_endpoint {
     c = TCPSIPConnection.new(5070)
     begin
       incoming_cid = c.get_new_call_id
@@ -92,16 +94,13 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
 
       idata = incoming_call.recv_request("INVITE")
       incoming_call.send_response("100 Trying")
-      incoming_call.send_response("404 Not Found", nil, {
-        "Record-Route" => ["<sip:#{ENV['HOSTNAME']}:5070;transport=TCP>"]+idata['message'].headers["Record-Route"],
-      })
+      incoming_call.send_response("404 Not Found")
       incoming_call.recv_request("ACK")  # Comes from Bono
       incoming_call.end_call
     ensure
       c.terminate
     end
-  end 
-  t.quaff_lambdas = [quaff_lambda]
+  }
  
   t.set_scenario(
     sip_caller.register +
