@@ -142,15 +142,15 @@ class TestDefinition
 
     retval = true
     @quaff_threads.each do |t| 
-       result_of_join = t.join(3)
-       unless result_of_join 
-         puts RedGreen::Color.red("Failed")
-         puts "Quaff thread still had work outstanding"
-         puts t.backtrace
-         t.kill
-         retval = false
-        end
+      result_of_join = t.join(3)
+      unless result_of_join 
+        puts RedGreen::Color.red("Failed")
+        puts "Quaff thread still had work outstanding"
+        puts t.backtrace
+        t.kill
+        retval = false
       end
+    end
     retval
   end
 
@@ -169,7 +169,7 @@ class TestDefinition
   end
 
   def add_quaff_endpoint &blk
-   @quaff_blocks.push blk
+    @quaff_threads.push Thread.new {blk.call}
   end
 
   def add_public_identity(ep)
@@ -229,22 +229,20 @@ class TestDefinition
     @deployment = deployment
     @transport = transport
     clear_diags
-    @quaff_blocks = []
     @quaff_threads = []
     TestDefinition.set_current_test(self)
     retval = false
     begin
       @blk.call(self)
-      @quaff_blocks.each do |thr| @quaff_threads.push Thread.new {thr.call} end
       print "(#{@endpoints.map { |e| e.username }.join ", "}) "
       sipp_scripts = create_sipp_scripts
       @sipp_pids = launch_sipp sipp_scripts
       retval = wait_for_sipp
     ensure
-      cleanup_retval = cleanup
+      retval &= cleanup
       TestDefinition.unset_current_test
     end
-     return (retval and cleanup_retval)
+     return retval
   end
 
   def launch_sipp(sipp_scripts)
@@ -288,7 +286,6 @@ class TestDefinition
       end
       return false
     else
-      #puts RedGreen::Color.green("Passed")
       clear_diags
       return true
     end

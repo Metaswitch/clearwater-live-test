@@ -40,7 +40,7 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
-  t.add_quaff_endpoint {
+  t.add_quaff_endpoint do
     c = TCPSIPConnection.new(5070)
     begin
       incoming_cid = c.get_new_call_id
@@ -63,7 +63,7 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
     ensure
       c.terminate
     end
-  }
+  end
 
   t.set_scenario(
     sip_caller.register +
@@ -86,7 +86,7 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
-  t.add_quaff_endpoint {
+  t.add_quaff_endpoint do
     c = TCPSIPConnection.new(5070)
     begin
       incoming_cid = c.get_new_call_id
@@ -100,7 +100,7 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
     ensure
       c.terminate
     end
-  }
+  end
  
   t.set_scenario(
     sip_caller.register +
