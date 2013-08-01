@@ -137,7 +137,7 @@ class TestDefinition
       e.cleanup
     end
     @endpoints = []
-    @quaff_threads.each do |t| t.join end
+    @quaff_threads.each do |t| t.join(5) || t.kill end
   end
 
   # @@TODO - Don't pass transport in once UDP authentication is fixed
@@ -210,6 +210,7 @@ class TestDefinition
   def run(deployment, transport)
     @deployment = deployment
     @transport = transport
+    clear_diags
     @quaff_lambdas = []
     @quaff_threads = []
     TestDefinition.set_current_test(self)

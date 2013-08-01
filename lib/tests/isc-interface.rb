@@ -33,6 +33,88 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 require_relative '../../quaff/quaff.rb'
 
+ASTestDefinition.new("ISC Interface - Terminating") do |t|
+  sip_caller = t.add_sip_endpoint
+  sip_callee = t.add_sip_endpoint
+
+  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+
+  quaff_lambda = lambda do
+    c = TCPSIPConnection.new(5070)
+    begin
+      incoming_cid = c.get_new_call_id
+      incoming_call = Call.new(c, incoming_cid)
+
+      idata = incoming_call.recv_request("INVITE")
+      incoming_call.send_response("100 Trying")
+      incoming_call.send_response("200 OK")
+      incoming_call.recv_request("ACK")
+      # This is received from Bono, so our sending destination automatically switches
+      incoming_call.recv_request("BYE")
+
+      incoming_call.send_response("200 OK", nil, {"CSeq" => "4 BYE"})
+      sleep 2 # Ensure that the 200 OK is sent to Bono before the socket is closed
+      incoming_call.end_call
+    ensure
+      c.terminate
+    end
+  end
+
+  t.quaff_lambdas = [quaff_lambda]
+
+  t.set_scenario(
+    sip_caller.register +
+    [
+      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
+      sip_caller.recv("100"),
+      sip_caller.recv("200", rrs: true),
+      sip_caller.send("ACK", target: sip_callee, in_dialog: true, method: "INVITE"),
+      sip_caller.send("BYE", target: sip_callee, in_dialog: true),
+      sip_caller.recv("200"),
+    ] +
+    sip_caller.unregister 
+  )
+end
+
+ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
+  sip_caller = t.add_sip_endpoint
+  sip_callee = t.add_sip_endpoint
+
+  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+
+  quaff_lambda = lambda do
+    c = TCPSIPConnection.new(5070)
+    begin
+      incoming_cid = c.get_new_call_id
+      incoming_call = Call.new(c, incoming_cid)
+
+      idata = incoming_call.recv_request("INVITE")
+      incoming_call.send_response("100 Trying")
+      incoming_call.send_response("404 Not Found", nil, {
+        "Record-Route" => ["<sip:#{ENV['HOSTNAME']}:5070;transport=TCP>"]+idata['message'].headers["Record-Route"],
+      })
+      incoming_call.recv_request("ACK")  # Comes from Bono
+      incoming_call.end_call
+    ensure
+      c.terminate
+    end
+  end 
+  t.quaff_lambdas = [quaff_lambda]
+ 
+  t.set_scenario(
+    sip_caller.register +
+    [
+      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
+      sip_caller.recv("100"),
+      sip_caller.recv("404", rrs: true),
+      sip_caller.send("ACK", in_dialog: true),
+    ] +
+    sip_caller.unregister
+  )
+end
+
 ASTestDefinition.new("ISC Interface - Redirect") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee1 = t.add_sip_endpoint
@@ -75,90 +157,6 @@ ASTestDefinition.new("ISC Interface - Redirect") do |t|
   )
 end
 
-Thread.abort_on_exception = true
-ASTestDefinition.new("ISC Interface - Terminating") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee = t.add_sip_endpoint
-
-  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
-  sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
-
-  quaff_lambda = lambda do
-    c = TCPSIPConnection.new(5070)
-    begin
-    incoming_cid = c.get_new_call_id
-    incoming_call = Call.new(c, incoming_cid)
-
-    idata = incoming_call.recv_request("INVITE")
-    incoming_call.send_response("100 Trying")
-    incoming_call.send_response("200 OK", nil, {
-        "Record-Route" => ["<sip:#{ENV['HOSTNAME']}:5070;transport=TCP>"]+idata['message'].headers["Record-Route"],
-    })
-    incoming_call.recv_request("ACK")
-    incoming_call.recv_request("BYE")
-
-    incoming_call.send_response("200 OK", nil, {"CSeq" => "4 BYE"})
-    incoming_call.end_call
-    ensure
-    c.terminate
-    sleep 1
-    end
-  end
-
-  t.quaff_lambdas = [quaff_lambda]
-
-  t.set_scenario(
-    sip_caller.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
-      sip_caller.recv("100"),
-      sip_caller.recv("200", rrs: true),
-      sip_caller.send("ACK", target: sip_callee, in_dialog: true, method: "INVITE"),
-      sip_caller.send("BYE", target: sip_callee, in_dialog: true),
-      sip_caller.recv("200"),
-    ] +
-    sip_caller.unregister 
-  )
-end
-
-ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee = t.add_sip_endpoint
-
-  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
-  sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
-
-  quaff_lambda = lambda do
-    c = TCPSIPConnection.new(5070)
-    begin
-    incoming_cid = c.get_new_call_id
-    incoming_call = Call.new(c, incoming_cid)
-
-    idata = incoming_call.recv_request("INVITE")
-    incoming_call.send_response("100 Trying")
-    incoming_call.send_response("404 Not Found", nil, {
-        "Record-Route" => ["<sip:#{ENV['HOSTNAME']}:5070;transport=TCP>"]+idata['message'].headers["Record-Route"],
-    })
-    incoming_call.recv_request("ACK")  # Comes from Bono
-    incoming_call.end_call
-    ensure
-    c.terminate
-    sleep 1
-    end
-  end 
-  t.quaff_lambdas = [quaff_lambda]
- 
-  t.set_scenario(
-    sip_caller.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
-      sip_caller.recv("100"),
-      sip_caller.recv("404", rrs: true),
-      sip_caller.send("ACK", in_dialog: true),
-    ] +
-    sip_caller.unregister
-  )
-end
 
 =begin
 ASTestDefinition.new("ISC Interface - B2BUA") do |t|
