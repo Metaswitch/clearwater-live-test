@@ -105,7 +105,7 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
     end
   end
 
-  t.quaff_lambdass = [quaff_lambda]
+  t.quaff_lambdas = [quaff_lambda]
 
   t.set_scenario(
     sip_caller.register +
