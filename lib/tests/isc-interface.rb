@@ -153,13 +153,22 @@ ASTestDefinition.new("ISC Interface - Third-party Registration - implicit regist
   ep2 = t.add_public_identity(sip_caller)
 
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP", method: "REGISTER"
-  ep2.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP", method: "REGISTER"
+  ep2.set_ifc server_name: "#{ENV['HOSTNAME']}:5071;transport=TCP", method: "REGISTER"
 
   t.add_quaff_endpoint do
     c = TCPSIPConnection.new(5070)
     begin
       validate_expiry c, EXPECTED_EXPIRY
       validate_expiry c, "0"
+    ensure
+      c.terminate
+    end
+  end
+
+  # Set up a second AS on port 5071, to ensure that iFCs for the second public identity are handled independently
+  t.add_quaff_endpoint do
+    c = TCPSIPConnection.new(5071)
+    begin
       validate_expiry c, EXPECTED_EXPIRY
       validate_expiry c, "0"
     ensure
