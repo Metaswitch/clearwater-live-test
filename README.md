@@ -45,6 +45,7 @@ There are various modifiers you can use to determine which subset of tests you w
  - `PROXY=<host>` - to force the tests to run against a particular Bono instance.
  - `ELLIS=<host>` - to override the default FQDN for Ellis.  Useful when running against an AIO node.
  - `HOSTNAME=<host>` - publicly accessible hostname of the machine running the tests, used for the dummy AS.
+ - `EXPIRES=<number>` - maximum Expires header expected from Sprout, used for the dummy AS.
 
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
 

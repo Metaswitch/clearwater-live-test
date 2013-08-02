@@ -33,6 +33,8 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 require_relative '../../quaff/quaff.rb'
 
+EXPECTED_EXPIRY = ENV['EXPIRES'] || "300"
+
 ASTestDefinition.new("ISC Interface - Terminating") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee = t.add_sip_endpoint
@@ -52,10 +54,10 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
       
       # This is received from Bono, so our sending destination automatically switches
       ack_data = incoming_call.recv_request("ACK")
-      raise "Expecting INVITE from Sprout and ACK from Bono!" unless invite_data['source'].sock != ack_data['source'].sock
+      fail "Expecting INVITE from Sprout and ACK from Bono!" unless invite_data['source'].sock != ack_data['source'].sock
       
       bye_data = incoming_call.recv_request("BYE")
-      raise "Expecting ACK and BYE to both come from Bono!" unless bye_data['source'].sock == ack_data['source'].sock
+      fail "Expecting ACK and BYE to both come from Bono!" unless bye_data['source'].sock == ack_data['source'].sock
 
       incoming_call.send_response("200 OK", nil, {"CSeq" => "4 BYE"})
       sleep 2 # Ensure that the 200 OK is sent to Bono before the socket is closed
@@ -114,6 +116,16 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
   )
 end
 
+def validate_expiry c, expected_expiry
+      incoming_cid = c.get_new_call_id
+      incoming_call = Call.new(c, incoming_cid)
+
+      register_data = incoming_call.recv_request("REGISTER")
+      actual_expiry = register_data['message'].header("Expires")
+      fail "Expected Expires of #{expected_expiry}, got expires of #{actual_expiry}!" unless actual_expiry == expected_expiry
+      incoming_call.end_call
+end
+
 ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
   sip_caller = t.add_sip_endpoint
 
@@ -122,12 +134,8 @@ ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
   t.add_quaff_endpoint do
     c = TCPSIPConnection.new(5070)
     begin
-      incoming_cid = c.get_new_call_id
-      incoming_call = Call.new(c, incoming_cid)
-
-      register_data = incoming_call.recv_request("REGISTER")
-      raise "Expected Expires of 300, got expires of #{register_data['message'].header("Expires")}!" unless register_data['message'].header("Expires") == "300"
-      incoming_call.end_call
+      validate_expiry c, EXPECTED_EXPIRY
+      validate_expiry c, "0"
     ensure
       c.terminate
     end
@@ -135,6 +143,7 @@ ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
 
   t.set_scenario(
     sip_caller.register +
+    [SIPpPhase.new("pause", sip_caller, timeout: 1000)] +
     sip_caller.unregister 
   )
 end
@@ -143,34 +152,25 @@ ASTestDefinition.new("ISC Interface - Third-party Registration - implicit regist
   sip_caller = t.add_sip_endpoint
   ep2 = t.add_public_identity(sip_caller)
 
-  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070", method: "REGISTER"
+  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP", method: "REGISTER"
+  ep2.set_ifc server_name: "#{ENV['HOSTNAME']}:5071;transport=TCP", method: "REGISTER"
 
   t.add_quaff_endpoint do
     c = TCPSIPConnection.new(5070)
     begin
-      incoming_cid = c.get_new_call_id
-      incoming_call = Call.new(c, incoming_cid)
-      register_data = incoming_call.recv_request("REGISTER")
-      raise "Expected Expires of 300, got expires of #{register_data['message'].header("Expires")}!" unless register_data['message'].header("Expires") == "300"
-      incoming_call.end_call
+      validate_expiry c, EXPECTED_EXPIRY
+      validate_expiry c, "0"
+    ensure
+      c.terminate
+    end
+  end
 
-      incoming_cid = c.get_new_call_id
-      incoming_call = Call.new(c, incoming_cid)
-      register_data = incoming_call.recv_request("REGISTER")
-      raise "Expected Expires of 0, got expires of #{register_data['message'].header("Expires")}!" unless register_data['message'].header("Expires") == "0"
-      incoming_call.end_call
-
-      incoming_cid = c.get_new_call_id
-      incoming_call = Call.new(c, incoming_cid)
-      register_data = incoming_call.recv_request("REGISTER")
-      raise "Expected Expires of 300, got expires of #{register_data['message'].header("Expires")}!" unless register_data['message'].header("Expires") == "300"
-      incoming_call.end_call
-
-      incoming_cid = c.get_new_call_id
-      incoming_call = Call.new(c, incoming_cid)
-      register_data = incoming_call.recv_request("REGISTER")
-      raise "Expected Expires of 0, got expires of #{register_data['message'].header("Expires")}!" unless register_data['message'].header("Expires") == "0"
-      incoming_call.end_call
+  # Set up a second AS on port 5071, to ensure that iFCs for the second public identity are handled independently
+  t.add_quaff_endpoint do
+    c = TCPSIPConnection.new(5071)
+    begin
+      validate_expiry c, EXPECTED_EXPIRY
+      validate_expiry c, "0"
     ensure
       c.terminate
     end
@@ -178,8 +178,11 @@ ASTestDefinition.new("ISC Interface - Third-party Registration - implicit regist
 
   t.set_scenario(
     sip_caller.register +
+    [SIPpPhase.new("pause", sip_caller, timeout: 1000)] +
     sip_caller.unregister +
+    [SIPpPhase.new("pause", sip_caller, timeout: 1000)] +
     ep2.register +
+    [SIPpPhase.new("pause", ep2, timeout: 1000)] +
     ep2.unregister 
   )
 end
