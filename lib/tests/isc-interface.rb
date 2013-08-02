@@ -126,8 +126,7 @@ ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
       incoming_call = Call.new(c, incoming_cid)
 
       register_data = incoming_call.recv_request("REGISTER")
-      
-      sleep 2 # Ensure that the 200 OK is sent to Bono before the socket is closed
+      raise "Expected Expires of 300, got expires of #{register_data['message'].header("Expires")}!" unless register_data['message'].header("Expires") == "300"
       incoming_call.end_call
     ensure
       c.terminate
@@ -139,6 +138,52 @@ ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
     sip_caller.unregister 
   )
 end
+
+ASTestDefinition.new("ISC Interface - Third-party Registration - implicit registration") do |t|
+  sip_caller = t.add_sip_endpoint
+  ep2 = t.add_public_identity(sip_caller)
+
+  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070", method: "REGISTER"
+
+  t.add_quaff_endpoint do
+    c = TCPSIPConnection.new(5070)
+    begin
+      incoming_cid = c.get_new_call_id
+      incoming_call = Call.new(c, incoming_cid)
+      register_data = incoming_call.recv_request("REGISTER")
+      raise "Expected Expires of 300, got expires of #{register_data['message'].header("Expires")}!" unless register_data['message'].header("Expires") == "300"
+      incoming_call.end_call
+
+      incoming_cid = c.get_new_call_id
+      incoming_call = Call.new(c, incoming_cid)
+      register_data = incoming_call.recv_request("REGISTER")
+      raise "Expected Expires of 0, got expires of #{register_data['message'].header("Expires")}!" unless register_data['message'].header("Expires") == "0"
+      incoming_call.end_call
+
+      incoming_cid = c.get_new_call_id
+      incoming_call = Call.new(c, incoming_cid)
+      register_data = incoming_call.recv_request("REGISTER")
+      raise "Expected Expires of 300, got expires of #{register_data['message'].header("Expires")}!" unless register_data['message'].header("Expires") == "300"
+      incoming_call.end_call
+
+      incoming_cid = c.get_new_call_id
+      incoming_call = Call.new(c, incoming_cid)
+      register_data = incoming_call.recv_request("REGISTER")
+      raise "Expected Expires of 0, got expires of #{register_data['message'].header("Expires")}!" unless register_data['message'].header("Expires") == "0"
+      incoming_call.end_call
+    ensure
+      c.terminate
+    end
+  end
+
+  t.set_scenario(
+    sip_caller.register +
+    sip_caller.unregister +
+    ep2.register +
+    ep2.unregister 
+  )
+end
+
 
 
 ASTestDefinition.new("ISC Interface - Redirect") do |t|
