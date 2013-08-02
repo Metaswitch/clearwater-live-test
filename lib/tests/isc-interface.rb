@@ -228,16 +228,13 @@ ASTestDefinition.new("ISC Interface - Redirect") do |t|
   )
 end
 
-
-=begin
 ASTestDefinition.new("ISC Interface - B2BUA") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee = t.add_sip_endpoint
 
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   
-  Thread.abort_on_exception = true
-  Thread.new do
+  t.add_quaff_endpoint do
     c = TCPSIPConnection.new(5070)
 
     incoming_cid = c.get_new_call_id
@@ -247,20 +244,21 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
     incoming_call.send_response("100")
 
     # Send a new call back to Sprout
-    outgoing_call = Call.new(c, call_id: incoming_cid+"///2")
+    outgoing_call = Call.new(c, call_id: "2///"+incoming_cid)
     outgoing_call.setdest(incoming_call.get_next_hop_from_route, recv_from_this: true)
 
     # Copy top Route header to Route or Request-URI?
-    outgoing_call.clone_details(incoming_call) # Copy To, From headers etc.
-    outgoing_call.send_request("INVITE")
+    outgoing_call.send_request("INVITE", nil, nil,
+      {"Record-Route" => "<sip:#{ENV['HOSTNAME']}:5070;transport=TCP;lr>"})
 
     outgoing_call.recv_response("180")
     incoming_call.send_response("180")
 
-    outgoing_call.recv_response("200")
+    ok_data = outgoing_call.recv_response("200")
 
     # Switch over to talking to Bono now the dialog is established
-    outgoing_call.setdest(outgoing_call.get_next_hop_from_rr)
+    puts ok_data['message'].headers['Route']
+    puts ok_data['message'].headers['Record-Route']
     outgoing_call.send_request("ACK")
 
     incoming_call.send_response("200 OK", false, nil, {"Contact" => mock_as})
@@ -302,5 +300,3 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
     sip_callee.unregister
   )
 end
-
-=end
