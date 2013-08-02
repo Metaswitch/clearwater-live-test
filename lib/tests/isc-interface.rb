@@ -117,7 +117,7 @@ end
 ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
   sip_caller = t.add_sip_endpoint
 
-  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070", method: "REGISTER"
+  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP", method: "REGISTER"
 
   t.add_quaff_endpoint do
     c = TCPSIPConnection.new(5070)
