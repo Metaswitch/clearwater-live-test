@@ -236,7 +236,6 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
   sip_callee = t.add_sip_endpoint
 
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
-  #sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
   
   t.add_quaff_endpoint do
     c = TCPSIPConnection.new(5070)
@@ -255,7 +254,7 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
       outgoing_call.set_callee(invite_data['message'].requri)
 
       # Copy top Route header to Route or Request-URI?
-      outgoing_call.send_request("INVITE")
+      outgoing_call.send_request("INVITE", nil, nil, {"From" => invite_data.header "From"})
 
       outgoing_call.recv_response("100")
       outgoing_call.recv_response("180")
@@ -264,18 +263,16 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
       ok_data = outgoing_call.recv_response("200")
 
       # Switch over to talking to Bono now the dialog is established
-      puts ok_data['message'].headers['Record-Route']
-      puts ok_data['message'].headers['Contact']
       /<sip:(.*):5058/ =~ invite_data['message'].headers['Record-Route'][0]
-      puts $1
       bono_outbound = TCPSource.new TCPSocket.new($1, 5058)
-      /<(.*)>/ =~ invite_data['message'].headers['Contact'][0]
-      puts $1
       outgoing_call.setdest(bono_outbound, recv_from_this: true)
+
+      /<(.*)>/ =~ invite_data['message'].headers['Contact'][0]
       outgoing_call.set_callee($1)
+
       outgoing_call.send_request("ACK", nil, nil, {"Route" => ok_data['message'].headers['Record-Route']})
 
-      sleep 0.5
+      sleep 0.5 # Don't let these two reach SIPp in the wrong order
 
       incoming_call.send_response("200 OK")
       incoming_call.recv_request("ACK")  # Comes from Bono
