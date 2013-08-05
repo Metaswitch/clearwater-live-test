@@ -255,8 +255,7 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
       outgoing_call.set_callee(invite_data['message'].requri)
 
       # Copy top Route header to Route or Request-URI?
-      outgoing_call.send_request("INVITE", nil, nil,
-        {"Record-Route" => "<sip:#{ENV['HOSTNAME']}:5070;transport=TCP;lr>"})
+      outgoing_call.send_request("INVITE")
 
       outgoing_call.recv_response("100")
       outgoing_call.recv_response("180")
@@ -266,10 +265,14 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
 
       # Switch over to talking to Bono now the dialog is established
       puts ok_data['message'].headers['Record-Route']
+      puts ok_data['message'].headers['Contact']
       /<sip:(.*):5058/ =~ invite_data['message'].headers['Record-Route'][0]
       puts $1
       bono_outbound = TCPSource.new TCPSocket.new($1, 5058)
+      /<(.*)>/ =~ invite_data['message'].headers['Contact'][0]
+      puts $1
       outgoing_call.setdest(bono_outbound, recv_from_this: true)
+      outgoing_call.set_callee($1)
       outgoing_call.send_request("ACK", nil, nil, {"Route" => ok_data['message'].headers['Record-Route']})
 
       sleep 0.5
