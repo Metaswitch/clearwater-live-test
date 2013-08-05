@@ -254,7 +254,7 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
       outgoing_call.set_callee(invite_data['message'].requri)
 
       # Copy top Route header to Route or Request-URI?
-      outgoing_call.send_request("INVITE", nil, nil, {"From" => invite_data.header "From"})
+      outgoing_call.send_request("INVITE", nil, nil, {"From" => invite_data['message'].header("From")})
 
       outgoing_call.recv_response("100")
       outgoing_call.recv_response("180")
