@@ -235,46 +235,60 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee = t.add_sip_endpoint
 
-  sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
+  #sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
   
   t.add_quaff_endpoint do
     c = TCPSIPConnection.new(5070)
+    begin
+      incoming_cid = c.get_new_call_id
+      incoming_call = Call.new(c, incoming_cid)
 
-    incoming_cid = c.get_new_call_id
-    incoming_call = Call.new(c, incoming_cid)
+      invite_data = incoming_call.recv_request("INVITE")
+      incoming_call.send_response("100")
 
-    incoming_call.recv_request("INVITE")
-    incoming_call.send_response("100")
+      sprout_outbound = TCPSource.new TCPSocket.new(invite_data['source'].remote_ip, 5054)
 
-    # Send a new call back to Sprout
-    outgoing_call = Call.new(c, call_id: "2///"+incoming_cid)
-    outgoing_call.setdest(incoming_call.get_next_hop_from_route, recv_from_this: true)
+      # Send a new call back to Sprout
+      outgoing_call = Call.new(c, "2///"+incoming_cid)
+      outgoing_call.setdest(sprout_outbound, recv_from_this: true)
+      outgoing_call.set_callee(invite_data['message'].requri)
 
-    # Copy top Route header to Route or Request-URI?
-    outgoing_call.send_request("INVITE", nil, nil,
-      {"Record-Route" => "<sip:#{ENV['HOSTNAME']}:5070;transport=TCP;lr>"})
+      # Copy top Route header to Route or Request-URI?
+      outgoing_call.send_request("INVITE", nil, nil,
+        {"Record-Route" => "<sip:#{ENV['HOSTNAME']}:5070;transport=TCP;lr>"})
 
-    outgoing_call.recv_response("180")
-    incoming_call.send_response("180")
+      outgoing_call.recv_response("100")
+      outgoing_call.recv_response("180")
+      incoming_call.send_response("180")
 
-    ok_data = outgoing_call.recv_response("200")
+      ok_data = outgoing_call.recv_response("200")
 
-    # Switch over to talking to Bono now the dialog is established
-    puts ok_data['message'].headers['Route']
-    puts ok_data['message'].headers['Record-Route']
-    outgoing_call.send_request("ACK")
+      # Switch over to talking to Bono now the dialog is established
+      puts ok_data['message'].headers['Record-Route']
+      /<sip:(.*):5058/ =~ invite_data['message'].headers['Record-Route'][0]
+      puts $1
+      bono_outbound = TCPSource.new TCPSocket.new($1, 5058)
+      outgoing_call.setdest(bono_outbound, recv_from_this: true)
+      outgoing_call.send_request("ACK", nil, nil, {"Route" => ok_data['message'].headers['Record-Route']})
 
-    incoming_call.send_response("200 OK", false, nil, {"Contact" => mock_as})
-    incoming_call.recv_request("ACK")  # Comes from Bono
-    incoming_call.recv_request("BYE")  # Also comes from Bono
+      sleep 0.5
 
-    # We automatically switch to Bono now, as that's where the BYE came from
-    incoming_call.send_response("200 OK")
-    incoming_call.end_call
+      incoming_call.send_response("200 OK")
+      incoming_call.recv_request("ACK")  # Comes from Bono
+      incoming_call.recv_request("BYE")  # Also comes from Bono
 
-    outgoing_call.send_request("BYE")
-    outgoing_call.recv_response("200")
-    outgoing_call.end_call
+      # We automatically switch to Bono now, as that's where the BYE came from
+      incoming_call.send_response("200 OK", nil, {"CSeq" => "4 BYE"})
+
+      outgoing_call.send_request("BYE", nil, nil, {"Route" => ok_data['message'].headers['Record-Route'], "CSeq" => "8 BYE"})
+      outgoing_call.recv_response("200")
+
+      incoming_call.end_call
+      outgoing_call.end_call
+    ensure
+      c.terminate
+    end
   end
 
   t.set_scenario(
@@ -283,7 +297,7 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
     [
       sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
       sip_caller.recv("100"),
-      sip_callee.recv("INVITE", extract_uas_via: true),
+      sip_callee.recv("INVITE", extract_uas_via: true, rrs: true),
 
       sip_callee.send("180", target: sip_caller, method: "INVITE", cid_prefix: "2///"),
       sip_caller.recv("180"),
