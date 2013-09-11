@@ -2,7 +2,8 @@
   <recv timeout="<%= timeout rescue 3000 %>" response="<%= response %>" <% if defined?(save_auth) and save_auth %> auth="true" <% end %> optional="<%= optional rescue false %>" <% if defined?(rrs) and rrs %>rrs="true"<% end %> <% if defined?(next_label)%>next="<%= next_label %>"<% end %>>
     <action>
       <% if defined?(save_nat_ip) and save_nat_ip %>
-      <ereg regexp="rport=([^;]*);.*received=([^;]*);" search_in="hdr" header="Via:" assign_to="dummy,nat_port,nat_ip_addr" />
+      <ereg regexp="rport=([^;]*);" search_in="hdr" header="Via:" assign_to="dummy,nat_port" />
+      <ereg regexp="received=([^;]*);" search_in="hdr" header="Via:" assign_to="dummy,nat_ip_addr" />
       <% refs.push("dummy", "nat_port", "nat_ip_addr") %>
       <% end %>
       <% if defined? check_trusted and check_trusted %>
