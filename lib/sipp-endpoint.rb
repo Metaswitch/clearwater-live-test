@@ -107,8 +107,15 @@ class SIPpEndpoint
     end
     register_flow << recv("200", save_nat_ip: true)
     register_flow << SIPpPhase.new("__label", self, label_value: label_id)
-#    register_flow << send("REGISTER", nat_contact_header: true)
-#    register_flow << recv("200")
+
+    # ReREGISTER with NAT address in the Contact header
+    label_id = TestDefinition.get_next_label_id
+    register_flow << send("REGISTER", nat_contact_header: true)
+    register_flow << recv("200", optional: true, next_label: label_id)
+    register_flow << recv("401", save_auth: true)
+    register_flow << send("REGISTER", nat_contact_header: true, auth_header: true)
+    register_flow << recv("200")
+    register_flow << SIPpPhase.new("__label", self, label_value: label_id)
     register_flow
   end
 

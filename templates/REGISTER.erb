@@ -13,13 +13,10 @@
       Supported: outbound, path
       <% if defined?(nat_contact_header) and nat_contact_header %>
       Contact: <sip:<%= sender.username %>@[$nat_ip_addr]:[$nat_port];transport=[transport];ob>;reg-id=1;+sip.instance="<urn:uuid:<%= sender.instance_id %>>"
-      <% end %>
-      Contact: <sip:<%= sender.username %>@[local_ip]:[local_port];transport=[transport];ob>;reg-id=1;+sip.instance="<urn:uuid:<%= sender.instance_id %>>"
-      <% if defined?(expires) %>
-      Expires: <%= expires %>
       <% else %>
-      Expires: 3600
+      Contact: <sip:<%= sender.username %>@[local_ip]:[local_port];transport=[transport];ob>;reg-id=1;+sip.instance="<urn:uuid:<%= sender.instance_id %>>"
       <% end %>
+      <% if defined?(expires) %>Expires: <%= expires %><% else %>Expires: 3600<% end %>
       <% if defined?(auth_header) and auth_header %>
       [authentication username=<%= sender.private_id %> password=<%= sender.password %>]
       <% end%>
