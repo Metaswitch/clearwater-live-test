@@ -20,6 +20,14 @@
   </nop>
   <% end %>
 
+  <% if defined? extract_second_via and extract_second_via %>
+  <nop>
+    <action>
+        <assignstr assign_to="second_via" value="[last_Via:]" />
+    </action>
+  </nop>
+  <% end %>
+
   <% if !refs.empty? %>
   <Reference variables="<%= refs.join(",") %>" /> <!-- Unused variables are a SIPp error -->
   <% end %>

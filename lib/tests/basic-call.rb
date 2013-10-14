@@ -116,3 +116,35 @@ TestDefinition.new("Basic Call - Rejected by remote endpoint") do |t|
     sip_callee.unregister
   )
 end
+
+TestDefinition.new("Basic Call - Pracks") do |t|
+  sip_caller = t.add_sip_endpoint
+  sip_callee = t.add_sip_endpoint
+  t.set_scenario(
+    sip_caller.register +
+    sip_callee.register +
+    [
+      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
+      sip_caller.recv("100"),
+      sip_callee.recv("INVITE", extract_uas_via: true, check_trusted: true, trusted_present: false),
+      sip_callee.send("100", target: sip_caller, method: "INVITE"),
+      sip_callee.send("180", target: sip_caller, method: "INVITE"),
+      sip_caller.recv("180"),
+      sip_caller.send("PRACK", target: sip_callee),
+      sip_callee.recv("PRACK", extract_second_via: true),
+      sip_callee.send("200", second_transaction: true, target: sip_caller, method: "PRACK"),
+      sip_caller.recv("200", target: sip_caller, method: "PRACK"),
+      sip_callee.send("200-SDP", target: sip_caller, method: "INVITE"),
+      sip_caller.recv("200", rrs: true),
+      sip_caller.send("ACK", target: sip_callee, in_dialog: true),
+      sip_callee.recv("ACK"),
+      SIPpPhase.new("pause", sip_caller, timeout: 1000),
+      sip_caller.send("BYE", target: sip_callee, in_dialog: true),
+      sip_callee.recv("BYE", extract_uas_via: true),
+      sip_callee.send("200", target: sip_caller, method: "BYE", emit_trusted: true),
+      sip_caller.recv("200", check_trusted: true, trusted_present: false),
+  ] +
+  sip_caller.unregister +
+  sip_callee.unregister
+  )
+end

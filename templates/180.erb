@@ -9,6 +9,7 @@
       CSeq: <%= defined?(cseq) ? cseq : "[cseq]" %> <%= method %>
       Contact: <sip:<%= sender.username %>@[$nat_ip_addr]:[$nat_port];transport=[transport];ob>;+sip.ice
       Allow: PRACK, INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
+      RSeq: 1
       Content-Length:  0
     ]]>
   </send>
