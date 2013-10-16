@@ -112,7 +112,7 @@ TestDefinition.new("Basic Call - Pracks") do |t|
       sip_caller.recv("100"),
       sip_callee.recv("INVITE", extract_uas_via: true, check_trusted: true, trusted_present: false),
       sip_callee.send("100", target: sip_caller, method: "INVITE"),
-      sip_callee.send("180", target: sip_caller, method: "INVITE"),
+      sip_callee.send("180", prack_expected: true, target: sip_caller, method: "INVITE"),
       sip_caller.recv("180"),
       sip_caller.send("PRACK", target: sip_callee),
       sip_callee.recv("PRACK", extract_second_via: true),
