@@ -20,6 +20,15 @@
   </nop>
   <% end %>
 
+  <!-- Need to store two via headers if there are two transactions in a single test -->
+  <% if defined? extract_second_via and extract_second_via %>
+  <nop>
+    <action>
+        <assignstr assign_to="second_via" value="[last_Via:]" />
+    </action>
+  </nop>
+  <% end %>
+
   <% if !refs.empty? %>
   <Reference variables="<%= refs.join(",") %>" /> <!-- Unused variables are a SIPp error -->
   <% end %>
