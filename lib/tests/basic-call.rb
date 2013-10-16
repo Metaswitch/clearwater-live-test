@@ -77,22 +77,6 @@ TestDefinition.new("Basic Call - Unknown number") do |t|
   )
 end
 
-TestDefinition.new("Basic Call - Off-net number rejection") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee = t.add_fake_endpoint("+18778268782")
-
-  t.set_scenario(
-    sip_caller.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee),
-      sip_caller.recv("100"),
-      sip_caller.recv("404"),
-      sip_caller.send("ACK", target: sip_callee),
-    ] +
-    sip_caller.unregister
-  )
-end
-
 TestDefinition.new("Basic Call - Rejected by remote endpoint") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee = t.add_sip_endpoint
