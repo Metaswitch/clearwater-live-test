@@ -12,7 +12,8 @@ def get_snmp host, community, oid
 end
 
 
-servers = ENV['SNMP_AGENTS'].split(",")
+servers_env = ENV['SNMP_AGENTS'] || ""
+servers = servers_env.split(",")
 
 servers.each do |s|
   NonCallTestDefinition.new("SNMP - #{s}") do |domain, t|
