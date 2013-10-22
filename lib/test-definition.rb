@@ -142,9 +142,9 @@ class TestDefinition
     @endpoints = []
 
     retval = true
-    @quaff_threads.each do |t| 
+    @quaff_threads.each do |t|
       result_of_join = t.join(3)
-      unless result_of_join 
+      unless result_of_join
         puts RedGreen::Color.red("Failed")
         puts "Quaff thread still had work outstanding"
         puts t.backtrace
@@ -188,7 +188,7 @@ class TestDefinition
     @endpoints << new_endpoint
     new_endpoint
   end
-  
+
   def add_mock_as(domain, port)
     # TODO - pass in actual domain
     new_endpoint = MockAS.new(domain, port)
@@ -209,7 +209,7 @@ class TestDefinition
     end
     sipp_scripts
   end
-  
+
   def create_sipp_script(scenario, element_type)
     sipp_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
       "<scenario name=\"#{@name} - #{element_type.to_s}\">\n" +
@@ -239,27 +239,34 @@ class TestDefinition
       sipp_scripts = create_sipp_scripts
       @sipp_pids = launch_sipp sipp_scripts
       retval = wait_for_sipp
-
-      snmp_map = {}
-      SNMP::Manager.open(:host => deployment, :community => "clearwater") do |manager|
-        manager.walk("1.2.826.0.1.1578918.9.2") do |row|
-          row.each { |vb| snmp_map[vb.name] = vb.value }
-        end
-      end
-
-      latency_threshold = 250
-      if (snmp_map[average_oid] <= snmp_map[hwm_oid]) or (snmp_map[average_oid] >= snmp_map[lwm_oid])
-        raise "SNMP values are inconsistent: #{snmp_map.inspect}"
-      end
-      if (snmp_map[average_oid] <= (1000 * latency_threshold))
-        raise "Average latency is greater than #{latency_threshold}ms"
-      end
+      verify_snmp_stats
     ensure
       retval &= cleanup
       TestDefinition.unset_current_test
     end
      return retval
   end
+
+  def verify_snmp_stats
+      latency_threshold = 250
+      average_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.2"
+      lwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.4"
+      hwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.5"
+
+      snmp_map = {}
+      SNMP::Manager.open(:host => @deployment, :community => "clearwater") do |manager|
+        manager.walk("1.2.826.0.1.1578918.9.2") do |row|
+          row.each { |vb| snmp_map[vb.oid] = vb.value }
+        end
+      end
+
+      if (snmp_map[average_oid] > snmp_map[hwm_oid]) or (snmp_map[average_oid] < snmp_map[lwm_oid])
+        raise "SNMP values are inconsistent: #{snmp_map.inspect}"
+      end
+      if (snmp_map[average_oid] > (1000 * latency_threshold))
+        raise "Average latency is greater than #{latency_threshold}ms"
+      end
+    end
 
   def launch_sipp(sipp_scripts)
     sipp_pids = sipp_scripts.map do |s|
