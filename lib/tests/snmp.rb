@@ -16,7 +16,11 @@ servers_env = ENV['SNMP_AGENTS'] || ""
 servers = servers_env.split(",")
 
 servers.each do |s|
-  NonCallTestDefinition.new("SNMP - #{s}") do |domain, t|
+  # Test that the Clearwater-specific SNMP stats (e.g. latency) work
+  # We can't be much moree specific about what we expect, because
+  # stats can vary with IP address and (in some cases, like connected
+  # Homesteads) based on how long we've been running
+  NonCallTestDefinition.new("Clearwater SNMP - #{s}") do |domain, t|
     host = s
     snmp_map = get_snmp host, "clearwater", "1.2.826.0.1.1578918.9.2"
     if (snmp_map.empty?)
@@ -25,6 +29,7 @@ servers.each do |s|
     true
   end
 
+  # Test that the generic SNMP stats which we've made available work
   NonCallTestDefinition.new("CPU/Mem SNMP - #{s}") do |domain, t|
     host = s
     snmp_map = get_snmp host, "clearwater", "1.3.6.1.4.1.2021"
@@ -34,6 +39,8 @@ servers.each do |s|
     true
   end
 
+  # Test that the Clearwater SNMP code does not return stats for
+  # nonexistent fields
   NonCallTestDefinition.new("Nonexistent SNMP - #{s}") do |domain, t|
     host = s
     oid = "1.2.826.0.1.1578918.9.2.99999"
@@ -45,6 +52,7 @@ servers.each do |s|
     true
   end
 
+  # Test that SNMPd does not respond when we authenticate incorrectly
   NonCallTestDefinition.new("SNMP with wrong community - #{s}") do |domain, t|
     host = s
 
