@@ -33,6 +33,7 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 require 'timeout'
+require "snmp"
 
 # Source: RedGreen gem - https://github.com/kule/redgreen
 module RedGreen
@@ -238,6 +239,21 @@ class TestDefinition
       sipp_scripts = create_sipp_scripts
       @sipp_pids = launch_sipp sipp_scripts
       retval = wait_for_sipp
+
+      snmp_map = {}
+      SNMP::Manager.open(:host => deployment, :community => "clearwater") do |manager|
+        manager.walk("1.2.826.0.1.1578918.9.2") do |row|
+          row.each { |vb| snmp_map[vb.name] = vb.value }
+        end
+      end
+
+      latency_threshold = 250
+      if (snmp_map[average_oid] <= snmp_map[hwm_oid]) or (snmp_map[average_oid] >= snmp_map[lwm_oid])
+        raise "SNMP values are inconsistent: #{snmp_map.inspect}"
+      end
+      if (snmp_map[average_oid] <= (1000 * latency_threshold))
+        raise "Average latency is greater than #{latency_threshold}ms"
+      end
     ensure
       retval &= cleanup
       TestDefinition.unset_current_test
