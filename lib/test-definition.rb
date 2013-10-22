@@ -60,6 +60,7 @@ class TestDefinition
   attr_writer :timeout
 
   @@tests = []
+  @@non_call_tests = []
   @@current_test = nil
   @@failures = 0
 
@@ -67,7 +68,15 @@ class TestDefinition
     @@tests << i
   end
 
+  def self.add_non_call_instance(i)
+    @@non_call_tests << i
+  end
+
   def self.tests
+    @@tests
+  end
+
+  def self.non_call_tests
     @@tests
   end
 
@@ -89,6 +98,7 @@ class TestDefinition
       STDERR.puts "ERROR: Unsupported transports #{req_transports - transports} requested"
       exit 2
     end
+    non_call_tests_to_run = @@non_call_tests.select { |t| t.name =~ glob }
     tests_to_run = @@tests.select { |t| t.name =~ glob }
     repeat.times do |r|
       puts "Test iteration #{r + 1}" if repeat != 1
@@ -96,6 +106,20 @@ class TestDefinition
         begin
           print "#{test.name} (#{trans.to_s.upcase}) - "
           if test.run(deployment, trans)
+            puts RedGreen::Color.green("Passed")
+          end
+        rescue StandardError => e
+          record_failure
+          puts RedGreen::Color.red("Failed")
+          puts "  #{e.class} thrown:"
+          puts "   - #{e}"
+          puts e.backtrace.map { |line| "     - " + line }.join("\n")
+        end
+      end
+      non_call_tests_to_run.each do |test|
+        begin
+          print "#{test.name} - "
+          if test.run(deployment)
             puts RedGreen::Color.green("Passed")
           end
         rescue StandardError => e
@@ -141,9 +165,9 @@ class TestDefinition
     @endpoints = []
 
     retval = true
-    @quaff_threads.each do |t| 
+    @quaff_threads.each do |t|
       result_of_join = t.join(3)
-      unless result_of_join 
+      unless result_of_join
         puts RedGreen::Color.red("Failed")
         puts "Quaff thread still had work outstanding"
         puts t.backtrace
@@ -187,7 +211,7 @@ class TestDefinition
     @endpoints << new_endpoint
     new_endpoint
   end
-  
+
   def add_mock_as(domain, port)
     # TODO - pass in actual domain
     new_endpoint = MockAS.new(domain, port)
@@ -208,7 +232,7 @@ class TestDefinition
     end
     sipp_scripts
   end
-  
+
   def create_sipp_script(scenario, element_type)
     sipp_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
       "<scenario name=\"#{@name} - #{element_type.to_s}\">\n" +
@@ -335,5 +359,17 @@ class ASTestDefinition < TestDefinition
       puts RedGreen::Color.yellow("Skipped") + " (No hostname given)"
       puts "   - Call with HOSTNAME=<publicly accessible hostname/IP of this machine>"
     end
+  end
+end
+
+class NonCallTestDefinition < TestDefinition
+  def initialize(name, &blk)
+    TestDefinition.add_non_call_instance self
+    @name = name
+    @blk = blk
+  end
+
+  def run(deployment)
+    @blk.call(deployment, self)
   end
 end
