@@ -239,7 +239,7 @@ class TestDefinition
       sipp_scripts = create_sipp_scripts
       @sipp_pids = launch_sipp sipp_scripts
       retval = wait_for_sipp
-      verify_snmp_stats
+      verify_snmp_stats if ENV['SNMP'] != "N"
     ensure
       retval &= cleanup
       TestDefinition.unset_current_test
