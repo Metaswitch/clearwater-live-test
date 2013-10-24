@@ -250,8 +250,8 @@ class TestDefinition
   def verify_snmp_stats
       latency_threshold = 250
       average_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.2"
-      lwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.4"
-      hwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.5"
+      hwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.4"
+      lwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.5"
 
       snmp_map = {}
       SNMP::Manager.open(:host => @deployment, :community => "clearwater") do |manager|
