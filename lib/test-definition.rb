@@ -239,7 +239,7 @@ class TestDefinition
       sipp_scripts = create_sipp_scripts
       @sipp_pids = launch_sipp sipp_scripts
       retval = wait_for_sipp
-      verify_snmp_stats if ENV['SNMP'] == "Y"
+      verify_snmp_stats if ENV['SNMP'] != "N"
     ensure
       retval &= cleanup
       TestDefinition.unset_current_test
@@ -261,7 +261,17 @@ class TestDefinition
       end
 
     if (snmp_map[lwm_oid] > snmp_map[hwm_oid])
-      raise "SNMP values are inconsistent because the LWM (#{snmp_map[lwm_oid]}) is above the HWM #{snmp_map[hwm_oid]}: #{snmp_map.inspect}"
+      raise "SNMP values are inconsistent because the LWM (#{snmp_map[lwm_oid]}ms) is above the HWM (#{snmp_map[hwm_oid]}ms): #{snmp_map.inspect}"
+    end
+
+
+    if (snmp_map[average_oid] > snmp_map[hwm_oid])
+      raise "SNMP values are inconsistent because the average (#{snmp_map[average_oid]}ms) is above the HWM (#{snmp_map[hwm_oid]}ms): #{snmp_map.inspect}"
+    end
+
+
+    if (snmp_map[lwm_oid] > snmp_map[average_oid])
+      raise "SNMP values are inconsistent because the LWM (#{snmp_map[lwm_oid]}ms) is above the average (#{snmp_map[average_oid]}ms): #{snmp_map.inspect}"
     end
 
     if (snmp_map[average_oid] > (1000 * latency_threshold))
