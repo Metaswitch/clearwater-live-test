@@ -132,3 +132,21 @@ TestDefinition.new("Basic Call - Pracks") do |t|
   sip_callee.unregister
   )
 end
+
+TestDefinition.new("Basic Call - Messages - Paper model") do |t|
+  sip_caller = t.add_sip_endpoint
+  sip_callee = t.add_sip_endpoint
+  t.set_scenario(
+    sip_caller.register +
+    sip_callee.register +
+    [
+      sip_caller.send("MESSAGE", target: sip_callee),
+      sip_callee.recv("MESSAGE", extract_uas_via: true),
+      sip_callee.send("200", target: sip_caller, method: "MESSAGE"),
+      sip_caller.recv("200", target: sip_caller, method: "MESSAGE"),
+  ] +
+  sip_caller.unregister +
+  sip_callee.unregister
+  )
+end
+
