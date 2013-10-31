@@ -133,7 +133,7 @@ TestDefinition.new("Basic Call - Pracks") do |t|
   )
 end
 
-TestDefinition.new("Basic Call - Messages - Paper model") do |t|
+NotValidForUDPTestDefinition.new("Basic Call - Messages - Paper model") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee = t.add_sip_endpoint
   t.set_scenario(

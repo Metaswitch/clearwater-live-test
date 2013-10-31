@@ -361,3 +361,14 @@ class ASTestDefinition < TestDefinition
     end
   end
 end
+
+class NotValidForUDPTestDefinition < TestDefinition
+  def run(*args)
+    clear_diags
+    if args[1].to_s == "udp"
+      puts RedGreen::Color.yellow("Skipped") + " (Test is not valid for UDP)"
+    else
+      super
+    end
+  end
+end
