@@ -363,9 +363,9 @@ class ASTestDefinition < TestDefinition
 end
 
 class NotValidForUDPTestDefinition < TestDefinition
-  def run(*args)
+  def run(domain, transport, *args)
     clear_diags
-    if args[1].to_s == "udp"
+    if transport == :udp
       puts RedGreen::Color.yellow("Skipped") + " (Test is not valid for UDP)"
     else
       super
