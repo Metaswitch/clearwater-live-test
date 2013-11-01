@@ -132,3 +132,23 @@ TestDefinition.new("Basic Call - Pracks") do |t|
   sip_callee.unregister
   )
 end
+
+# This test isn't valid for UDP (due to a limitation of sipp running both  
+# endpoints in the same scenario)
+NotValidForUDPTestDefinition.new("Basic Call - Messages - Pager model") do |t|
+  sip_caller = t.add_sip_endpoint
+  sip_callee = t.add_sip_endpoint
+  t.set_scenario(
+    sip_caller.register +
+    sip_callee.register +
+    [
+      sip_caller.send("MESSAGE", target: sip_callee),
+      sip_callee.recv("MESSAGE", extract_uas_via: true),
+      sip_callee.send("200", target: sip_caller, method: "MESSAGE"),
+      sip_caller.recv("200", target: sip_caller, method: "MESSAGE"),
+  ] +
+  sip_caller.unregister +
+  sip_callee.unregister
+  )
+end
+
