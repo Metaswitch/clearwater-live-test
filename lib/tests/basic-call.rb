@@ -133,6 +133,8 @@ TestDefinition.new("Basic Call - Pracks") do |t|
   )
 end
 
+# This test isn't valid for UDP (due to a limitation of sipp running both  
+# endpoints in the same scenario)
 NotValidForUDPTestDefinition.new("Basic Call - Messages - Pager model") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee = t.add_sip_endpoint
