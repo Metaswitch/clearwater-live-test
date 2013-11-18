@@ -13,6 +13,9 @@
       CSeq: <%= defined?(cseq) ? cseq : "[cseq]" %> <%= method %>
       Contact: <sip:<%= sender.username %>@[$nat_ip_addr]:[$nat_port];transport=[transport];ob>;+sip.ice
       <% if defined? emit_trusted and emit_trusted %>P-Access-Network-Info: IEEE-802.11;i-wlan-node-id=SecretBunker42
-      <% end %>Content-Length: 0
+      <% end %>
+      <% if defined? emit_trusted and emit_trusted %>P-Visited-Network-Id: other.net, "Other Network"
+      <% end %>
+      Content-Length: 0
     ]]>
   </send>
