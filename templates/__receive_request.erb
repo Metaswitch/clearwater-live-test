@@ -8,6 +8,8 @@
       <% if defined? check_trusted and check_trusted %>
       <ereg regexp="." search_in="hdr" header="P-Access-Network-Info:" case_indep="true" check_it<%= trusted_present ? "" : "_inverse" %>="true" assign_to="1"/>
       <% refs.push("1") %>
+      <ereg regexp="." search_in="hdr" header="P-Visited-Network-Id:" case_indep="true" check_it<%= trusted_present ? "" : "_inverse" %>="true" assign_to="2"/>
+      <% refs.push("2") %>
       <% end %>
     </action>
   </recv>

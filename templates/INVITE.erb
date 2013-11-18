@@ -12,8 +12,11 @@
       Route: <sip:<%= sender.domain %>;transport=[transport];lr>
       Allow: INVITE, ACK, BYE, CANCEL, UPDATE, SUBSCRIBE, NOTIFY, REFER, MESSAGE, OPTIONS
       Supported: replaces
-      <% if defined? emit_trusted and emit_trusted %>P-Access-Network-Info: IEEE-802.11;i-wlan-node-id=SecretBunker42
-      <% end %>User-Agent: Clearwater Live Test Agent
+      <% if defined? emit_trusted and emit_trusted %>
+      P-Access-Network-Info: IEEE-802.11;i-wlan-node-id=SecretBunker42
+      P-Visited-Network-Id: other.net, "Other Network"
+      <% end %>
+      User-Agent: Clearwater Live Test Agent
       Content-Type: application/sdp
       Content-Length:  [len]
 
