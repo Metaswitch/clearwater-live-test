@@ -261,21 +261,21 @@ class TestDefinition
       end
 
     if (snmp_map[lwm_oid] > snmp_map[hwm_oid])
-      raise "SNMP values are inconsistent because the LWM (#{snmp_map[lwm_oid]}ms) is above the HWM (#{snmp_map[hwm_oid]}ms): #{snmp_map.inspect}"
+      raise "Bono SNMP values are inconsistent - the LWM (#{snmp_map[lwm_oid]}ms) is above the HWM (#{snmp_map[hwm_oid]}ms): #{snmp_map.inspect}"
     end
 
 
     if (snmp_map[average_oid] > snmp_map[hwm_oid])
-      raise "SNMP values are inconsistent because the average (#{snmp_map[average_oid]}ms) is above the HWM (#{snmp_map[hwm_oid]}ms): #{snmp_map.inspect}"
+      raise "Bono SNMP values are inconsistent - the average (#{snmp_map[average_oid]}ms) is above the HWM (#{snmp_map[hwm_oid]}ms): #{snmp_map.inspect}"
     end
 
 
     if (snmp_map[lwm_oid] > snmp_map[average_oid])
-      raise "SNMP values are inconsistent because the LWM (#{snmp_map[lwm_oid]}ms) is above the average (#{snmp_map[average_oid]}ms): #{snmp_map.inspect}"
+      raise "Bono SNMP values are inconsistent - the LWM (#{snmp_map[lwm_oid]}ms) is above the average (#{snmp_map[average_oid]}ms): #{snmp_map.inspect}"
     end
 
     if (snmp_map[average_oid] > (1000 * latency_threshold))
-      raise "Average latency is greater than #{latency_threshold}ms"
+      raise "Bono's average latency is greater than #{latency_threshold}ms"
     end
   end
 
