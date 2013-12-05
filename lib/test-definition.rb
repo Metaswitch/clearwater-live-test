@@ -349,6 +349,27 @@ class PSTNTestDefinition < TestDefinition
   end
 end
 
+class MMTelTestDefinition < TestDefinition
+  def run(*args)
+    unless ENV['NOMMTEL']
+      super
+    else
+      puts RedGreen::Color.yellow("Skipped") + " (No MMTel TAS support)"
+    end
+  end
+end
+
+class MMTelPSTNTestDefinition < PSTNTestDefinition
+  def run(*args)
+    clear_diags
+    unless ENV['NOMMTEL']
+    else
+      puts RedGreen::Color.yellow("Skipped") + " (No MMTel TAS support)"
+    end
+  end
+end
+
+
 class LiveTestDefinition < PSTNTestDefinition
   def run(*args)
     clear_diags

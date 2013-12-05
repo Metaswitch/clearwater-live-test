@@ -32,7 +32,7 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-TestDefinition.new("Call Barring - Outbound Rejection") do |t|
+MMTelTestDefinition.new("Call Barring - Outbound Rejection") do |t|
   sip_caller = t.add_sip_endpoint
   sip_caller.set_simservs ocb: { active: true,
                                  rules: [ { conditions: [],
@@ -53,7 +53,7 @@ TestDefinition.new("Call Barring - Outbound Rejection") do |t|
   )
 end
 
-PSTNTestDefinition.new("Call Barring - Allow non-international call") do |t|
+MMTelPSTNTestDefinition.new("Call Barring - Allow non-international call") do |t|
   sip_caller = t.add_pstn_endpoint
   sip_caller.set_simservs ocb: { active: true,
                                  rules: [ { conditions: ["international"],
@@ -85,7 +85,7 @@ PSTNTestDefinition.new("Call Barring - Allow non-international call") do |t|
   )
 end
 
-PSTNTestDefinition.new("Call Barring - Reject international call") do |t|
+MMTelPSTNTestDefinition.new("Call Barring - Reject international call") do |t|
   sip_caller = t.add_pstn_endpoint
   sip_caller.set_simservs ocb: { active: true,
                                  rules: [ { conditions: ["international"],
@@ -104,7 +104,7 @@ PSTNTestDefinition.new("Call Barring - Reject international call") do |t|
   )
 end
 
-TestDefinition.new("Call Barring - Inbound Rejection") do |t|
+MMTelTestDefinition.new("Call Barring - Inbound Rejection") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee = t.add_sip_endpoint
   sip_callee.set_simservs icb: { active: true,
