@@ -32,7 +32,7 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-TestDefinition.new("Call Diversion - Not registered") do |t|
+MMTelTestDefinition.new("Call Diversion - Not registered") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee1 = t.add_sip_endpoint
   sip_callee2 = t.add_sip_endpoint
@@ -67,7 +67,7 @@ TestDefinition.new("Call Diversion - Not registered") do |t|
   )
 end
 
-TestDefinition.new("Call Diversion - Busy") do |t|
+MMTelTestDefinition.new("Call Diversion - Busy") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee1 = t.add_sip_endpoint
   sip_callee2 = t.add_sip_endpoint
@@ -108,7 +108,7 @@ TestDefinition.new("Call Diversion - Busy") do |t|
   )
 end
 
-TestDefinition.new("Call Diversion - No answer") do |t|
+MMTelTestDefinition.new("Call Diversion - No answer") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee1 = t.add_sip_endpoint
   sip_callee2 = t.add_sip_endpoint
@@ -151,7 +151,8 @@ TestDefinition.new("Call Diversion - No answer") do |t|
     sip_callee2.unregister
   )
 end
-TestDefinition.new("Call Diversion - Bad target URI") do |t|
+
+MMTelTestDefinition.new("Call Diversion - Bad target URI") do |t|
   sip_caller = t.add_sip_endpoint
   sip_callee1 = t.add_sip_endpoint
 
@@ -161,7 +162,7 @@ TestDefinition.new("Call Diversion - Bad target URI") do |t|
                                 }
   t.set_scenario(
     sip_caller.register +
-    [ 
+    [
       sip_caller.send("INVITE", target: sip_callee1),
       sip_caller.recv("100"),
       sip_caller.recv("404"),
