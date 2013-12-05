@@ -363,6 +363,7 @@ class MMTelPSTNTestDefinition < PSTNTestDefinition
   def run(*args)
     clear_diags
     unless ENV['NOMMTEL']
+      super
     else
       puts RedGreen::Color.yellow("Skipped") + " (No MMTel TAS support)"
     end
