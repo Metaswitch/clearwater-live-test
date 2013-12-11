@@ -34,6 +34,7 @@
 
 require 'timeout'
 require "snmp"
+require_relative "quaff-endpoint"
 
 # Source: RedGreen gem - https://github.com/kule/redgreen
 module RedGreen
@@ -134,13 +135,6 @@ class TestDefinition
   end
 
   def cleanup
-    # Reverse the endpoints list so that associated public IDs are
-    # deleted before the default public ID (which was created first).
-    @endpoints.reverse.each do |e|
-      e.cleanup
-    end
-    @endpoints = []
-
     retval = true
     @quaff_threads.each do |t|
       result_of_join = t.join(3)
@@ -152,6 +146,14 @@ class TestDefinition
         retval = false
       end
     end
+
+    # Reverse the endpoints list so that associated public IDs are
+    # deleted before the default public ID (which was created first).
+    @endpoints.reverse.each do |e|
+      e.cleanup
+    end
+    @endpoints = []
+
     retval
   end
 
@@ -162,6 +164,12 @@ class TestDefinition
     new_endpoint
   end
 
+  def add_quaff_endpoint
+    new_endpoint = QuaffEndpoint.new(false, @deployment, @transport)
+    @endpoints << new_endpoint
+    new_endpoint.quaff
+  end
+
   # @@TODO - Don't pass transport in once UDP authentication is fixed
   def add_pstn_endpoint
     new_endpoint = SIPpEndpoint.new(true, @deployment, @transport)
@@ -169,7 +177,7 @@ class TestDefinition
     new_endpoint
   end
 
-  def add_quaff_endpoint &blk
+  def add_quaff_scenario &blk
     @quaff_threads.push Thread.new {blk.call}
   end
 
@@ -236,9 +244,13 @@ class TestDefinition
     begin
       @blk.call(self)
       print "(#{@endpoints.map { |e| e.username }.join ", "}) "
-      sipp_scripts = create_sipp_scripts
-      @sipp_pids = launch_sipp sipp_scripts
-      retval = wait_for_sipp
+      if @scenario
+        sipp_scripts = create_sipp_scripts
+        @sipp_pids = launch_sipp sipp_scripts
+        retval = wait_for_sipp
+      else
+        retval = true
+      end
       verify_snmp_stats if ENV['SNMP'] != "N"
     ensure
       retval &= cleanup

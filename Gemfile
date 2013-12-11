@@ -6,6 +6,7 @@ gem 'rest-client'
 gem 'joker', git: "https://github.com/karottenreibe/joker"
 gem 'rake'
 gem 'snmp'
+gem 'quaff'
 
 group :development do
   gem 'pry'

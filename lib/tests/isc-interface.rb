@@ -31,7 +31,7 @@
 # "OpenSSL Licenses" means the OpenSSL License and Original SSLeay License
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
-require_relative '../../quaff/quaff.rb'
+require 'quaff'
 
 EXPECTED_EXPIRY = ENV['EXPIRES'] || "300"
 
@@ -42,7 +42,7 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
   sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
-  t.add_quaff_endpoint do
+  t.add_quaff_scenario do
     c = TCPSIPConnection.new(5070)
     begin
       incoming_cid = c.get_new_call_id
@@ -51,11 +51,11 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
       invite_data = incoming_call.recv_request("INVITE")
       incoming_call.send_response("100 Trying")
       incoming_call.send_response("200 OK")
-      
+
       # This is received from Bono, so our sending destination automatically switches
       ack_data = incoming_call.recv_request("ACK")
       fail "Expecting INVITE from Sprout and ACK from Bono!" unless invite_data['source'].sock != ack_data['source'].sock
-      
+
       bye_data = incoming_call.recv_request("BYE")
       fail "Expecting ACK and BYE to both come from Bono!" unless bye_data['source'].sock == ack_data['source'].sock
 
@@ -77,7 +77,7 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
       sip_caller.send("BYE", target: sip_callee, in_dialog: true),
       sip_caller.recv("200"),
     ] +
-    sip_caller.unregister 
+    sip_caller.unregister
   )
 end
 
@@ -103,7 +103,7 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
       c.terminate
     end
   end
- 
+
   t.set_scenario(
     sip_caller.register +
     [
@@ -144,7 +144,7 @@ ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
   t.set_scenario(
     sip_caller.register +
     [SIPpPhase.new("pause", sip_caller, timeout: 1000)] +
-    sip_caller.unregister 
+    sip_caller.unregister
   )
 end
 
@@ -183,7 +183,7 @@ ASTestDefinition.new("ISC Interface - Third-party Registration - implicit regist
     [SIPpPhase.new("pause", sip_caller, timeout: 1000)] +
     ep2.register +
     [SIPpPhase.new("pause", ep2, timeout: 1000)] +
-    ep2.unregister 
+    ep2.unregister
   )
 end
 
@@ -196,7 +196,7 @@ ASTestDefinition.new("ISC Interface - Redirect") do |t|
   mock_as = t.add_mock_as(ENV['HOSTNAME'], 5070)
 
   sip_callee1.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
-  
+
   t.set_scenario(
     sip_caller.register +
     sip_callee1.register +
@@ -236,7 +236,7 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
   sip_callee = t.add_sip_endpoint
 
   sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
-  
+
   t.add_quaff_endpoint do
     c = TCPSIPConnection.new(5070)
     begin
