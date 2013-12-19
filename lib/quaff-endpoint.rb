@@ -58,13 +58,13 @@ class QuaffEndpoint < EllisEndpoint
     listen_port = ENV['LISTENPORT'] || rand(60000) + 1024
     if transport == :tcp then
       @quaff = Quaff::TCPSIPEndpoint.new(@sip_uri,
-                                         "#{@username}@#{@domain}",
+                                         @private_id,
                                          @password,
                                          listen_port,
                                          registrar)
     else
       @quaff = Quaff::UDPSIPEndpoint.new(@sip_uri,
-                                         "#{@username}@#{@domain}",
+                                         @private_id,
                                          @password,
                                          listen_port,
                                          registrar)

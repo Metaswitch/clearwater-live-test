@@ -33,8 +33,8 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("Basic Call - Mainline") do |t|
-  caller = t.add_quaff_endpoint
-  callee = t.add_quaff_endpoint
+  caller = t.add_quaff_endpoint.quaff
+  callee = t.add_quaff_endpoint.quaff
   caller.register
   callee.register
 
@@ -54,7 +54,7 @@ TestDefinition.new("Basic Call - Mainline") do |t|
     caller.unregister
   end
 
-  t.add_quaff_endpoint do
+  t.add_quaff_scenario do
     call2 = callee.incoming_call
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
@@ -103,7 +103,7 @@ TestDefinition.new("Basic Call - Rejected by remote endpoint") do |t|
     caller.unregister
   end
 
-  t.add_quaff_endpoint do
+  t.add_quaff_scenario do
     call2 = callee.incoming_call
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
@@ -129,7 +129,7 @@ TestDefinition.new("Basic Call - Messages - Pager model") do |t|
     caller.unregister
   end
 
-  t.add_quaff_endpoint do
+  t.add_quaff_scenario do
     call2 = callee.incoming_call
     call2.recv_request("MESSAGE")
     call2.send_response("200", "OK")
