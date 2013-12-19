@@ -36,35 +36,35 @@ require 'quaff'
 EXPECTED_EXPIRY = ENV['EXPIRES'] || "300"
 
 ASTestDefinition.new("ISC Interface - Terminating") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee = t.add_sip_endpoint
+  caller_cfg = t.add_quaff_endpoint
+  callee_cfg = t.add_quaff_endpoint
 
-  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
-  sip_callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  sip_caller = caller_cfg.quaff
+  sip_callee = callee_cfg.quaff
+
+  caller_cfg.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  callee_cfg.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
   t.add_quaff_scenario do
-    c = TCPSIPConnection.new(5070)
-    begin
-      incoming_cid = c.get_new_call_id
-      incoming_call = Call.new(c, incoming_cid)
+    c = Quaff::TCPSIPEndpoint.new("as1@#{@deployment}",
+                                  nil,
+                                  nil,
+                                  5070,
+                                  nil)
+
+      incoming_call = c.incoming_call
 
       invite_data = incoming_call.recv_request("INVITE")
-      incoming_call.send_response("100 Trying")
-      incoming_call.send_response("200 OK")
+      incoming_call.send_response("100", "Trying")
+      incoming_call.send_response("200", "OK")
 
       # This is received from Bono, so our sending destination automatically switches
       ack_data = incoming_call.recv_request("ACK")
-      fail "Expecting INVITE from Sprout and ACK from Bono!" unless invite_data['source'].sock != ack_data['source'].sock
 
       bye_data = incoming_call.recv_request("BYE")
-      fail "Expecting ACK and BYE to both come from Bono!" unless bye_data['source'].sock == ack_data['source'].sock
 
       incoming_call.send_response("200 OK", nil, {"CSeq" => "4 BYE"})
-      sleep 2 # Ensure that the 200 OK is sent to Bono before the socket is closed
       incoming_call.end_call
-    ensure
-      c.terminate
-    end
   end
 
   t.set_scenario(
