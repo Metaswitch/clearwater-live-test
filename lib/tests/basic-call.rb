@@ -33,10 +33,13 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("Basic Call - Mainline") do |t|
-  caller = t.add_quaff_endpoint.quaff
-  callee = t.add_quaff_endpoint.quaff
-  caller.register
-  callee.register
+  caller, caller_provisioning = t.add_endpoint
+  callee, callee_provisioning = t.add_endpoint
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+  end
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
@@ -48,10 +51,11 @@ TestDefinition.new("Basic Call - Mainline") do |t|
 
     call.create_dialog(data["message"])
     call.send_request("ACK")
+    sleep 1
+    call.update_branch
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
-    caller.unregister
   end
 
   t.add_quaff_scenario do
@@ -61,17 +65,26 @@ TestDefinition.new("Basic Call - Mainline") do |t|
     call2.send_response("180", "Ringing")
     call2.send_response("200", "OK", "hello world\r\n", nil, {"Content-Type" => "text/plain"})
     call2.recv_request("ACK")
+
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
     call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
     callee.unregister
   end
+
 end
 
 TestDefinition.new("Basic Call - Unknown number") do |t|
-  caller = t.add_quaff_endpoint
-  callee = t.add_quaff_endpoint
-  caller.register
+  caller, caller_provisioning = t.add_endpoint
+  callee, callee_provisioning = t.add_endpoint
+
+  t.add_quaff_setup do
+    caller.register
+  end
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
@@ -81,16 +94,22 @@ TestDefinition.new("Basic Call - Unknown number") do |t|
     call.recv_response("404")
     call.send_request("ACK")
     call.end_call
+  end
+
+  t.add_quaff_cleanup do
     caller.unregister
   end
 
 end
 
 TestDefinition.new("Basic Call - Rejected by remote endpoint") do |t|
-  caller = t.add_quaff_endpoint
-  callee = t.add_quaff_endpoint
-  caller.register
-  callee.register
+  caller, caller_provisioning = t.add_endpoint
+  callee, callee_provisioning = t.add_endpoint
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+  end
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
@@ -100,25 +119,31 @@ TestDefinition.new("Basic Call - Rejected by remote endpoint") do |t|
     call.recv_response("486")
     call.send_request("ACK")
     call.end_call
-    caller.unregister
   end
 
   t.add_quaff_scenario do
     call2 = callee.incoming_call
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
-    call2.send_response("486", "")
+    call2.send_response("486", "Busy Here")
     call2.recv_request("ACK")
     call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
     callee.unregister
   end
 end
 
 TestDefinition.new("Basic Call - Messages - Pager model") do |t|
-  caller = t.add_quaff_endpoint
-  callee = t.add_quaff_endpoint
-  caller.register
-  callee.register
+  caller, caller_provisioning = t.add_endpoint
+  callee, callee_provisioning = t.add_endpoint
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+  end
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
@@ -126,7 +151,6 @@ TestDefinition.new("Basic Call - Messages - Pager model") do |t|
     call.send_request("MESSAGE", "hello world\r\n", {"Content-Type" => "text/plain"})
     call.recv_response("200")
     call.end_call
-    caller.unregister
   end
 
   t.add_quaff_scenario do
@@ -134,34 +158,45 @@ TestDefinition.new("Basic Call - Messages - Pager model") do |t|
     call2.recv_request("MESSAGE")
     call2.send_response("200", "OK")
     call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
     callee.unregister
   end
 end
 
 TestDefinition.new("Basic Call - Pracks") do |t|
-  caller = t.add_quaff_endpoint.quaff
-  callee = t.add_quaff_endpoint.quaff
-  caller.register
-  callee.register
+  caller, caller_provisioning = t.add_endpoint
+  callee, callee_provisioning = t.add_endpoint
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+#    caller.msg_trace = true
+  end
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
     call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
     call.recv_response("100")
-    call.recv_response("180")
+    data = call.recv_response("180")
 
+    call.create_dialog(data["message"])
     call.update_branch
     call.send_request("PRACK")
     call.recv_response("200")
 
-    data =  call.recv_response("200")
+    data = call.recv_response("200")
     call.create_dialog(data["message"])
     call.send_request("ACK")
+
+    sleep 1
+    call.update_branch
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
-    caller.unregister
   end
 
   t.add_quaff_scenario do
@@ -176,9 +211,14 @@ TestDefinition.new("Basic Call - Pracks") do |t|
     call2.assoc_with_msg(data["message"])
     call2.send_response("200", "OK", "hello world\r\n", nil, {"Content-Type" => "text/plain"})
     call2.recv_request("ACK")
+
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
     call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
     callee.unregister
   end
 end

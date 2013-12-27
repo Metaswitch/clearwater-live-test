@@ -137,7 +137,7 @@ class TestDefinition
   def cleanup
     retval = true
     @quaff_threads.each do |t|
-      result_of_join = t.join(3)
+      result_of_join = t.join(60)
       unless result_of_join
         puts RedGreen::Color.red("Failed")
         puts "Quaff thread still had work outstanding"
@@ -147,6 +147,7 @@ class TestDefinition
       end
     end
 
+    @quaff_cleanup_blk.call if @quaff_cleanup_blk
     # Reverse the endpoints list so that associated public IDs are
     # deleted before the default public ID (which was created first).
     @endpoints.reverse.each do |e|
@@ -170,6 +171,12 @@ class TestDefinition
     new_endpoint
   end
 
+  def add_endpoint
+    new_endpoint = QuaffEndpoint.new(false, @deployment, @transport)
+    @endpoints << new_endpoint
+    [new_endpoint.quaff, new_endpoint]
+  end
+
   # @@TODO - Don't pass transport in once UDP authentication is fixed
   def add_pstn_endpoint
     new_endpoint = SIPpEndpoint.new(true, @deployment, @transport)
@@ -177,8 +184,16 @@ class TestDefinition
     new_endpoint
   end
 
+  def add_quaff_setup &blk
+    @quaff_setup_blk = blk
+  end
+
   def add_quaff_scenario &blk
-    @quaff_threads.push Thread.new {blk.call}
+    @quaff_scenario_blocks.push blk
+  end
+
+  def add_quaff_cleanup &blk
+    @quaff_cleanup_blk = blk
   end
 
   def add_public_identity(ep)
@@ -193,12 +208,12 @@ class TestDefinition
 
   def add_quaff_public_identity(ep)
     new_endpoint = QuaffEndpoint.new(ep.pstn,
-                                    ep.domain,
-                                    ep.transport,
-                                    ep)
+                                     ep.domain,
+                                     ep.transport,
+                                     ep)
     fail "Added public identity does not share private ID" unless new_endpoint.private_id == ep.private_id
     @endpoints << new_endpoint
-    new_endpoint
+    [new_endpoint.quaff, new_endpoint]
   end
 
   def add_fake_endpoint(username)
@@ -248,12 +263,15 @@ class TestDefinition
     @deployment = deployment
     @transport = transport
     clear_diags
+    @quaff_scenario_blocks = []
     @quaff_threads = []
     TestDefinition.set_current_test(self)
     retval = false
     begin
       @blk.call(self)
       print "(#{@endpoints.map { |e| e.username }.join ", "}) "
+      @quaff_setup_blk.call if @quaff_setup_blk
+      @quaff_threads = @quaff_scenario_blocks.map { |blk| Thread.new &blk }
       if @scenario
         sipp_scripts = create_sipp_scripts
         @sipp_pids = launch_sipp sipp_scripts
@@ -266,21 +284,21 @@ class TestDefinition
       retval &= cleanup
       TestDefinition.unset_current_test
     end
-     return retval
+    return retval
   end
 
   def verify_snmp_stats
-      latency_threshold = 250
-      average_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.2"
-      hwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.4"
-      lwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.5"
+    latency_threshold = 250
+    average_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.2"
+    hwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.4"
+    lwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.5"
 
-      snmp_map = {}
-      SNMP::Manager.open(:host => @deployment, :community => "clearwater") do |manager|
-        manager.walk("1.2.826.0.1.1578918.9.2") do |row|
-          row.each { |vb| snmp_map[vb.oid] = vb.value }
-        end
+    snmp_map = {}
+    SNMP::Manager.open(:host => @deployment, :community => "clearwater") do |manager|
+      manager.walk("1.2.826.0.1.1578918.9.2") do |row|
+        row.each { |vb| snmp_map[vb.oid] = vb.value }
       end
+    end
 
     if (snmp_map[lwm_oid] && snmp_map[hwm_oid] && snmp_map[average_oid])
       if (snmp_map[lwm_oid] > snmp_map[hwm_oid])
