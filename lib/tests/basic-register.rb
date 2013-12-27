@@ -33,17 +33,18 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("Basic Registration") do |t|
-  caller = t.add_quaff_endpoint.quaff
+  caller, caller_provisioning = t.add_endpoint
   caller.register
   caller.unregister
 
 end
 
 TestDefinition.new("Multiple Identities") do |t|
-  ep1 = t.add_quaff_endpoint
-  ep2 = t.add_quaff_public_identity(ep1)
-  ep1.quaff.register
-  ep2.quaff.register
-  ep1.quaff.unregister
-  ep2.quaff.unregister
+  ep1, ep1_provisioning = t.add_endpoint
+  ep2, ep2_provisioning = t.add_quaff_public_identity(ep1_provisioning)
+
+  ep1.register
+  ep2.register
+  ep1.unregister
+  ep2.unregister
 end
