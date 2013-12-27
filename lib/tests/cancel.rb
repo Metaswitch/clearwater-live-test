@@ -33,10 +33,13 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("CANCEL - Mainline") do |t|
-  caller = t.add_quaff_endpoint.quaff
-  callee = t.add_quaff_endpoint.quaff
-  caller.register
-  callee.register
+  caller, caller_provisioning = t.add_endpoint
+  callee, callee_provisioning = t.add_endpoint
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+  end
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
@@ -52,7 +55,6 @@ TestDefinition.new("CANCEL - Mainline") do |t|
     call.recv_response("487")
     call.send_request("ACK")
     call.end_call
-    caller.unregister
   end
 
   t.add_quaff_scenario do
@@ -70,6 +72,11 @@ TestDefinition.new("CANCEL - Mainline") do |t|
     call2.recv_request("ACK")
 
     call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
     callee.unregister
   end
+
 end
