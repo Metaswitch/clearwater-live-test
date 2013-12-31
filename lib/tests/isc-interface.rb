@@ -359,7 +359,7 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
     invite_data = incoming_call.recv_request("INVITE")
     incoming_call.send_response("100", "Trying")
 
-    sprout_outbound = Quaff::TCPSource.new TCPSocket.new(invite_data.source.remote_ip, 5054)
+    sprout_outbound = Quaff::TCPSource.new invite_data.source.remote_ip, 5054
 
     # Send a new call back to Sprout
     outgoing_call = as.outgoing_call
