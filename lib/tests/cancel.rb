@@ -59,7 +59,7 @@ TestDefinition.new("CANCEL - Mainline") do |t|
 
   t.add_quaff_scenario do
     call2 = callee.incoming_call
-    data = call2.recv_request("INVITE")
+    original_invite = call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
 
@@ -67,7 +67,8 @@ TestDefinition.new("CANCEL - Mainline") do |t|
     call2.send_response("200", "OK")
 
     # Use assoc_with_msg to make the CSeq of the 487 follow the INVITE, not the CANCEL
-    call2.assoc_with_msg(data["message"])
+    call2.assoc_with_msg(original_invite)
+
     call2.send_response("487", "Cancelled")
     call2.recv_request("ACK")
 

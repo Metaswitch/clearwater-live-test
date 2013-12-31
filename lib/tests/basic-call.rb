@@ -58,12 +58,15 @@ a=fmtp:101 0-11,16\r
     call.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
     call.recv_response("100")
     call.recv_response("180")
-    data =  call.recv_response("200")
 
-    call.create_dialog(data["message"])
+    # Save off Contact and routeset
+    call.recv_response_and_create_dialog("200")
+
+    call.new_transaction
     call.send_request("ACK")
     sleep 1
-    call.update_branch
+
+    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -71,6 +74,7 @@ a=fmtp:101 0-11,16\r
 
   t.add_quaff_scenario do
     call2 = callee.incoming_call
+
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
@@ -127,6 +131,7 @@ TestDefinition.new("Basic Call - Rejected by remote endpoint") do |t|
 
     call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
     call.recv_response("100")
+
     call.recv_response("486")
     call.send_request("ACK")
     call.end_call
@@ -190,21 +195,23 @@ TestDefinition.new("Basic Call - Pracks") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
+    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain", "Supported" => "100rel"})
     call.recv_response("100")
-    data = call.recv_response("180")
 
-    call.create_dialog(data["message"])
-    call.update_branch
-    call.send_request("PRACK")
+    # For a PRACK, we create the dialog early, on the 180 response
+    ringing_msg = call.recv_response_and_create_dialog("180")
+
+    call.new_transaction
+    call.send_request("PRACK", "", {"RAck" => "#{ringing_msg.header("RSeq")} #{ringing_msg.header("CSeq")}"})
     call.recv_response("200")
 
-    data = call.recv_response("200")
-    call.create_dialog(data["message"])
+    call.recv_response_and_create_dialog("200")
+
+    call.new_transaction
     call.send_request("ACK")
 
     sleep 1
-    call.update_branch
+    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -212,14 +219,15 @@ TestDefinition.new("Basic Call - Pracks") do |t|
 
   t.add_quaff_scenario do
     call2 = callee.incoming_call
-    data = call2.recv_request("INVITE")
+    original_invite = call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
-    call2.send_response("180", "Ringing")
+    call2.send_response("180", "Ringing", "", nil, {"Require" => "100rel", "RSeq" => "1"})
 
     call2.recv_request("PRACK")
     call2.send_response("200", "OK")
 
-    call2.assoc_with_msg(data["message"])
+    # Send this 200 in the original transaction, not the PRACK transaction
+    call2.assoc_with_msg(original_invite)
     call2.send_response("200", "OK", "hello world\r\n", nil, {"Content-Type" => "text/plain"})
     call2.recv_request("ACK")
 
