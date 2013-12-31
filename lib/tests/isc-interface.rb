@@ -344,11 +344,13 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
   t.add_quaff_setup do
     caller.register
     callee.register
+    callee2.register
   end
 
   t.add_quaff_cleanup do
     caller.unregister
     callee.unregister
+    callee2.unregister
   end
 
   sdp = ""
