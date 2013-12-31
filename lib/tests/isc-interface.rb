@@ -236,13 +236,13 @@ ASTestDefinition.new("ISC Interface - Third-party Registration - implicit regist
     caller.unregister
   end
 
-  t.add_quaff_endpoint do
+  t.add_quaff_scenario do
     validate_expiry as, EXPECTED_EXPIRY
     validate_expiry as, "0"
   end
 
   # Set up a second AS on port 5071, to ensure that iFCs for the second public identity are handled independently
-  t.add_quaff_endpoint do
+  t.add_quaff_scenario do
     validate_expiry as2, EXPECTED_EXPIRY
     validate_expiry as2, "0"
   end
@@ -335,6 +335,7 @@ end
 ASTestDefinition.new("ISC Interface - B2BUA") do |t|
   caller, caller_provisioning = t.add_endpoint
   callee, callee_provisioning = t.add_endpoint
+  callee2, callee2_provisioning = t.add_endpoint
 
   as = t.add_as 5070
 
@@ -361,8 +362,10 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
 
     sprout_outbound = Quaff::TCPSource.new invite_data.source.remote_ip, 5054
 
-    # Send a new call back to Sprout
-    outgoing_call = as.outgoing_call(invite_data.requri)
+    # Send a new call back to Sprout - send it to a different callee
+    # to avoid looping (we could also set a specific header here and
+    # in the iFC)
+    outgoing_call = as.outgoing_call(callee2.uri)
     outgoing_call.setdest(sprout_outbound, recv_from_this: true)
 
     outgoing_call.send_request("INVITE", "", {"From" => invite_data['message'].header("From")})
@@ -416,7 +419,7 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
 
   # Callee scenario - receive INVITE from B2BUA, answer it
   t.add_quaff_scenario do
-      incoming_call = callee.incoming_call
+      incoming_call = callee2.incoming_call
 
       invite_data = incoming_call.recv_request("INVITE")
 
