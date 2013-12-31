@@ -362,9 +362,8 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
     sprout_outbound = Quaff::TCPSource.new invite_data.source.remote_ip, 5054
 
     # Send a new call back to Sprout
-    outgoing_call = as.outgoing_call
+    outgoing_call = as.outgoing_call(invite_data.requri)
     outgoing_call.setdest(sprout_outbound, recv_from_this: true)
-    outgoing_call.set_callee(invite_data.requri)
 
     outgoing_call.send_request("INVITE", nil, nil, {"From" => invite_data['message'].header("From")})
     outgoing_call.recv_response("100")
