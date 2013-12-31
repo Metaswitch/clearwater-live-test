@@ -129,6 +129,7 @@ class TestDefinition
     TestDefinition.add_instance self
     @name = name
     @endpoints = []
+    @as_list = []
     @blk = blk
     @current_label_id = 0
     @timeout = 10
