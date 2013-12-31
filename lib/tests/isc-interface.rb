@@ -357,7 +357,7 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
 
     # Receive an incoming INVITE
     invite_data = incoming_call.recv_request("INVITE")
-    incoming_call.send_response("100")
+    incoming_call.send_response("100", "Trying")
 
     sprout_outbound = TCPSource.new TCPSocket.new(invite_data.source.remote_ip, 5054)
 
@@ -371,7 +371,7 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
 
     # Get the 180 and pass it back
     outgoing_call.recv_response("180")
-    incoming_call.send_response("180")
+    incoming_call.send_response("180", "Ringing")
 
     # Get the 200 OK, ACK it, and pass it back
     outgoing_call.recv_response_and_create_dialog("200")
