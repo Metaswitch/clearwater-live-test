@@ -107,8 +107,8 @@ ASTestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t|
   end
 
   sdp = ""
-  caller_provisioning.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
-  callee_provisioning.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
+  caller_provisioning.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=UDP"
+  callee_provisioning.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=UDP"
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
@@ -216,7 +216,6 @@ ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
     validate_expiry as, EXPECTED_EXPIRY
     caller.unregister
     validate_expiry as, "0"
-    c.terminate
   end
 end
 
@@ -253,45 +252,85 @@ end
 
 
 ASTestDefinition.new("ISC Interface - Redirect") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee1 = t.add_sip_endpoint
-  sip_callee2 = t.add_sip_endpoint
-  mock_as = t.add_mock_as(ENV['HOSTNAME'], 5070)
+  caller, caller_provisioning = t.add_endpoint
+  callee, callee_provisioning = t.add_endpoint
+  callee2, callee2_provisioning = t.add_endpoint
 
-  sip_callee1.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  mock_as = t.add_as 5070
 
-  t.set_scenario(
-    sip_caller.register +
-    sip_callee1.register +
-    sip_callee2.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee1, emit_trusted: true, call_number: 1),
-      sip_caller.recv("100"),
-      mock_as.recv("INVITE", extract_uas_via: true, save_remote_ip: true),
-      mock_as.send("302", from: sip_caller, to: sip_callee1, redirect_target: sip_callee2, method: "INVITE", call_number: 1),
-      mock_as.recv("ACK"),
-      sip_caller.recv("302", from: sip_caller, to: sip_callee1, redirect_target: sip_callee2, method: "INVITE"),
-      sip_caller.send("ACK", target: sip_callee1, call_number: 1),
-      sip_caller.send("INVITE", target: sip_callee2, emit_trusted: true, call_number: 2),
-      sip_caller.recv("100"),
-      sip_callee2.recv("INVITE", extract_uas_via: true, check_trusted: true, trusted_present: false),
-      sip_callee2.send("100", target: sip_caller, method: "INVITE", call_number: 2),
-      sip_callee2.send("180", target: sip_caller, method: "INVITE", call_number: 2),
-      sip_caller.recv("180"),
-      sip_callee2.send("200-SDP", target: sip_caller, method: "INVITE", call_number: 2),
-      sip_caller.recv("200", rrs: true),
-      sip_caller.send("ACK", target: sip_callee2, in_dialog: true, call_number: 2),
-      sip_callee2.recv("ACK"),
-      SIPpPhase.new("pause", sip_caller, timeout: 1000),
-      sip_caller.send("BYE", target: sip_callee2, in_dialog: true, call_number: 2),
-      sip_callee2.recv("BYE", extract_uas_via: true),
-      sip_callee2.send("200", target: sip_caller, method: "BYE", emit_trusted: true, call_number: 2),
-      sip_caller.recv("200", check_trusted: true, trusted_present: false),
-    ] +
-    sip_caller.unregister +
-    sip_callee1.unregister +
-    sip_callee2.unregister
-  )
+  callee_provisioning.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+    callee2.register
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee.unregister
+    callee2.unregister
+  end
+
+  sdp = ""
+
+  # Caller scenario - call, receive a 302, start a new call
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee.uri)
+
+    call.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
+    call.recv_response("100")
+
+    redirect = call.recv_response("302")
+    call.new_transaction
+    call.send_request("ACK")
+    call.end_call
+
+    call2 = caller.outgoing_call(redirect.header("Contact"))
+    call2.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
+    call2.recv_response("100")
+    call2.recv_response("180")
+
+    # Save off Contact and routeset
+    call2.recv_response_and_create_dialog("200")
+
+    call2.new_transaction
+    call2.send_request("ACK")
+    sleep 0.1
+
+    call2.new_transaction
+    call2.send_request("BYE")
+    call2.recv_response("200")
+    call2.end_call
+  end
+
+  # AS scenario - receive INVITE, send 302
+  t.add_quaff_scenario do
+      incoming_call = as.incoming_call
+
+      invite_data = incoming_call.recv_request("INVITE")
+
+    incoming_call.send_response("302", "Moved Temorarily", "", nil, {"Contact" => callee2.uri})
+      incoming_call.recv_request("ACK")
+
+      incoming_call.end_call
+  end
+
+  # Redirected callee scenario - receive INVITE, answer it
+  t.add_quaff_scenario do
+      incoming_call = callee2.incoming_call
+
+      invite_data = incoming_call.recv_request("INVITE")
+
+      incoming_call.send_response("180", "Ringing")
+      incoming_call.send_response("200", "OK")
+      incoming_call.recv_request("ACK")
+
+      incoming_call.recv_request("BYE")
+      incoming_call.send_response("200", "OK")
+
+      incoming_call.end_call
+  end
 end
 
 ASTestDefinition.new("ISC Interface - B2BUA") do |t|
