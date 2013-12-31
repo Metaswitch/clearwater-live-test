@@ -464,7 +464,7 @@ class ASTestDefinition < TestDefinition
   end
 end
 
-class NotValidForUDPTestDefinition < TestDefinition
+class NotValidForUDPASTestDefinition < ASTestDefinition
   def run(domain, transport, *args)
     clear_diags
     if transport == :udp

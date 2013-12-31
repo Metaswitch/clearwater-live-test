@@ -45,18 +45,17 @@ class QuaffEndpoint < EllisEndpoint
   def initialize(pstn, deployment, transport, shared_identity = nil)
     super
     registrar = ENV['PROXY'] || deployment
-    listen_port = ENV['LISTENPORT'] || rand(60000) + 1024
     if transport == :tcp then
       @quaff = Quaff::TCPSIPEndpoint.new(@sip_uri,
                                          @private_id,
                                          @password,
-                                         listen_port,
+                                         :anyport,
                                          registrar)
     else
       @quaff = Quaff::UDPSIPEndpoint.new(@sip_uri,
                                          @private_id,
                                          @password,
-                                         listen_port,
+                                         :anyport,
                                          registrar)
     end
   end

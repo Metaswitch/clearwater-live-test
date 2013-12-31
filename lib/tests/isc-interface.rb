@@ -91,7 +91,7 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
 
 end
 
-ASTestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t|
+NotValidForUDPASTestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t|
   caller, caller_provisioning = t.add_endpoint
   callee, callee_provisioning = t.add_endpoint
   as = t.add_udp_as 5070
@@ -362,7 +362,7 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
     invite_data = incoming_call.recv_request("INVITE")
     incoming_call.send_response("100", "Trying")
 
-    sprout_outbound = Quaff::TCPSource.new invite_data.source.remote_ip, 5054
+    sprout_outbound = Quaff::TCPSource.new invite_data.source.remote_ip, 5052
 
     # Send a new call back to Sprout - send it to a different callee
     # to avoid looping (we could also set a specific header here and
