@@ -155,6 +155,11 @@ class TestDefinition
     end
     @endpoints = []
 
+    @as_list.reverse.each do |e|
+      e.terminate
+    end
+    @as_list = []
+
     retval
   end
 
@@ -163,6 +168,26 @@ class TestDefinition
     new_endpoint = SIPpEndpoint.new(false, @deployment, @transport)
     @endpoints << new_endpoint
     new_endpoint
+  end
+
+  def add_as port
+    c = Quaff::TCPSIPEndpoint.new("as1@#{@deployment}",
+                                  nil,
+                                  nil,
+                                  port,
+                                  nil)
+    @as_list.push c
+    c
+  end
+
+  def add_udp_as port
+    c = Quaff::UDPSIPEndpoint.new("as1@#{@deployment}",
+                                  nil,
+                                  nil,
+                                  port,
+                                  nil)
+    @as_list.push c
+    c
   end
 
   def add_quaff_endpoint
