@@ -237,8 +237,8 @@ ASTestDefinition.new("ISC Interface - Third-party Registration - implicit regist
   end
 
   t.add_quaff_scenario do
-    validate_expiry as, EXPECTED_EXPIRY
-    validate_expiry as, "0"
+    validate_expiry as1, EXPECTED_EXPIRY
+    validate_expiry as1, "0"
   end
 
   # Set up a second AS on port 5071, to ensure that iFCs for the second public identity are handled independently
