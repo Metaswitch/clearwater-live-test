@@ -365,7 +365,7 @@ ASTestDefinition.new("ISC Interface - B2BUA") do |t|
     outgoing_call = as.outgoing_call(invite_data.requri)
     outgoing_call.setdest(sprout_outbound, recv_from_this: true)
 
-    outgoing_call.send_request("INVITE", nil, nil, {"From" => invite_data['message'].header("From")})
+    outgoing_call.send_request("INVITE", "", {"From" => invite_data['message'].header("From")})
     outgoing_call.recv_response("100")
 
     # Get the 180 and pass it back
