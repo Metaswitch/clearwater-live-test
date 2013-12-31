@@ -256,7 +256,7 @@ ASTestDefinition.new("ISC Interface - Redirect") do |t|
   callee, callee_provisioning = t.add_endpoint
   callee2, callee2_provisioning = t.add_endpoint
 
-  mock_as = t.add_as 5070
+  as = t.add_as 5070
 
   callee_provisioning.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
@@ -286,7 +286,7 @@ ASTestDefinition.new("ISC Interface - Redirect") do |t|
     call.send_request("ACK")
     call.end_call
 
-    call2 = caller.outgoing_call(redirect.header("Contact"))
+    call2 = caller.outgoing_call(redirect.header("Contact").gsub(/[<>]/, ""))
     call2.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
     call2.recv_response("100")
     call2.recv_response("180")
@@ -306,14 +306,13 @@ ASTestDefinition.new("ISC Interface - Redirect") do |t|
 
   # AS scenario - receive INVITE, send 302
   t.add_quaff_scenario do
-      incoming_call = as.incoming_call
+    incoming_call = as.incoming_call
 
-      invite_data = incoming_call.recv_request("INVITE")
+    incoming_call.recv_request("INVITE")
+    incoming_call.send_response("302", "Moved Temporarily", "", nil, {"Contact" => callee2.uri})
+    incoming_call.recv_request("ACK")
 
-    incoming_call.send_response("302", "Moved Temorarily", "", nil, {"Contact" => callee2.uri})
-      incoming_call.recv_request("ACK")
-
-      incoming_call.end_call
+    incoming_call.end_call
   end
 
   # Redirected callee scenario - receive INVITE, answer it
@@ -334,88 +333,102 @@ ASTestDefinition.new("ISC Interface - Redirect") do |t|
 end
 
 ASTestDefinition.new("ISC Interface - B2BUA") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee = t.add_sip_endpoint
+  caller, caller_provisioning = t.add_endpoint
+  callee, callee_provisioning = t.add_endpoint
 
-  sip_caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
+  as = t.add_as 5070
 
-  t.add_quaff_endpoint do
-    c = TCPSIPConnection.new(5070)
-    begin
-      incoming_cid = c.get_new_call_id
-      incoming_call = Call.new(c, incoming_cid)
+  callee_provisioning.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
 
-      invite_data = incoming_call.recv_request("INVITE")
-      incoming_call.send_response("100")
-
-      sprout_outbound = TCPSource.new TCPSocket.new(invite_data['source'].remote_ip, 5054)
-
-      # Send a new call back to Sprout
-      outgoing_call = Call.new(c, "2///"+incoming_cid)
-      outgoing_call.setdest(sprout_outbound, recv_from_this: true)
-      outgoing_call.set_callee(invite_data['message'].requri)
-
-      # Copy top Route header to Route or Request-URI?
-      outgoing_call.send_request("INVITE", nil, nil, {"From" => invite_data['message'].header("From")})
-
-      outgoing_call.recv_response("100")
-      outgoing_call.recv_response("180")
-      incoming_call.send_response("180")
-
-      ok_data = outgoing_call.recv_response("200")
-
-      # Switch over to talking to Bono now the dialog is established
-      /<sip:(.*):5058/ =~ invite_data['message'].headers['Record-Route'][0]
-      bono_outbound = TCPSource.new TCPSocket.new($1, 5058)
-      outgoing_call.setdest(bono_outbound, recv_from_this: true)
-
-      /<(.*)>/ =~ invite_data['message'].headers['Contact'][0]
-      outgoing_call.set_callee($1)
-
-      outgoing_call.send_request("ACK", nil, nil, {"Route" => ok_data['message'].headers['Record-Route']})
-
-      sleep 0.5 # Don't let these two reach SIPp in the wrong order
-
-      incoming_call.send_response("200 OK")
-      incoming_call.recv_request("ACK")  # Comes from Bono
-      incoming_call.recv_request("BYE")  # Also comes from Bono
-
-      # We automatically switch to Bono now, as that's where the BYE came from
-      incoming_call.send_response("200 OK", nil, {"CSeq" => "4 BYE"})
-
-      outgoing_call.send_request("BYE", nil, nil, {"Route" => ok_data['message'].headers['Record-Route'], "CSeq" => "8 BYE"})
-      outgoing_call.recv_response("200")
-
-      incoming_call.end_call
-      outgoing_call.end_call
-    ensure
-      c.terminate
-    end
+  t.add_quaff_setup do
+    caller.register
+    callee.register
   end
 
-  t.set_scenario(
-    sip_caller.register +
-    sip_callee.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee, emit_trusted: true),
-      sip_caller.recv("100"),
-      sip_callee.recv("INVITE", extract_uas_via: true, rrs: true),
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee.unregister
+  end
 
-      sip_callee.send("180", target: sip_caller, method: "INVITE", cid_prefix: "2///"),
-      sip_caller.recv("180"),
+  sdp = ""
 
-      sip_callee.send("200", target: sip_caller, method: "INVITE", cid_prefix: "2///"),
-      sip_callee.recv("ACK"),
-      sip_caller.recv("200", rrs: true),
-      sip_caller.send("ACK", target: sip_callee, in_dialog: true, method: "INVITE"),
+  t.add_quaff_scenario do
+    incoming_call = as.incoming_call
 
-      SIPpPhase.new("pause", sip_caller, timeout: 1000),
-      sip_caller.send("BYE", target: sip_callee, in_dialog: true),
-      sip_caller.recv("200"),
-      sip_callee.recv("BYE"),
-      sip_callee.send("200", target: sip_callee, method: "BYE", cid_prefix: "2///"),
-    ] +
-    sip_caller.unregister +
-    sip_callee.unregister
-  )
+    # Receive an incoming INVITE
+    invite_data = incoming_call.recv_request("INVITE")
+    incoming_call.send_response("100")
+
+    sprout_outbound = TCPSource.new TCPSocket.new(invite_data.source.remote_ip, 5054)
+
+    # Send a new call back to Sprout
+    outgoing_call = as.outgoing_call
+    outgoing_call.setdest(sprout_outbound, recv_from_this: true)
+    outgoing_call.set_callee(invite_data.requri)
+
+    outgoing_call.send_request("INVITE", nil, nil, {"From" => invite_data['message'].header("From")})
+    outgoing_call.recv_response("100")
+
+    # Get the 180 and pass it back
+    outgoing_call.recv_response("180")
+    incoming_call.send_response("180")
+
+    # Get the 200 OK, ACK it, and pass it back
+    outgoing_call.recv_response_and_create_dialog("200")
+    outgoing_call.new_transaction
+    outgoing_call.send_request("ACK")
+
+    incoming_call.send_response("200", "OK")
+    incoming_call.recv_request("ACK")
+
+    # Get the BYE, OK it, and pass it back
+    incoming_call.recv_request("BYE")
+    incoming_call.send_response("200", "OK")
+
+    outgoing_call.new_transaction
+    outgoing_call.send_request("BYE")
+    outgoing_call.recv_response("200")
+
+    incoming_call.end_call
+    outgoing_call.end_call
+  end
+
+  # Caller scenario
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee.uri)
+
+    call.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
+    call.recv_response("100")
+
+    call.recv_response("180")
+
+    # Save off Contact and routeset
+    call.recv_response_and_create_dialog("200")
+
+    call.new_transaction
+    call.send_request("ACK")
+    sleep 0.1
+
+    call.new_transaction
+    call.send_request("BYE")
+    call.recv_response("200")
+    call.end_call
+  end
+
+  # Callee scenario - receive INVITE from B2BUA, answer it
+  t.add_quaff_scenario do
+      incoming_call = callee.incoming_call
+
+      invite_data = incoming_call.recv_request("INVITE")
+
+      incoming_call.send_response("180", "Ringing")
+      incoming_call.send_response("200", "OK")
+      incoming_call.recv_request("ACK")
+
+      incoming_call.recv_request("BYE")
+      incoming_call.send_response("200", "OK")
+
+      incoming_call.end_call
+  end
+
 end
