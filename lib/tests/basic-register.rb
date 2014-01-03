@@ -33,24 +33,34 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("Basic Registration") do |t|
-  caller, caller_provisioning = t.add_endpoint
-  caller.register
-  caller.unregister
+  caller = t.add_endpoint
+
+  t.add_quaff_scenario do
+    caller.register
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+  end
 
 end
 
 TestDefinition.new("Multiple Identities") do |t|
-  ep1, ep1_provisioning = t.add_endpoint
-  ep2, ep2_provisioning = t.add_quaff_public_identity(ep1_provisioning)
+  ep1 = t.add_endpoint
+  ep2 = t.add_quaff_public_identity(ep1)
 
-  ok = ep1.register
-  ok2 = ep2.register
+  t.add_quaff_scenario do
+    ok = ep1.register
+    ok2 = ep2.register
 
-  fail "200 OK for #{ep1.uri} does not include <#{ep1.uri}>" unless ok.all_headers("P-Associated-URI").include? "<#{ep1.uri}>"
-  fail "200 OK for #{ep1.uri} does not include <#{ep2.uri}>" unless ok.all_headers("P-Associated-URI").include? "<#{ep2.uri}>"
-  fail "200 OK for #{ep2.uri} does not include <#{ep1.uri}>" unless ok2.all_headers("P-Associated-URI").include? "<#{ep1.uri}>"
-  fail "200 OK for #{ep2.uri} does not include <#{ep2.uri}>" unless ok2.all_headers("P-Associated-URI").include? "<#{ep2.uri}>"
+    fail "200 OK for #{ep1.uri} does not include <#{ep1.uri}>" unless ok.all_headers("P-Associated-URI").include? "<#{ep1.uri}>"
+    fail "200 OK for #{ep1.uri} does not include <#{ep2.uri}>" unless ok.all_headers("P-Associated-URI").include? "<#{ep2.uri}>"
+    fail "200 OK for #{ep2.uri} does not include <#{ep1.uri}>" unless ok2.all_headers("P-Associated-URI").include? "<#{ep1.uri}>"
+    fail "200 OK for #{ep2.uri} does not include <#{ep2.uri}>" unless ok2.all_headers("P-Associated-URI").include? "<#{ep2.uri}>"
+  end
 
-  ep1.unregister
-  ep2.unregister
+  t.add_quaff_cleanup do
+    ep1.unregister
+    ep2.unregister
+  end
 end

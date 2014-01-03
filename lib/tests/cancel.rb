@@ -33,8 +33,8 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("CANCEL - Mainline") do |t|
-  caller, caller_provisioning = t.add_endpoint
-  callee, callee_provisioning = t.add_endpoint
+  caller = t.add_endpoint
+  callee = t.add_endpoint
 
   t.add_quaff_setup do
     caller.register
@@ -79,5 +79,4 @@ TestDefinition.new("CANCEL - Mainline") do |t|
     caller.unregister
     callee.unregister
   end
-
 end

@@ -64,4 +64,8 @@ class QuaffEndpoint < EllisEndpoint
     @quaff.terminate
     super
   end
+
+  def method_missing meth, *args, &block
+    @quaff.send meth, *args, &block
+  end
 end
