@@ -33,28 +33,51 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("CANCEL - Mainline") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee = t.add_sip_endpoint
-  t.set_scenario(
-    sip_caller.register +
-    sip_callee.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee),
-      sip_caller.recv("100"),
-      sip_callee.recv("INVITE", extract_uas_via: true),
-      sip_callee.send("100", target: sip_caller, method: "INVITE"),
-      sip_callee.send("180", target: sip_caller, method: "INVITE"),
-      sip_caller.recv("180"),
-      sip_caller.send("CANCEL", target: sip_callee),
-      sip_caller.recv("200"),
-      sip_callee.recv("CANCEL"),
-      sip_callee.send("200", target: sip_caller, method: "CANCEL"),
-      sip_callee.send("487", target: sip_caller, method: "INVITE"),
-      sip_callee.recv("ACK"),
-      sip_caller.recv("487"),
-      sip_caller.send("ACK", target: sip_callee),
-  ] +
-  sip_caller.unregister +
-  sip_callee.unregister
-  )
+  caller, caller_provisioning = t.add_endpoint
+  callee, callee_provisioning = t.add_endpoint
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee.uri)
+
+    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
+    call.recv_response("100")
+    call.recv_response("180")
+
+    # New transaction, but CANCELs share the original branch parameter
+    call.send_request("CANCEL")
+    call.recv_response("200")
+
+    call.recv_response("487")
+    call.send_request("ACK")
+    call.end_call
+  end
+
+  t.add_quaff_scenario do
+    call2 = callee.incoming_call
+    original_invite = call2.recv_request("INVITE")
+    call2.send_response("100", "Trying")
+    call2.send_response("180", "Ringing")
+
+    call2.recv_request("CANCEL")
+    call2.send_response("200", "OK")
+
+    # Use assoc_with_msg to make the CSeq of the 487 follow the INVITE, not the CANCEL
+    call2.assoc_with_msg(original_invite)
+
+    call2.send_response("487", "Cancelled")
+    call2.recv_request("ACK")
+
+    call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee.unregister
+  end
+
 end

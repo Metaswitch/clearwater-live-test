@@ -1,4 +1,4 @@
-# @file basic-register.rb
+# @file sipp-endpoint.rb
 #
 # Project Clearwater - IMS in the Cloud
 # Copyright (C) 2013  Metaswitch Networks Ltd
@@ -32,25 +32,36 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-TestDefinition.new("Basic Registration") do |t|
-  caller, caller_provisioning = t.add_endpoint
-  caller.register
-  caller.unregister
+require 'rest_client'
+require 'json'
+require 'erubis'
+require 'cgi'
+require_relative 'ellis-endpoint'
+require 'quaff'
 
-end
+class QuaffEndpoint < EllisEndpoint
+  attr_reader :quaff
 
-TestDefinition.new("Multiple Identities") do |t|
-  ep1, ep1_provisioning = t.add_endpoint
-  ep2, ep2_provisioning = t.add_quaff_public_identity(ep1_provisioning)
+  def initialize(pstn, deployment, transport, shared_identity = nil)
+    super
+    registrar = ENV['PROXY'] || deployment
+    if transport == :tcp then
+      @quaff = Quaff::TCPSIPEndpoint.new(@sip_uri,
+                                         @private_id,
+                                         @password,
+                                         :anyport,
+                                         registrar)
+    else
+      @quaff = Quaff::UDPSIPEndpoint.new(@sip_uri,
+                                         @private_id,
+                                         @password,
+                                         :anyport,
+                                         registrar)
+    end
+  end
 
-  ok = ep1.register
-  ok2 = ep2.register
-
-  fail "200 OK for #{ep1.uri} does not include <#{ep1.uri}>" unless ok.all_headers("P-Associated-URI").include? "<#{ep1.uri}>"
-  fail "200 OK for #{ep1.uri} does not include <#{ep2.uri}>" unless ok.all_headers("P-Associated-URI").include? "<#{ep2.uri}>"
-  fail "200 OK for #{ep2.uri} does not include <#{ep1.uri}>" unless ok2.all_headers("P-Associated-URI").include? "<#{ep1.uri}>"
-  fail "200 OK for #{ep2.uri} does not include <#{ep2.uri}>" unless ok2.all_headers("P-Associated-URI").include? "<#{ep2.uri}>"
-
-  ep1.unregister
-  ep2.unregister
+  def cleanup
+    @quaff.terminate
+    super
+  end
 end
