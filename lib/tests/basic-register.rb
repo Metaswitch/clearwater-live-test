@@ -57,7 +57,7 @@ TestDefinition.new("Multiple Identities") do |t|
 
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
-    call.send_request("REGISTER", "", { "Expires" => "3600", "Authorization" => %Q!Digest username="#{ep1.private_id}"! })
+    call.send_request("REGISTER", "", { "Expires" => "3600", "Authorization" => %Q[Digest username="#{ep1.private_id}"] })
     response_data = call.recv_response("401")
     auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), ep1.private_id, ep1.password, "REGISTER", ep1.uri
     call.new_transaction
@@ -65,7 +65,7 @@ TestDefinition.new("Multiple Identities") do |t|
     ok = call.recv_response("200")
 
     call2 = ep2.outgoing_call(ep2.uri)
-    call2.send_request("REGISTER", "", { "Expires" => "3600", "Authorization" => %Q!Digest username="#{ep2.private_id}"! })
+    call2.send_request("REGISTER", "", { "Expires" => "3600", "Authorization" => %Q[Digest username="#{ep2.private_id}"] })
     response_data = call2.recv_response("401")
     auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), ep2.private_id, ep2.password, "REGISTER", ep1.uri
     call2.new_transaction
