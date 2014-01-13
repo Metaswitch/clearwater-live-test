@@ -41,7 +41,7 @@ TestDefinition.new("Basic Registration") do |t|
     response_data = call.recv_response("401")
     auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), caller.private_id, caller.password, "REGISTER", caller.uri
     call.update_branch
-    call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => expires.to_s, "CSeq" => "2 REGISTER"})
+    call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3600", "CSeq" => "2 REGISTER"})
     response_data = call.recv_response("200")
   end
 
