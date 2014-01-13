@@ -34,6 +34,7 @@
 
 require 'timeout'
 require "snmp"
+require 'resolv'
 require_relative "quaff-endpoint"
 
 # Source: RedGreen gem - https://github.com/kule/redgreen
@@ -313,8 +314,9 @@ class TestDefinition
     hwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.4"
     lwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.5"
 
+    snmp_host = Resolv::DNS.new.getaddress(@deployment).to_s
     snmp_map = {}
-    SNMP::Manager.open(:host => @deployment, :community => "clearwater") do |manager|
+    SNMP::Manager.open(:host => snmp_host, :community => "clearwater") do |manager|
       manager.walk("1.2.826.0.1.1578918.9.2") do |row|
         row.each { |vb| snmp_map[vb.oid] = vb.value }
       end
