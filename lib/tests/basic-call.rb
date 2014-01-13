@@ -33,8 +33,8 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("Basic Call - Mainline") do |t|
-  caller, caller_provisioning = t.add_endpoint
-  callee, callee_provisioning = t.add_endpoint
+  caller = t.add_endpoint
+  callee = t.add_endpoint
 
   t.add_quaff_setup do
     caller.register
@@ -94,8 +94,8 @@ a=fmtp:101 0-11,16\r
 end
 
 TestDefinition.new("Basic Call - Unknown number") do |t|
-  caller, caller_provisioning = t.add_endpoint
-  callee, callee_provisioning = t.add_endpoint
+  caller = t.add_endpoint
+  callee = t.add_endpoint
 
   t.add_quaff_setup do
     caller.register
@@ -118,8 +118,8 @@ TestDefinition.new("Basic Call - Unknown number") do |t|
 end
 
 TestDefinition.new("Basic Call - Rejected by remote endpoint") do |t|
-  caller, caller_provisioning = t.add_endpoint
-  callee, callee_provisioning = t.add_endpoint
+  caller = t.add_endpoint
+  callee = t.add_endpoint
 
   t.add_quaff_setup do
     caller.register
@@ -153,8 +153,8 @@ TestDefinition.new("Basic Call - Rejected by remote endpoint") do |t|
 end
 
 TestDefinition.new("Basic Call - Messages - Pager model") do |t|
-  caller, caller_provisioning = t.add_endpoint
-  callee, callee_provisioning = t.add_endpoint
+  caller = t.add_endpoint
+  callee = t.add_endpoint
 
   t.add_quaff_setup do
     caller.register
@@ -183,13 +183,12 @@ TestDefinition.new("Basic Call - Messages - Pager model") do |t|
 end
 
 TestDefinition.new("Basic Call - Pracks") do |t|
-  caller, caller_provisioning = t.add_endpoint
-  callee, callee_provisioning = t.add_endpoint
+  caller = t.add_endpoint
+  callee = t.add_endpoint
 
   t.add_quaff_setup do
     caller.register
     callee.register
-#    caller.msg_trace = true
   end
 
   t.add_quaff_scenario do

@@ -191,16 +191,10 @@ class TestDefinition
     c
   end
 
-  def add_quaff_endpoint
-    new_endpoint = QuaffEndpoint.new(false, @deployment, @transport)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
   def add_endpoint
     new_endpoint = QuaffEndpoint.new(false, @deployment, @transport)
     @endpoints << new_endpoint
-    [new_endpoint.quaff, new_endpoint]
+    new_endpoint
   end
 
   # @@TODO - Don't pass transport in once UDP authentication is fixed
@@ -239,7 +233,7 @@ class TestDefinition
                                      ep)
     fail "Added public identity does not share private ID" unless new_endpoint.private_id == ep.private_id
     @endpoints << new_endpoint
-    [new_endpoint.quaff, new_endpoint]
+    new_endpoint
   end
 
   def add_fake_endpoint(username)
