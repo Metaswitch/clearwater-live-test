@@ -1,4 +1,4 @@
-# @file basic-call.rb
+# @file subscribe.rb
 #
 # Project Clearwater - IMS in the Cloud
 # Copyright (C) 2013  Metaswitch Networks Ltd
@@ -32,7 +32,8 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-TestDefinition.new("SUBSCRIBE/NOTIFY") do |t|
+TestDefinition.new("SIP SUBSCRIBE/NOTIFY") do |t|
+  
   ep1 = t.add_endpoint
 
   t.add_quaff_setup do
@@ -42,39 +43,15 @@ TestDefinition.new("SUBSCRIBE/NOTIFY") do |t|
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
 
-    call.send_request("SUBSCRIBE")
+    call.send_request("SUBSCRIBE", "", {"Event" => "Reg"})
     call.recv_response_and_create_dialog("200")
+    call.recv_request("NOTIFY")
+    call.send_response("200", "OK")
 
     ep1.register # Re-registration
 
     call.recv_request("NOTIFY")
-    call.send_response("200")
-
-    call.end_call
-  end
-
-  t.add_quaff_cleanup do
-    ep1.unregister
-  end
-
-end
-
-
-TestDefinition.new("SUBSCRIBE/NOTIFY - not permitted") do |t|
-  ep1 = t.add_endpoint
-  ep2 = t.add_endpoint
-
-  t.add_quaff_setup do
-    ep1.register
-  end
-
-  t.add_quaff_scenario do
-    call = ep1.outgoing_call(ep2.uri)
-
-    call.send_request("SUBSCRIBE")
-
-    # ep1 isn't authorised to subscribe to ep2
-    call.recv_response_and_create_dialog("403")
+    call.send_response("200", "OK")
 
     call.end_call
   end
