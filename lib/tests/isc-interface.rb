@@ -242,7 +242,7 @@ ASTestDefinition.new("ISC Interface - Third-party Registration - implicit regist
   end
 end
 
-ASTestDefinition.new("ISC Interface - Redirect") do |t|
+NotValidForUDPASTestDefinition.new("ISC Interface - Redirect") do |t|
   caller = t.add_endpoint
   callee = t.add_endpoint
   callee2 = t.add_endpoint
@@ -322,7 +322,7 @@ ASTestDefinition.new("ISC Interface - Redirect") do |t|
   end
 end
 
-ASTestDefinition.new("ISC Interface - B2BUA") do |t|
+NotValidForUDPASTestDefinition.new("ISC Interface - B2BUA") do |t|
   caller = t.add_endpoint
   callee = t.add_endpoint
   callee2 = t.add_endpoint
