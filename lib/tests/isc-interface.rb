@@ -249,7 +249,7 @@ NotValidForUDPASTestDefinition.new("ISC Interface - Redirect") do |t|
 
   as = t.add_as 5070
 
-  callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
 
   t.add_quaff_setup do
     caller.register
@@ -329,7 +329,7 @@ NotValidForUDPASTestDefinition.new("ISC Interface - B2BUA") do |t|
 
   as = t.add_as 5070
 
-  callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070"
+  callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
 
   t.add_quaff_setup do
     caller.register
