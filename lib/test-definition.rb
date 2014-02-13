@@ -100,6 +100,8 @@ class TestDefinition
           print "#{test.name} (#{trans.to_s.upcase}) - "
           if test.run(deployment, trans)
             puts RedGreen::Color.green("Passed")
+          else
+            record_failure
           end
         rescue StandardError => e
           record_failure
