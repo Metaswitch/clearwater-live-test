@@ -58,6 +58,7 @@ class QuaffEndpoint < EllisEndpoint
                                          :anyport,
                                          registrar)
     end
+    @quaff.instance_id = instance_id
   end
 
   def cleanup
