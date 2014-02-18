@@ -98,11 +98,12 @@ class TestDefinition
       tests_to_run.product(transports).collect do |test, trans|
         begin
           print "#{test.name} (#{trans.to_s.upcase}) - "
-          if test.run(deployment, trans)
+          success = test.run(deployment, trans)
+          if success == true
             puts RedGreen::Color.green("Passed")
-          else
+          elsif success == false
             record_failure
-          end
+          end # Do nothing if success == nil - that means we skipped a test
         rescue StandardError => e
           record_failure
           puts RedGreen::Color.red("Failed")
@@ -170,7 +171,7 @@ class TestDefinition
     if @quaff_cleanup_blk
       @quaff_cleanup_blk.call
     end
-    
+
     # If we failed any call scenario, dump out the log files.
     unless retval
       @endpoints.each do |e|
