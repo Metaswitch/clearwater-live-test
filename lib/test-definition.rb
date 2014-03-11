@@ -98,9 +98,12 @@ class TestDefinition
       tests_to_run.product(transports).collect do |test, trans|
         begin
           print "#{test.name} (#{trans.to_s.upcase}) - "
-          if test.run(deployment, trans)
+          success = test.run(deployment, trans)
+          if success == true
             puts RedGreen::Color.green("Passed")
-          end
+          elsif success == false
+            record_failure
+          end # Do nothing if success == nil - that means we skipped a test
         rescue StandardError => e
           record_failure
           puts RedGreen::Color.red("Failed")
@@ -139,17 +142,47 @@ class TestDefinition
   def cleanup
     retval = true
     @quaff_threads.each do |t|
-      result_of_join = t.join(60)
-      unless result_of_join
-        puts RedGreen::Color.red("Failed")
-        puts "Quaff thread still had work outstanding"
-        puts t.backtrace
-        t.kill
+      # Join the threads, this will do one of three things:
+      #  - Return the thread handle, indicating complete success
+      #  - Return nil indicating that the 60 seconds passed
+      #  - Throw an exception caught in the thread
+      result_of_join = begin
+                         t.join(60)
+                       rescue StandardError => e
+                         e
+                       end
+      unless result_of_join == t
+        puts RedGreen::Color.red("Failed") if retval
+
+        if result_of_join.nil?
+          puts "Endpoint had outstanding work to do, current backtrace:"
+          t.backtrace.each { |b| puts "   - #{b}" }
+          t.kill
+        else
+          puts "Endpoint threw exception:"
+          puts " - #{e.message}"
+          e.backtrace.each { |b| puts "   - #{b}" }
+        end
+
         retval = false
       end
     end
 
-    @quaff_cleanup_blk.call if @quaff_cleanup_blk
+    if @quaff_cleanup_blk
+      @quaff_cleanup_blk.call
+    end
+
+    # If we failed any call scenario, dump out the log files.
+    unless retval
+      @endpoints.each do |e|
+        log_file_name = File.join(File.dirname(__FILE__),
+                                  "..",
+                                  "scripts",
+                                  "#{@name} - #{@transport.to_s.upcase} - #{e.sip_uri}.log")
+        File.write(log_file_name, e.msg_log.join("\n\n================\n\n"))
+      end
+    end
+
     # Reverse the endpoints list so that associated public IDs are
     # deleted before the default public ID (which was created first).
     @endpoints.reverse.each do |e|
