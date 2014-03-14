@@ -106,7 +106,7 @@ TestDefinition.new("Basic Call - Unknown number") do |t|
 
     call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
     call.recv_response("100")
-    call.recv_response("404")
+    call.recv_response("480")
     call.send_request("ACK")
     call.end_call
   end
