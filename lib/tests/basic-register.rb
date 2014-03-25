@@ -51,60 +51,6 @@ TestDefinition.new("Basic Registration") do |t|
 
 end
 
-TestDefinition.new("Registration Timeout") do |t|
-  caller = t.add_endpoint
-
-  t.add_quaff_scenario do
-    call = caller.outgoing_call(caller.uri)
-    call.send_request("REGISTER", "", { "Expires" => "3600", "Authorization" => %Q!Digest username="#{caller.private_id}"! })
-    response_data = call.recv_response("401")
-    auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), caller.private_id, caller.password, "REGISTER", caller.uri
-
-    # Wait for 30 seconds before sebnding the authenticated REGISTER.
-    # This should cause the nonce to expire.
-
-    sleep 30
-
-    call.update_branch
-    call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3600", "CSeq" => "2 REGISTER"})
-    response_data = call.recv_response("401")
-  end
-
-  t.add_quaff_cleanup do
-    caller.unregister
-  end
-
-end
-
-TestDefinition.new("Registration Replay") do |t|
-  caller = t.add_endpoint
-
-  t.add_quaff_scenario do
-    call = caller.outgoing_call(caller.uri)
-    call.send_request("REGISTER", "", { "Expires" => "3600", "Authorization" => %Q!Digest username="#{caller.private_id}"! })
-    response_data = call.recv_response("401")
-    auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), caller.private_id, caller.password, "REGISTER", caller.uri
-    call.update_branch
-    call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3600", "CSeq" => "2 REGISTER"})
-    response_data = call.recv_response("200")
-
-    # Deregister, so that we aren't using an authenticated flow
-    call.update_branch
-    call.send_request("REGISTER", "", {"Expires" => "0", "CSeq" => "3 REGISTER"})
-
-    # Do a new registration using the previous Authorization header -
-    # this should be challenged as a replay attack
-    call = caller.outgoing_call(caller.uri)
-    call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3600", "CSeq" => "1 REGISTER", "P-Clearwater-Test-Header" => "Replay attack"})
-    response_data = call.recv_response("401")
-  end
-
-  t.add_quaff_cleanup do
-    caller.unregister
-  end
-
-end
-
 TestDefinition.new("Multiple Identities") do |t|
   ep1 = t.add_endpoint
   ep2 = t.add_quaff_public_identity(ep1)
