@@ -42,9 +42,9 @@ TestDefinition.new("Basic Call - Mainline") do |t|
   end
 
 sdp = "v=0\r
-o=- 3547439529 3547439529 IN IP4 #{Facter.ipaddress}\r
+o=- 3547439529 3547439529 IN IP4 #{Facter.value(:ipaddress)}\r
 s=-\r
-c=IN IP4 #{Facter.ipaddress}\r
+c=IN IP4 #{Facter.value(:ipaddress)}\r
 t=0 0\r
 m=audio 6000 RTP/AVP 8 0\r
 a=rtpmap:8 PCMA/8000\r
