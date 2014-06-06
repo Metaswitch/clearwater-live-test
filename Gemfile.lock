@@ -10,9 +10,12 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
+    CFPropertyList (2.2.8)
+    abnf-parsing (0.2.0)
     coderay (1.0.9)
     erubis (2.7.0)
-    facter (1.7.5)
+    facter (2.0.1)
+      CFPropertyList (~> 2.2.6)
     git (1.2.5)
     jeweler (1.8.4)
       bundler (~> 1.0)
@@ -21,13 +24,14 @@ GEM
       rdoc
     json (1.7.7)
     method_source (0.8.1)
-    milenage (1.1.0)
+    milenage (1.1.1)
     mime-types (1.21)
     pry (0.9.12)
       coderay (~> 1.0.5)
       method_source (~> 0.8)
       slop (~> 3.4)
-    quaff (0.5.1)
+    quaff (0.5.4)
+      abnf-parsing (>= 0.2.0)
       facter (>= 1.7.3)
       milenage (>= 0.1.0)
     rake (10.0.3)
@@ -47,6 +51,7 @@ PLATFORMS
 
 DEPENDENCIES
   erubis
+  facter
   joker!
   pry
   quaff
