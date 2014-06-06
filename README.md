@@ -54,83 +54,93 @@ For example, to run all the call barring tests (including the international numb
 Framework Structure
 ---------------
 
-Tests in the framework are defined as a combination of a collection of endpoints and
-a list of actions for those endpoints to perform.  These actions are converted through the magic of [erubis](http://www.kuwata-lab.com/erubis/) into a SIPp script that is then run.
+Tests in the framework are essentially short Ruby programs. These programs use the Quaff library to talk over SIP to Clearwater nodes for calls, and the rest-client library to communicate with Ellis for provisioning.
 
-The output of the SIPp script generation and the record of the messages sent and errors reported by SIPp during the run are saved off in the event of a failure and are very useful for tracking down issues/bugs in the scripts.
+Any Quaff error logs are saved off in the event of a failure and are very useful for tracking down issues/bugs in the scripts.
 
 The test framework is very punctilious about cleaning up after itself, so there should be no issue with running the tests in any order or running the framework multiple times on one deployment (even at the same time!).
 
 Writing A New Test
 ------------------
 
-The test definitions are found in `lib/tests/*.rb` and should be pretty self-explanitory.  A basic test structure is as follows:
+The test definitions are found in `lib/tests/*.rb` and should be pretty self-explanatory.  A basic test structure is as follows:
 
-    TestDefinition.new("Test Description") do |t|
-      caller = t.add_sip_endpoint
-      callee = t.add_sip_endpoint
-      t.set_scenario(
-        [
-          caller.send("NOTIFY", target: callee),
-          callee.recv("NOTIFY"),
-          callee.send("200", target: caller),
-          caller.recv("200"),
-        ]
-      )
-    end
+```
+TestDefinition.new("Basic Call - Messages - Pager model") do |t|
+  caller = t.add_endpoint
+  callee = t.add_endpoint
 
-This (non-functional) example would create two numbers in ellis/homestead then send a NOTIFY transaction between them before destroying the numbers.
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee.uri)
+
+    call.send_request("MESSAGE", "hello world\r\n", {"Content-Type" => "text/plain"})
+    call.recv_response("200")
+    call.end_call
+  end
+
+  t.add_quaff_scenario do
+    call2 = callee.incoming_call
+    call2.recv_request("MESSAGE")
+    call2.send_response("200", "OK")
+    call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee.unregister
+  end
+end
+```
+
+This example would create two numbers in ellis/homestead, register them, then send a MESSAGE transaction between them before deregistering and destroying the numbers. Because the deregistration takes place in a cleanup block, this happens even if the main scenario fails or hits an exception.
 
 There are different types of test that can be defined, based on the requirements on the system under test or on the command line options given at run time:
 
  - `TestDefinition`: Generic test, only uses Clearwater-registered endpoints.
- - `PSTNTestDefiniton`: PSTN test, requires that `PSTN=true` be passed to rake or the test will be skipped.
- - `LiveTestDefiniton`: Live call test, requires that a live number is given to rake as `LIVENUMBER=...`.
+ - `PSTNTestDefinition`: PSTN test, requires that `PSTN=true` be passed to rake or the test will be skipped.
+ - `LiveTestDefinition`: Live call test, requires that a live number is given to rake as `LIVENUMBER=...`.
  - `SkippedTestDefinition`: Used to mark out currently broken tests, tests should not be left in this state for longer than necessary.
-
-The templates for messages that sent are specified in the scenario list can be found in the `templates` folder named according to the message they contain.  There are two generic receive templates there too.
 
 Creating Endpoints
 ------------------
 
-As you saw above, a test can create an endpoint in ellis with `test.add_sip_endpoint`.  It may need an endpoint that is not a Clearwater number (for example for off-net calling), in which case `add_fake_endpoint(<DN>, <domain>)` may be used instead.
+As you saw above, a test can create an endpoint in ellis with `test.add_endpoint`.  It may need an endpoint that is not a Clearwater number (for example for off-net calling), in which case `add_fake_endpoint(<DN>, <domain>)` may be used instead.
 
 To create a PSTN number use `test.add_pstn_endpoint`.  These numbers can make calls out to the PSTN and should be used for live calling/international number dialing tests.  When using these numbers, mark the test as a `PSTNTestDefinition` to ensure it is skipped if PSTN numbers are not available on the system under test.
 
-To create a new public identity for a line, use the `test.add_public_identity` function.  The returned endpoint will share a private ID with the passed in one but will have its own public identity.
+To create a new public identity for a line, use the `test.add_quaff_public_identity` function.  The returned endpoint will share a private ID with the passed in one but will have its own public identity.
 
 When using Clearwater endpoints, a common thing to need to do is to (un)register the endpoint and so `ep.register` and `ep.unregister` have been supplied that return the scenario entries needed to do this (see _Basic Call - Mainline_ for an example of how this is used).
 
 Modifying Simservs
 ------------------
 
-To change a simservs document for a Clearwater endpoint, use `ep.set_simservs` which takes a hash of options for the document.  See `templates/simsers.xml.erb` for how the options are used and see `SIPpEndpoint::default_simservs` for the options that will be used if not specified in your call to `set_simservs`.
+To change a simservs document for a Clearwater endpoint, use `ep.set_simservs` which takes a hash of options for the document.  See `templates/simservs.xml.erb` for how the options are used and see `EllisEndpoint::default_simservs` for the options that will be used if not specified in your call to `set_simservs`.
 
 Modifying iFCs
 ------------------
 
-To change the iFC document for a Clearwater endpoint, use `ep.set_ifcs` which takes a hash of options for the document.  See `templates/ifcs.xml.erb` for how the options are used and see `SIPpEndpoint::default_ifcs` for the options that will be used if not specified in your call to `set_ifcs`.
+To change the iFC document for a Clearwater endpoint, use `ep.set_ifcs` which takes a hash of options for the document.  See `templates/ifcs.xml.erb` for how the options are used and see `EllisEndpoint::default_ifcs` for the options that will be used if not specified in your call to `set_ifcs`.
 
 Sending Messages
 ----------------
 
-To send a SIP message, use the `ep.send(<template>, target: <endpoint>, ...)` command passing the name of the template to use, a target and any other parameters you like.  These parameters will be made available as functions in the template.  If the parameter is optional, its presence should be tested for with:
-
-    <% if defined? <function> %>
+To send a SIP message, use the `ep.send_request(<method>)` or `ep.send_response(<status code>, <reason phrase>)` commands. These are commands from the Quaff Ruby library for SIP, documented at https://github.com/rkday/quaff.
 
 Receiving Messages
 ------------------
 
-To receive a SIP message, simple add `ep.recv(<message>)` to the scenario.
+To receive a SIP message, simple add `ep.recv_response(<status code>)` or `ep.recv_request(<method>)` to the scenario.
 
 Pausing
 -------
 
-To add a pause in the script (for example to mimic the call progress), use the following incantation (which may also be used for other, non-endpoint-specific actions). 
-It is necessary to specify an endpoint so it is clear which sipp script to place the
-pause into (in the case of multiple endpoints)
-
-    SIPpPhase.new("pause", sip_caller, timeout: <ms>)
+Pauses are expressed using standard Ruby syntax - `sleep 5`. In general, the live tests are simply blocks of Ruby code using a SIP library, so anything that is possible in Ruby is possible within a testcase.
 
 Acknowledgements
 ----------------

@@ -165,7 +165,7 @@ MMTelTestDefinition.new("Call Diversion - Bad target URI") do |t|
     [
       sip_caller.send("INVITE", target: sip_callee1),
       sip_caller.recv("100"),
-      sip_caller.recv("404"),
+      sip_caller.recv("480"),
       sip_caller.send("ACK", target: sip_callee1),
     ] +
     sip_caller.unregister
