@@ -32,10 +32,9 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-TestDefinition.new("SIP SUBSCRIBE/NOTIFY") do |t|
-  
-  ep1 = t.add_endpoint
+TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
 
+  ep1 = t.add_endpoint
   t.add_quaff_setup do
     ep1.register
   end
@@ -43,8 +42,8 @@ TestDefinition.new("SIP SUBSCRIBE/NOTIFY") do |t|
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
 
-    call.send_request("SUBSCRIBE", "", {"Event" => "Reg"})
-    call.recv_response_and_create_dialog("200")
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342]})
+    call.recv_response("200")
     call.recv_request("NOTIFY")
     call.send_response("200", "OK")
 
@@ -52,6 +51,13 @@ TestDefinition.new("SIP SUBSCRIBE/NOTIFY") do |t|
 
     call.recv_request("NOTIFY")
     call.send_response("200", "OK")
+
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342], "Expires" => 0})
+    call.recv_response("200")
+    call.recv_request("NOTIFY")
+    call.send_response("200", "OK")
+
+    ep1.register # Re-registration
 
     call.end_call
   end
