@@ -90,5 +90,5 @@ def destroy_leaked_numbers(domain)
 end
 
 def is_default_public_id? number
-  /#{number["private_id"]}/ =~ number["sip_uri"]
+  /#{Regexp.escape(number["private_id"])}/ =~ number["sip_uri"]
 end
