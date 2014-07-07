@@ -144,7 +144,7 @@ end
 MMTelTestDefinition.new("Call Barring - Inbound Rejection") do |t|
   caller = t.add_endpoint
   callee = t.add_endpoint
-  caller.set_simservs ocb: { active: true,
+  callee.set_simservs icb: { active: true,
                              rules: [ { conditions: [],
                                         allow: false } ]
                             }
