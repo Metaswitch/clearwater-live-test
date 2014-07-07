@@ -33,94 +33,140 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 MMTelTestDefinition.new("Call Barring - Outbound Rejection") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_caller.set_simservs ocb: { active: true,
-                                 rules: [ { conditions: [],
-                                            allow: false } ]
-                               }
-  sip_callee = t.add_sip_endpoint
-  t.set_scenario(
-    sip_caller.register +
-    sip_callee.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee),
-      sip_caller.recv("100"),
-      sip_caller.recv("603"),
-      sip_caller.send("ACK", target: sip_caller)
-    ] +
-    sip_caller.unregister +
-    sip_callee.unregister
-  )
+  caller = t.add_endpoint
+  callee = t.add_endpoint
+  caller.set_simservs ocb: { active: true,
+                             rules: [ { conditions: [],
+                                        allow: false } ]
+                            }
+
+  t.add_quaff_setup do 
+    caller.register 
+    callee.register
+  end
+
+  t.add_quaff_scenario do 
+    call = caller.outgoing_call(callee.uri)
+
+    call.send_request("INVITE")
+    call.recv_response("100")
+    call.recv_response("603")
+    call.send_request("ACK")
+    call.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee.unregister
+  end
 end
 
 MMTelPSTNTestDefinition.new("Call Barring - Allow non-international call") do |t|
-  sip_caller = t.add_pstn_endpoint
-  sip_caller.set_simservs ocb: { active: true,
+  caller = t.add_pstn_endpoint
+  callee = t.add_endpoint
+  caller.set_simservs ocb: { active: true,
                                  rules: [ { conditions: ["international"],
                                             allow: false } ]
                                }
-  sip_callee = t.add_sip_endpoint
-  t.set_scenario(
-    sip_caller.register +
-    sip_callee.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee),
-      sip_caller.recv("100"),
-      sip_callee.recv("INVITE", extract_uas_via: true),
-      sip_callee.send("100", target: sip_caller, method: "INVITE"),
-      sip_callee.send("180", target: sip_caller, method: "INVITE"),
-      sip_caller.recv("180"),
-      sip_callee.send("200-SDP", target: sip_caller, method: "INVITE"),
-      sip_caller.recv("200", rrs: true),
-      sip_caller.send("ACK", target: sip_callee, in_dialog: true),
-      sip_callee.recv("ACK"),
-      SIPpPhase.new("pause", sip_caller, timeout: 1000),
-      sip_caller.send("BYE", target: sip_callee, in_dialog: true),
-      sip_callee.recv("BYE"),
-      sip_callee.send("200", target: sip_caller, method: "BYE", in_dialog: true),
-      sip_caller.recv("200"),
-    ] +
-    sip_caller.unregister +
-    sip_callee.unregister
-  )
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+  end
+ 
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee.sip_uri)
+
+    call.send_request("INVITE")
+    call.recv_response("100")
+    call.recv_response("180")
+
+    # Save off Contact and routeset
+    call.recv_response_and_create_dialog("200")
+
+    call.new_transaction
+    call.send_request("ACK")
+    sleep 1
+
+    call.new_transaction
+    call.send_request("BYE")
+    call.recv_response("200")
+    call.end_call
+  end
+
+  t.add_quaff_scenario do
+    call2 = callee.incoming_call
+    original_invite = call2.recv_request("INVITE")
+    call2.send_response("100", "Trying")
+    call2.send_response("180", "Ringing")
+    call2.send_response("200", "OK")
+    call2.recv_request("ACK")
+
+    call2.recv_request("BYE")
+    call2.send_response("200", "OK")
+    call2.end_call
+  end
+  
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee.unregister
+  end
+ 
 end
 
 MMTelPSTNTestDefinition.new("Call Barring - Reject international call") do |t|
-  sip_caller = t.add_pstn_endpoint
-  sip_caller.set_simservs ocb: { active: true,
-                                 rules: [ { conditions: ["international"],
-                                            allow: false } ]
-                               }
-  sip_callee = t.add_fake_endpoint("011447854481549")
-  t.set_scenario(
-    sip_caller.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee),
-      sip_caller.recv("100"),
-      sip_caller.recv("603"),
-      sip_caller.send("ACK", target: sip_caller)
-    ] +
-    sip_caller.unregister
-  )
+  caller = t.add_pstn_endpoint
+  callee = t.add_fake_endpoint("011447854481549")
+  caller.set_simservs ocb: { active: true,
+                             rules: [ { conditions: ["international"],
+                                        allow: false } ]
+                            }
+  t.add_quaff_setup do
+    caller.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee.sip_uri)
+
+    call.send_request("INVITE")
+    call.recv_response("100")
+    call.recv_response("603")
+    call.send_request("ACK")
+    call.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+  end
+  
 end
 
 MMTelTestDefinition.new("Call Barring - Inbound Rejection") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee = t.add_sip_endpoint
-  sip_callee.set_simservs icb: { active: true,
-                                 rules: [ { conditions: [],
-                                            allow: false } ]
-                               }
-  t.set_scenario(
-    sip_caller.register +
-    sip_callee.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee),
-      sip_caller.recv("100"),
-      sip_caller.recv("603"),
-      sip_caller.send("ACK", target: sip_caller)
-    ] +
-    sip_caller.unregister +
-    sip_callee.unregister
-  )
+  caller = t.add_endpoint
+  callee = t.add_endpoint
+  caller.set_simservs ocb: { active: true,
+                             rules: [ { conditions: [],
+                                        allow: false } ]
+                            }
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee.uri)
+
+    call.send_request("INVITE")
+    call.recv_response("100")
+    call.recv_response("603")
+    call.send_request("ACK")
+    call.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee.unregister
+  end
 end
+

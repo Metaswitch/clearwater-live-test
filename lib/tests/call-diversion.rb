@@ -33,141 +33,225 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 MMTelTestDefinition.new("Call Diversion - Not registered") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee1 = t.add_sip_endpoint
-  sip_callee2 = t.add_sip_endpoint
+  caller = t.add_endpoint
+  callee1 = t.add_endpoint
+  callee2 = t.add_endpoint
 
-  sip_callee1.set_simservs cdiv: { active: true,
-                                  rules: [ { conditions: ["not-registered"],
-                                             target: sip_callee2.sip_uri } ]
-                                }
-  t.set_scenario(
-    sip_caller.register +
-    sip_callee2.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee1),
-      sip_caller.recv("100"),
-      sip_caller.recv("181"),
-      sip_callee2.recv("INVITE", extract_uas_via: true),
-      sip_callee2.send("100", target: sip_caller, method: "INVITE"),
-      sip_callee2.send("180", target: sip_caller, method: "INVITE"),
-      sip_caller.recv("180"),
-      sip_callee2.send("200-SDP", target: sip_caller, method: "INVITE"),
-      sip_caller.recv("200", rrs: true),
-      sip_caller.send("ACK", target: sip_callee2, in_dialog: true),
-      sip_callee2.recv("ACK"),
-      SIPpPhase.new("pause", sip_caller, timeout: 1000),
-      sip_caller.send("BYE", target: sip_callee2, in_dialog: true),
-      sip_callee2.recv("BYE", extract_uas_via: true),
-      sip_callee2.send("200", target: sip_caller, method: "BYE"),
-      sip_caller.recv("200"),
-    ] +
-    sip_caller.unregister +
-    sip_callee2.unregister
-  )
+  callee1.set_simservs cdiv: { active: true,
+                               rules: [ { conditions: ["not-registered"],
+                                          target: callee2.uri } ]
+                             }
+
+  t.add_quaff_setup do
+    caller.register
+    callee2.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee1.uri)
+
+    call.send_request("INVITE")
+    call.recv_response("100")
+    call.recv_response("181")
+
+    # Call is diverted to callee2 
+    call.recv_response("180")
+    call.recv_response_and_create_dialog("200")
+
+    call.new_transaction
+    call.send_request("ACK")
+    sleep 1
+
+    call.new_transaction
+    call.send_request("BYE")
+    call.recv_response("200")
+    call.end_call
+
+  end
+
+  t.add_quaff_scenario do
+    call2 = callee2.incoming_call
+    call2.recv_request("INVITE")
+    call2.send_response("100", "Trying")
+    call2.send_response("180", "Ringing")
+    call2.send_response("200", "OK")
+    call2.recv_request("ACK")
+
+    call2.recv_request("BYE")
+    call2.send_response("200", "OK")
+    call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee2.unregister
+  end
 end
 
 MMTelTestDefinition.new("Call Diversion - Busy") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee1 = t.add_sip_endpoint
-  sip_callee2 = t.add_sip_endpoint
+  caller = t.add_endpoint
+  callee1 = t.add_endpoint
+  callee2 = t.add_endpoint
 
-  sip_callee1.set_simservs cdiv: { active: true,
-                                  rules: [ { conditions: ["busy"],
-                                             target: sip_callee2.sip_uri } ]
-                                }
-  t.set_scenario(
-    sip_caller.register +
-    sip_callee1.register +
-    sip_callee2.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee1),
-      sip_caller.recv("100"),
-      sip_callee1.recv("INVITE", extract_uas_via: true),
-      sip_callee1.send("100", target: sip_caller, method: "INVITE"),
-      sip_callee1.send("486", target: sip_caller, method: "INVITE"),
-      sip_callee1.recv("ACK"),
-      sip_caller.recv("181"),
-      sip_callee2.recv("INVITE", extract_uas_via: true),
-      sip_callee2.send("100", target: sip_caller, method: "INVITE"),
-      sip_callee2.send("180", target: sip_caller, method: "INVITE"),
-      sip_caller.recv("180"),
-      sip_callee2.send("200-SDP", target: sip_caller, method: "INVITE"),
-      sip_caller.recv("200", rrs: true),
-      sip_caller.send("ACK", target: sip_callee2, in_dialog: true),
-      sip_callee2.recv("ACK"),
-      SIPpPhase.new("pause", sip_caller, timeout: 1000),
-      sip_caller.send("BYE", target: sip_callee2, in_dialog: true),
-      sip_callee2.recv("BYE", extract_uas_via: true),
-      sip_callee2.send("200", target: sip_caller, method: "BYE"),
-      sip_caller.recv("200"),
-    ] +
-    sip_caller.unregister +
-    sip_callee1.unregister +
-    sip_callee2.unregister
-  )
+  callee1.set_simservs cdiv: { active: true,
+                               rules: [ { conditions: ["busy"],
+                                          target: callee2.uri } ]
+                             }
+
+  t.add_quaff_setup do
+    caller.register
+    callee1.register
+    callee2.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee1.uri)
+
+    call.send_request("INVITE")
+    call.recv_response("100")
+    call.recv_response("181")
+
+    # Call is diverted to callee2
+    call.recv_response("180")
+    call.recv_response_and_create_dialog("200")
+
+    call.new_transaction
+    call.send_request("ACK")
+    sleep 1
+
+    call.new_transaction
+    call.send_request("BYE")
+    call.recv_response("200")
+    call.end_call
+
+  end
+
+  t.add_quaff_scenario do
+    call1 = callee1.incoming_call
+    call1.recv_request("INVITE")
+    call1.send_response("100", "Trying")
+    call1.send_response("486", "Busy Here")
+    call1.recv_request("ACK")
+
+    call1.end_call
+  end
+
+  t.add_quaff_scenario do
+    call2 = callee2.incoming_call
+    call2.recv_request("INVITE")
+    call2.send_response("100", "Trying")
+    call2.send_response("180", "Ringing")
+    call2.send_response("200", "OK")
+    call2.recv_request("ACK")
+
+    call2.recv_request("BYE")
+    call2.send_response("200", "OK")
+    call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee1.register
+    callee2.unregister
+  end
+
 end
 
 MMTelTestDefinition.new("Call Diversion - No answer") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee1 = t.add_sip_endpoint
-  sip_callee2 = t.add_sip_endpoint
+  caller = t.add_endpoint
+  callee1 = t.add_endpoint
+  callee2 = t.add_endpoint
 
-  sip_callee1.set_simservs cdiv: { active: true,
-                                   timeout: "20",
-                                  rules: [ { conditions: ["no-answer"],
-                                             target: sip_callee2.sip_uri } ]
-                                }
-  t.set_scenario(
-    sip_caller.register +
-    sip_callee1.register +
-    sip_callee2.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee1),
-      sip_caller.recv("100"),
-      sip_callee1.recv("INVITE", extract_uas_via: true),
-      sip_callee1.send("100", target: sip_caller, method: "INVITE"),
-      sip_callee1.send("180", target: sip_caller, method: "INVITE"),
-      sip_caller.recv("180"),
-      sip_callee1.send("408", target: sip_caller, method: "INVITE"),
-      sip_callee1.recv("ACK"),
-      sip_caller.recv("181"),
-      sip_callee2.recv("INVITE", extract_uas_via: true),
-      sip_callee2.send("100", target: sip_caller, method: "INVITE"),
-      sip_callee2.send("180", target: sip_caller, method: "INVITE"),
-      sip_caller.recv("180"),
-      sip_callee2.send("200-SDP", target: sip_caller, method: "INVITE"),
-      sip_caller.recv("200", rrs: true),
-      sip_caller.send("ACK", target: sip_callee2, in_dialog: true),
-      sip_callee2.recv("ACK"),
-      SIPpPhase.new("pause", sip_caller, timeout: 1000),
-      sip_caller.send("BYE", target: sip_callee2, in_dialog: true),
-      sip_callee2.recv("BYE", extract_uas_via: true),
-      sip_callee2.send("200", target: sip_caller, method: "BYE"),
-      sip_caller.recv("200"),
-    ] +
-    sip_caller.unregister +
-    sip_callee1.unregister +
-    sip_callee2.unregister
-  )
+  callee1.set_simservs cdiv: { active: true,
+                               timeout: "20",
+                               rules: [ { conditions: ["no-answer"],
+                                          target: callee2.uri } ]
+                             }
+
+  t.add_quaff_setup do
+    caller.register
+    callee1.register
+    callee2.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee1.uri)
+
+    call.send_request("INVITE")
+    call.recv_response("100")
+    call.recv_response("180")
+    call.recv_response("181")
+
+    # Call is diverted to callee2
+    call.recv_response("180")
+    call.recv_response_and_create_dialog("200")
+
+    call.new_transaction
+    call.send_request("ACK")
+    sleep 1
+
+    call.new_transaction
+    call.send_request("BYE")
+    call.recv_response("200")
+    call.end_call
+
+  end
+
+  t.add_quaff_scenario do
+    call = callee1.incoming_call
+    invite = call.recv_request("INVITE")
+    call.send_response("100", "Trying")
+    call.send_response("180", "Ringing")
+    call.send_response("408", "Request Timeout")
+    call.recv_request("ACK")
+    call.end_call
+  end
+
+  t.add_quaff_scenario do
+    call = callee2.incoming_call
+    invite = call.recv_request("INVITE")
+    call.send_response("100", "Trying")
+    call.send_response("180", "Ringing")
+    call.send_response("200", "OK")
+    call.recv_request("ACK")
+
+    call.recv_request("BYE")
+    call.send_response("200", "OK")
+    call.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee1.unregister
+    callee2.unregister
+  end
 end
 
 MMTelTestDefinition.new("Call Diversion - Bad target URI") do |t|
-  sip_caller = t.add_sip_endpoint
-  sip_callee1 = t.add_sip_endpoint
+  caller = t.add_endpoint
+  callee = t.add_endpoint
 
-  sip_callee1.set_simservs cdiv: { active: true,
-                                  rules: [ { conditions: ["not-registered"],
-                                             target: "12345" } ]
-                                }
-  t.set_scenario(
-    sip_caller.register +
-    [
-      sip_caller.send("INVITE", target: sip_callee1),
-      sip_caller.recv("100"),
-      sip_caller.recv("480"),
-      sip_caller.send("ACK", target: sip_callee1),
-    ] +
-    sip_caller.unregister
-  )
+  callee.set_simservs cdiv: { active: true,
+                              rules: [ { conditions: ["not-registered"],
+                                         target: "12345" } ]
+                            }
+
+  t.add_quaff_setup do
+    caller.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee.uri)
+
+    call.send_request("INVITE")
+    call.recv_response("100")
+    call.recv_response("480")
+    call.send_request("ACK")
+    call.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+  end
 end
+

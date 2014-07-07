@@ -233,7 +233,7 @@ class TestDefinition
 
   # @@TODO - Don't pass transport in once UDP authentication is fixed
   def add_pstn_endpoint
-    new_endpoint = SIPpEndpoint.new(true, @deployment, @transport)
+    new_endpoint = QuaffEndpoint.new(true, @deployment, @transport)
     @endpoints << new_endpoint
     new_endpoint
   end
