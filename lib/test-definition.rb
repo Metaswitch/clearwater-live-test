@@ -238,6 +238,12 @@ class TestDefinition
     new_endpoint
   end
 
+  def add_pstn_sip_endpoint
+    new_endpoint = SIPpEndpoint.new(true, @deployment, @transport)
+    @endpoints << new_endpoint
+    new_endpoint
+  end
+
   def add_quaff_setup &blk
     @quaff_setup_blk = blk
   end
