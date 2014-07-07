@@ -96,7 +96,7 @@ MMTelPSTNTestDefinition.new("Call Barring - Allow non-international call") do |t
 
   t.add_quaff_scenario do
     call2 = callee.incoming_call
-    original_invite = call2.recv_request("INVITE")
+    call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
     call2.send_response("200", "OK")

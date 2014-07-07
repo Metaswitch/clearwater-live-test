@@ -198,26 +198,26 @@ MMTelTestDefinition.new("Call Diversion - No answer") do |t|
   end
 
   t.add_quaff_scenario do
-    call = callee1.incoming_call
-    invite = call.recv_request("INVITE")
-    call.send_response("100", "Trying")
-    call.send_response("180", "Ringing")
-    call.send_response("408", "Request Timeout")
-    call.recv_request("ACK")
-    call.end_call
+    call1 = callee1.incoming_call
+    call1.recv_request("INVITE")
+    call1.send_response("100", "Trying")
+    call1.send_response("180", "Ringing")
+    call1.send_response("408", "Request Timeout")
+    call1.recv_request("ACK")
+    call1.end_call
   end
 
   t.add_quaff_scenario do
-    call = callee2.incoming_call
-    invite = call.recv_request("INVITE")
-    call.send_response("100", "Trying")
-    call.send_response("180", "Ringing")
-    call.send_response("200", "OK")
-    call.recv_request("ACK")
+    call2 = callee2.incoming_call
+    call2.recv_request("INVITE")
+    call2.send_response("100", "Trying")
+    call2.send_response("180", "Ringing")
+    call2.send_response("200", "OK")
+    call2.recv_request("ACK")
 
-    call.recv_request("BYE")
-    call.send_response("200", "OK")
-    call.end_call
+    call2.recv_request("BYE")
+    call2.send_response("200", "OK")
+    call2.end_call
   end
 
   t.add_quaff_cleanup do
