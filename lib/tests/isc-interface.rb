@@ -373,10 +373,12 @@ NotValidForUDPASTestDefinition.new("ISC Interface - B2BUA") do |t|
     outgoing_call.send_request("ACK")
 
     incoming_call.send_response("200", "OK")
-    incoming_call.recv_request("ACK")
+
+    # We expect an ACK and a BYE - protect against them being sent out-of-order
+    incoming_call.recv_any_of ["ACK", "BYE"]
+    incoming_call.recv_any_of ["ACK", "BYE"]
 
     # Get the BYE, OK it, and pass it back
-    incoming_call.recv_request("BYE")
     incoming_call.send_response("200", "OK")
 
     outgoing_call.new_transaction

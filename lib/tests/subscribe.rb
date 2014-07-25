@@ -43,8 +43,11 @@ TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
     call = ep1.outgoing_call(ep1.uri)
 
     call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342]})
-    call.recv_response("200")
-    call.recv_request("NOTIFY")
+
+    # 200 and NOTIFY can come in any order, so expect either of them, twice
+    call.recv_any_of [200, "NOTIFY"]
+    call.recv_any_of [200, "NOTIFY"]
+
     call.send_response("200", "OK")
 
     ep1.register # Re-registration
@@ -52,9 +55,12 @@ TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
     call.recv_request("NOTIFY")
     call.send_response("200", "OK")
 
+    call.update_branch
     call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342], "Expires" => 0})
-    call.recv_response("200")
-    call.recv_request("NOTIFY")
+
+    call.recv_any_of [200, "NOTIFY"]
+    call.recv_any_of [200, "NOTIFY"]
+
     call.send_response("200", "OK")
 
     ep1.register # Re-registration

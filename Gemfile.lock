@@ -11,10 +11,10 @@ GEM
   remote: https://rubygems.org/
   specs:
     CFPropertyList (2.2.8)
-    abnf-parsing (0.2.0)
+    abnf-parsing (0.2.2)
     coderay (1.0.9)
     erubis (2.7.0)
-    facter (2.0.1)
+    facter (2.1.0)
       CFPropertyList (~> 2.2.6)
     git (1.2.5)
     jeweler (1.8.4)
@@ -30,7 +30,7 @@ GEM
       coderay (~> 1.0.5)
       method_source (~> 0.8)
       slop (~> 3.4)
-    quaff (0.5.4)
+    quaff (0.6.1)
       abnf-parsing (>= 0.2.0)
       facter (>= 1.7.3)
       milenage (>= 0.1.0)
