@@ -51,6 +51,46 @@ TestDefinition.new("Basic Registration") do |t|
 
 end
 
+TestDefinition.new("Frequent Registration") do |t|
+  caller = t.add_endpoint
+
+  t.add_quaff_scenario do
+    caller.register
+    sleep 2
+    caller.register
+    sleep 2
+    caller.register
+    sleep 2
+    caller.register
+    sleep 2
+    caller.register
+    sleep 2
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+  end
+
+end
+
+TestDefinition.new("Registration Timeout") do |t|
+  caller = t.add_endpoint
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(caller.uri)
+    call.send_request("REGISTER", "", { "Expires" => "3600", "Authorization" => %Q!Digest username="#{caller.private_id}"! })
+    response_data = call.recv_response("401")
+    auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), caller.private_id, caller.password, "REGISTER", caller.uri
+    call.update_branch
+    sleep 60
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+  end
+
+end
+
 TestDefinition.new("Multiple Identities") do |t|
   ep1 = t.add_endpoint
   ep2 = t.add_quaff_public_identity(ep1)
