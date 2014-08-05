@@ -46,12 +46,14 @@ class EllisEndpoint
               :pstn,
               :transport
 
-  def initialize(pstn, deployment, transport, shared_identity = nil)
+  def initialize(pstn, deployment, transport, shared_identity = nil, specific_id = nil)
     @domain = deployment
     @transport = transport
     @pstn = pstn
     @@security_cookie ||= get_security_cookie
-    if shared_identity.nil?
+    if specific_id
+      get_specific_number(specific_id)
+    elsif shared_identity.nil?
       get_number(pstn, nil)
     else
       get_number(pstn, shared_identity.private_id)
@@ -148,7 +150,22 @@ private
     r = RestClient::Request.execute(method: :post,
                                     url: ellis_url("accounts/#{account_username}/numbers/"),
                                     cookies: @@security_cookie,
-                                    payload: payload )
+                                    payload: payload)
+    r = JSON.parse(r.body)
+    @username = r["sip_username"]
+    @password = r["sip_password"] unless r["sip_password"].nil?
+    @sip_uri = r["sip_uri"]
+    @private_id = r["private_id"]
+  end
+
+  def get_specific_number(public_id)
+    fail "Cannot create more than one number per SIP endpoint" if not @username.nil?
+
+    r = RestClient::Request.execute(method: :post,
+                                    url: ellis_url("accounts/#{account_username}/numbers/sip:#{public_id}@#{@domain}"),
+                                    cookies: @@security_cookie,
+                                    payload: {},
+                                    headers: {"NGV-API-Key" => ENV['ELLIS_API_KEY']})
     r = JSON.parse(r.body)
     @username = r["sip_username"]
     @password = r["sip_password"] unless r["sip_password"].nil?

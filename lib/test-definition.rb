@@ -231,6 +231,12 @@ class TestDefinition
     new_endpoint
   end
 
+  def add_specific_endpoint uri
+    new_endpoint = QuaffEndpoint.new(false, @deployment, @transport, nil, uri)
+    @endpoints << new_endpoint
+    new_endpoint
+  end
+
   # @@TODO - Don't pass transport in once UDP authentication is fixed
   def add_pstn_endpoint
     new_endpoint = QuaffEndpoint.new(true, @deployment, @transport)

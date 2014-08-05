@@ -42,7 +42,7 @@ require 'quaff'
 class QuaffEndpoint < EllisEndpoint
   attr_reader :quaff
 
-  def initialize(pstn, deployment, transport, shared_identity = nil)
+  def initialize(pstn, deployment, transport, shared_identity = nil, specific_id = nil)
     super
     registrar = ENV['PROXY'] || deployment
     if transport == :tcp then
