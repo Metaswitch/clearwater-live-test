@@ -231,8 +231,8 @@ class TestDefinition
     new_endpoint
   end
 
-  def add_specific_endpoint uri
-    new_endpoint = QuaffEndpoint.new(false, @deployment, @transport, nil, uri)
+  def add_specific_endpoint user_part
+    new_endpoint = QuaffEndpoint.new(false, @deployment, @transport, nil, user_part)
     @endpoints << new_endpoint
     new_endpoint
   end
@@ -501,6 +501,18 @@ class ASTestDefinition < TestDefinition
     else
       puts RedGreen::Color.yellow("Skipped") + " (No hostname given)"
       puts "   - Call with HOSTNAME=<publicly accessible hostname/IP of this machine>"
+    end
+  end
+end
+
+class EllisPrivilegesTestDefinition < TestDefinition
+  def run(*args)
+    clear_diags
+    if ENV['ELLIS_API_KEY']
+      super
+    else
+      puts RedGreen::Color.yellow("Skipped") + " (No Ellis API key)"
+      puts "   - Call with ELLIS_API_KEY=<key>"
     end
   end
 end
