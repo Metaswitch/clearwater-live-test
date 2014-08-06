@@ -142,6 +142,13 @@ private
     end
   end
 
+  def setup_vars_from_json json
+    @username = json["sip_username"]
+    @password = json["sip_password"] unless json["sip_password"].nil?
+    @sip_uri = json["sip_uri"]
+    @private_id = json["private_id"]
+  end
+
   def get_number(pstn, private_id)
     fail "Cannot create more than one number per SIP endpoint" if not @username.nil?
 
@@ -151,11 +158,7 @@ private
                                     url: ellis_url("accounts/#{account_username}/numbers/"),
                                     cookies: @@security_cookie,
                                     payload: payload)
-    r = JSON.parse(r.body)
-    @username = r["sip_username"]
-    @password = r["sip_password"] unless r["sip_password"].nil?
-    @sip_uri = r["sip_uri"]
-    @private_id = r["private_id"]
+    setup_vars_from_json JSON.parse(r.body)
   end
 
   def get_specific_number(public_id)
@@ -166,11 +169,7 @@ private
                                     cookies: @@security_cookie,
                                     payload: {},
                                     headers: {"NGV-API-Key" => ENV['ELLIS_API_KEY']})
-    r = JSON.parse(r.body)
-    @username = r["sip_username"]
-    @password = r["sip_password"] unless r["sip_password"].nil?
-    @sip_uri = r["sip_uri"]
-    @private_id = r["private_id"]
+    setup_vars_from_json JSON.parse(r.body)
   end
 
   def delete_number
