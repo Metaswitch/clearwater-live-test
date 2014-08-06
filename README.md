@@ -37,6 +37,7 @@ where `<code>` is the signup code you supplied when configuring Ellis (see /etc/
 
 There are various modifiers you can use to determine which subset of tests you wish to run, to use these modifiers, add them to the end of the `rake` command:
 
+ - `ELLIS_API_KEY=<key>` - this should match [the ellis_api_key configuration on Ellis](https://github.com/Metaswitch/clearwater-docs/wiki/Manual%20Install#configuring-the-inter-node-hostnamesip-addresses) and allows the test scripts to provision specific SIP URIs on the system instead of having them randomly assigned by Ellis.
  - `TESTS="<glob>"` - to only run tests whos name matches the given glob.
  - `PSTN=true` - to run the PSTN-specific tests (your deployment must have PSTN numbers allocated).
  - `LIVENUMBER=<number>` - to allow running of tests that dial out to real devices (your deployment must have an IBCF node and a working PSTN) the live number given may be dialled as part of running the test and the test will expect it to be answered (so make it a real one!).
@@ -112,6 +113,8 @@ Creating Endpoints
 As you saw above, a test can create an endpoint in ellis with `test.add_endpoint`.  It may need an endpoint that is not a Clearwater number (for example for off-net calling), in which case `add_fake_endpoint(<DN>, <domain>)` may be used instead.
 
 To create a PSTN number use `test.add_pstn_endpoint`.  These numbers can make calls out to the PSTN and should be used for live calling/international number dialing tests.  When using these numbers, mark the test as a `PSTNTestDefinition` to ensure it is skipped if PSTN numbers are not available on the system under test.
+
+By default, `test.add_endpoint` has a random SIP URI assigned from Ellis' pool of numbers. `test.add_specific_endpoint "2345"` will assign the specific number `sip:2345@DOMAIN`. This should only be used when absolutely necessary for a specific test - it requires the Ellis API key to be provided in order to have sufficient privileges to create arbitrary numbers.
 
 To create a new public identity for a line, use the `test.add_quaff_public_identity` function.  The returned endpoint will share a private ID with the passed in one but will have its own public identity.
 
