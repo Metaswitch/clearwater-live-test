@@ -163,13 +163,77 @@ TestDefinition.new("Basic Call - Messages - Pager model") do |t|
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
-
     call.send_request("MESSAGE", "hello world\r\n", {"Content-Type" => "text/plain"})
     call.recv_response("200")
     call.end_call
+
   end
 
   t.add_quaff_scenario do
+    call2 = callee.incoming_call
+    call2.recv_request("MESSAGE")
+    call2.send_response("200", "OK")
+    call2.end_call
+
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee.unregister
+  end
+end
+
+NotValidForUDPTestDefinition.new("Basic Call - Large Messages") do |t|
+  caller = t.add_endpoint
+  callee = t.add_endpoint
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee.uri)
+    call.send_request("MESSAGE", "hello world\r\n", {"Content-Type" => "text/plain"})
+    call.recv_response("200")
+    call.end_call
+
+    call = caller.outgoing_call(callee.uri)
+    message = "0" * 63000
+    call.send_request("MESSAGE", message + "\r\n", {"Content-Type" => "text/plain"})
+    call.recv_response("200")
+    call.end_call
+
+    call = caller.outgoing_call(callee.uri)
+    message = "0" * 100
+    call.send_request("MESSAGE", message + "\r\n", {"Content-Type" => "text/plain"})
+    call.recv_response("200")
+    call.end_call
+
+    call = caller.outgoing_call(callee.uri)
+    message = "0" * 32000
+    call.send_request("MESSAGE", message + "\r\n", {"Content-Type" => "text/plain"})
+    call.recv_response("200")
+    call.end_call
+
+  end
+
+  t.add_quaff_scenario do
+    call2 = callee.incoming_call
+    call2.recv_request("MESSAGE")
+    call2.send_response("200", "OK")
+    call2.end_call
+
+    call2 = callee.incoming_call
+    call2.recv_request("MESSAGE")
+    call2.send_response("200", "OK")
+    call2.end_call
+
+    call2 = callee.incoming_call
+    call2.recv_request("MESSAGE")
+    call2.send_response("200", "OK")
+    call2.end_call
+
     call2 = callee.incoming_call
     call2.recv_request("MESSAGE")
     call2.send_response("200", "OK")
