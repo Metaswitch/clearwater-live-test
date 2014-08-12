@@ -527,3 +527,15 @@ class NotValidForUDPASTestDefinition < ASTestDefinition
     end
   end
 end
+
+class GeminiTestDefinition < TestDefinition
+  def run(*args)
+    clear_diags
+    if ENV['GEMINI']
+      super
+    else
+      puts RedGreen::Color.yellow("Skipped") + " (No Gemini hostname given)"
+      puts "   - Call with GEMINI=<publicly accessible hostname/IP of gemini cluster>"
+    end
+  end
+end

@@ -9,6 +9,12 @@
         <Method><% method ||= "INVITE" %><%= method %></Method>
         <Extension></Extension>
       </SPT>
+      <SPT>
+        <ConditionNegated>0</ConditionNegated>
+        <Group>0</Group>
+        <SessionCase><% session_case ||= "*" %><%= session_case %></SessionCase>
+        <Extension></Extension>
+      </SPT>
     </TriggerPoint>
     <ApplicationServer>
       <ServerName>sip:<%= server_name %></ServerName>
