@@ -534,7 +534,7 @@ class GeminiTestDefinition < TestDefinition
     if ENV['GEMINI']
       super
     else
-      puts RedGreen::Color.yellow("Skipped") + " (No Gemini hostname given)"
+      puts RedGreen::Color.yellow("Skipped") + " (No gemini hostname given)"
       puts "   - Call with GEMINI=<publicly accessible hostname/IP of gemini cluster>"
     end
   end
