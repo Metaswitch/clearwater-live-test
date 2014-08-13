@@ -30,7 +30,7 @@ GEM
       coderay (~> 1.0.5)
       method_source (~> 0.8)
       slop (~> 3.4)
-    quaff (0.6.1)
+    quaff (0.6.2)
       abnf-parsing (>= 0.2.0)
       facter (>= 1.7.3)
       milenage (>= 0.1.0)
