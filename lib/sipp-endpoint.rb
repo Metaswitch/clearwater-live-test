@@ -38,7 +38,14 @@ require 'erubis'
 require 'cgi'
 require_relative 'ellis-endpoint'
 
-class SIPpEndpoint < EllisEndpoint
+class SIPpEndpoint
+  extend Forwarder
+  forward_all :username, :password, :sip_uri, :domain, :private_id, :pstn, :transport, :set_simservs, :set_ifc, :cleanup, :element_type, :instance_id, to: :provisioner
+  attr_reader :provisioner
+
+  def initialize(provisioner)
+    @provisioner = provisioner
+  end
 
   def send(message, options={})
     SIPpPhase.new(message, self, options)
@@ -61,16 +68,16 @@ class SIPpEndpoint < EllisEndpoint
     register_flow = []
     if auth_reqd
       register_flow << send("REGISTER")
-      if @transport == :tcp
+      if @provisioner.transport == :tcp
         register_flow << recv("401", save_auth: true)
-      elsif @transport == :udp
+      elsif @provisioner.transport == :udp
         # In some situations, bono will allow a message through if the IP, port
         # and username match a recent REGISTER.  Since ellis allocates numbers
         # pretty deterministically, this happens quite often.
         register_flow << recv("200", optional: true, next_label: label_id, save_nat_ip: true)
         register_flow << recv("401", save_auth: true)
       else
-        throw "Unrecognized transport #{@transport}"
+        throw "Unrecognized transport #{@provisioner.transport}"
       end
       register_flow << send("REGISTER", auth_header: true)
     else

@@ -200,7 +200,7 @@ class TestDefinition
 
   # @@TODO - Don't pass transport in once UDP authentication is fixed
   def add_sip_endpoint
-    new_endpoint = SIPpEndpoint.new(false, @deployment, @transport)
+    new_endpoint = SIPpEndpoint.new EllisEndpoint.new(false, @deployment, @transport)
     @endpoints << new_endpoint
     new_endpoint
   end
@@ -226,26 +226,29 @@ class TestDefinition
   end
 
   def add_endpoint
-    new_endpoint = QuaffEndpoint.new(false, @deployment, @transport)
+    provisioner = EllisEndpoint.new(false, @deployment, @transport)
+    new_endpoint = QuaffEndpoint.new(provisioner, @deployment)
     @endpoints << new_endpoint
     new_endpoint
   end
 
   def add_specific_endpoint user_part
-    new_endpoint = QuaffEndpoint.new(false, @deployment, @transport, nil, user_part)
+    provisioner = EllisEndpoint.new(false, @deployment, @transport, nil, user_part)
+    new_endpoint = QuaffEndpoint.new(provisioner, @deployment)
     @endpoints << new_endpoint
     new_endpoint
   end
 
   # @@TODO - Don't pass transport in once UDP authentication is fixed
   def add_pstn_endpoint
-    new_endpoint = QuaffEndpoint.new(true, @deployment, @transport)
+    provisioner = EllisEndpoint.new(true, @deployment, @transport)
+    new_endpoint = QuaffEndpoint.new(provisioner, @deployment)
     @endpoints << new_endpoint
     new_endpoint
   end
 
   def add_pstn_sip_endpoint
-    new_endpoint = SIPpEndpoint.new(true, @deployment, @transport)
+    new_endpoint = SIPpEndpoint.new EllisEndpoint.new(true, @deployment, @transport)
     @endpoints << new_endpoint
     new_endpoint
   end
@@ -263,20 +266,21 @@ class TestDefinition
   end
 
   def add_public_identity(ep)
-    new_endpoint = SIPpEndpoint.new(ep.pstn,
-                                    ep.domain,
-                                    ep.transport,
-                                    ep)
+    new_endpoint = SIPpEndpoint.new EllisEndpoint.new(ep.pstn,
+                                                      ep.domain,
+                                                      ep.transport,
+                                                      ep)
     fail "Added public identity does not share private ID" unless new_endpoint.private_id == ep.private_id
     @endpoints << new_endpoint
     new_endpoint
   end
 
   def add_quaff_public_identity(ep)
-    new_endpoint = QuaffEndpoint.new(ep.pstn,
-                                     ep.domain,
-                                     ep.transport,
-                                     ep)
+    provisioner = EllisEndpoint.new(ep.pstn,
+                                    ep.domain,
+                                    ep.transport,
+                                    ep)
+    new_endpoint = QuaffEndpoint.new(provisioner, @deployment)
     fail "Added public identity does not share private ID" unless new_endpoint.private_id == ep.private_id
     @endpoints << new_endpoint
     new_endpoint

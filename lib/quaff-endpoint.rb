@@ -38,35 +38,36 @@ require 'erubis'
 require 'cgi'
 require_relative 'ellis-endpoint'
 require 'quaff'
+require 'forwarder'
 
-class QuaffEndpoint < EllisEndpoint
-  attr_reader :quaff
+class QuaffEndpoint
+  extend Forwarder
+  forward_all :incoming_call, :outgoing_call, :terminate, :register, :unregister, :msg_trace, :uri, :sdp_port, :sdp_socket, :msg_log, :local_port, to: :quaff
+  forward_all :username, :password, :sip_uri, :domain, :private_id, :pstn, :transport, :set_simservs, :set_ifc, to: :provisioner
+  attr_reader :quaff, :provisioner
 
-  def initialize(pstn, deployment, transport, shared_identity = nil, specific_id = nil)
-    super
+  def initialize(provisioner, deployment)
     registrar = ENV['PROXY'] || deployment
-    if transport == :tcp then
-      @quaff = Quaff::TCPSIPEndpoint.new(@sip_uri,
-                                         @private_id,
-                                         @password,
+    if provisioner.transport == :tcp then
+      @quaff = Quaff::TCPSIPEndpoint.new(provisioner.sip_uri,
+                                         provisioner.private_id,
+                                         provisioner.password,
                                          :anyport,
                                          registrar)
     else
-      @quaff = Quaff::UDPSIPEndpoint.new(@sip_uri,
-                                         @private_id,
-                                         @password,
+      @quaff = Quaff::UDPSIPEndpoint.new(provisioner.sip_uri,
+                                         provisioner.private_id,
+                                         provisioner.password,
                                          :anyport,
                                          registrar)
     end
-    @quaff.instance_id = instance_id
+    @quaff.instance_id = provisioner.instance_id
+    @provisioner = provisioner
   end
 
   def cleanup
     @quaff.terminate
-    super
+    @provisioner.cleanup
   end
 
-  def method_missing meth, *args, &block
-    @quaff.send meth, *args, &block
-  end
 end
