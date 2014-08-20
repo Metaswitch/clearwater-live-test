@@ -90,8 +90,11 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
     call = caller.outgoing_call(callee_voip.uri)
 
     call.send_request("INVITE")
+
     call.recv_response("100")
     call.recv_response("180")
+    call.recv_response("180")
+
     call.recv_response_and_create_dialog("200")
 
     call.new_transaction
@@ -101,8 +104,6 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
     call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
-
-    call.send_request("ACK")
     call.end_call
   end
 
@@ -115,7 +116,7 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
     call_voip.send_response("100", "Trying")
 
     # Wait before the VoIP device accepts the call
-    sleep 0.1
+    sleep 0.3
 
     call_voip.send_response("180", "Ringing")
     call_voip.send_response("200", "OK")
@@ -129,10 +130,14 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
   t.add_quaff_scenario do
     call_mobile = callee_mobile.incoming_call
 
-    call_mobile.recv_request("INVITE")
+    invite = call_mobile.recv_request("INVITE")
 
     call_mobile.send_response("100", "Trying")
+    call_mobile.send_response("180", "Ringing")
+
     call_mobile.recv_request("CANCEL")
+    call_mobile.assoc_with_msg(invite)
+    call_mobile.send_response("487", "Request Terminated")
 
     call_mobile.end_call
   end
@@ -165,7 +170,9 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
     call = caller.outgoing_call(callee_voip.uri)
 
     call.send_request("INVITE")
+
     call.recv_response("100")
+    call.recv_response("180")
     call.recv_response("180")
 
     call.recv_response_and_create_dialog("200")
@@ -177,8 +184,6 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
     call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
-
-    call.send_request("ACK")
     call.end_call
   end
 
@@ -189,7 +194,12 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
     fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.phone"
 
     call_voip.send_response("100", "Trying")
+    call_voip.send_response("180", "Ringing")
+
     call_voip.recv_request("CANCEL")
+    call_voip.assoc_with_msg(invite)
+    call_voip.send_response("487", "Request Terminated")
+
     call_voip.end_call
   end
 
@@ -198,10 +208,11 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
 
     call_mobile.recv_request("INVITE")
     call_mobile.send_response("100", "Trying")
+    call_mobile.send_response("180", "Ringing")
 
     # Wait before the mobile device accepts the call
-    sleep 0.1
-    call_mobile.send_response("180", "Ringing")
+    sleep 0.3
+
     call_mobile.send_response("200", "OK")
     call_mobile.recv_request("ACK")
 
@@ -253,8 +264,6 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
     call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
-
-    call.send_request("ACK")
     call.end_call
   end
 
@@ -277,7 +286,7 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
 
     # Wait to make sure the VoIP device rejects the call before the mobile device
     # accepts the call
-    sleep 0.1
+    sleep 0.3
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
@@ -316,9 +325,11 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
     call = caller.outgoing_call(callee_voip.uri)
 
     call.send_request("INVITE")
+
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("180")
+
     call.recv_response_and_create_dialog("200")
 
     call.new_transaction
@@ -328,8 +339,6 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
     call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
-
-    call.send_request("ACK")
     call.end_call
   end
 
@@ -341,7 +350,7 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
 
     # Wait to make sure the mobile device rejects the call before the VoIP device
     # accepts the call
-    sleep 0.1
+    sleep 0.3
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
@@ -365,7 +374,8 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
 end
 
 # Test INVITE where the mobile device rejects the call with a 480.
-GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
+# TODO BLOCKED. Need to be able to set the sip.phone parameter on an endpoint first.
+SkippedTestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
   caller = t.add_endpoint
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
@@ -389,9 +399,11 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") d
     call = caller.outgoing_call(callee_voip.uri)
 
     call.send_request("INVITE")
+
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("180")
+
     call.recv_response_and_create_dialog("200")
 
     call.new_transaction
@@ -401,8 +413,6 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") d
     call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
-
-    call.send_request("ACK")
     call.end_call
   end
 
@@ -413,14 +423,22 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") d
     fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.phone"
 
     call_voip.send_response("100", "Trying")
+    call_voip.send_response("180", "Ringing")
 
+    # TODO this INVITE isn't being sent on because it's failing the contact filtering check
+    # (this used to pass as we were checking for required rather than require).
     invite2 = call_voip.recv_request("INVITE")
-    fail "Call for VoIP device does not include the Accept-Contact header" unless invite2.all_headers("Accept-Contact").include? "*;required;+sip.phone;explicit"
+    fail "Call for VoIP device does not include the Accept-Contact header" unless invite2.all_headers("Accept-Contact").include? "*;require;+sip.phone;explicit"
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
+
+    call_voip.assoc_with_msg(invite)
+    call_voip.send_response("480", "Temporarily Unavailable")
+
+    call_voip.assoc_with_msg(invite2)
     call_voip.send_response("200", "OK")
-    call_voip.recv_request("CANCEL")
+
     call_voip.recv_request("ACK")
     call_voip.recv_request("BYE")
     call_voip.send_response("200", "OK")
@@ -435,7 +453,9 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") d
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
-    sleep 0.1
+
+    sleep 0.3
+
     call_mobile.send_response("480", "Temporarily Unavailable")
     call_mobile.end_call
   end
@@ -467,9 +487,11 @@ GeminiTestDefinition.new("Gemini - INVITE - Both reject, choose mobile response"
     call = caller.outgoing_call(callee_voip.uri)
 
     call.send_request("INVITE")
+
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("180")
+
     call.recv_response("500")
     call.end_call
   end
@@ -525,9 +547,11 @@ GeminiTestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") 
     call = caller.outgoing_call(callee_voip.uri)
 
     call.send_request("INVITE")
+
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("180")
+
     call.recv_response("487")
     call.end_call
   end
@@ -618,7 +642,7 @@ GeminiTestDefinition.new("Gemini - SUBSCRIBE - Mainline") do |t|
     call_voip = callee_voip.incoming_call
 
     call_voip.recv_request("SUBSCRIBE")
-    call_voip.send_response("408", "")
+    call_voip.send_response("408", "Request Timeout")
     call_voip.end_call
   end
 
