@@ -8,6 +8,7 @@ gem 'rake'
 gem 'snmp'
 gem 'quaff'
 gem 'facter'
+gem 'nokogiri'
 
 group :development do
   gem 'pry'
