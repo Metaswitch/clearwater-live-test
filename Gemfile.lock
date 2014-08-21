@@ -17,6 +17,9 @@ GEM
     facter (2.1.0)
       CFPropertyList (~> 2.2.6)
     git (1.2.5)
+    httpclient (2.4.0)
+    httpi (2.2.5)
+      rack
     jeweler (1.8.4)
       bundler (~> 1.0)
       git (>= 1.2.5)
@@ -37,6 +40,7 @@ GEM
       abnf-parsing (>= 0.2.0)
       facter (>= 1.7.3)
       milenage (>= 0.1.0)
+    rack (1.5.2)
     rake (10.0.3)
     rake-compiler (0.8.3)
       rake
@@ -55,6 +59,8 @@ PLATFORMS
 DEPENDENCIES
   erubis
   facter
+  httpclient
+  httpi
   joker!
   nokogiri
   pry

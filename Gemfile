@@ -9,6 +9,8 @@ gem 'snmp'
 gem 'quaff'
 gem 'facter'
 gem 'nokogiri'
+gem 'httpi'
+gem 'httpclient'
 
 group :development do
   gem 'pry'
