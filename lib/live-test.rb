@@ -43,7 +43,6 @@ require_relative 'ellis'
 require_relative 'sipp-phase'
 require_relative 'sipp-endpoint'
 require_relative 'fake-endpoint'
-require_relative 'mock-as'
 
 def run_tests(domain, glob="*")
   # Load and run all the tests

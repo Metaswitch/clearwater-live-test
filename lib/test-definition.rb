@@ -224,11 +224,6 @@ class TestDefinition
     include_endpoint FakeEndpoint.new(username, @deployment)
   end
 
-  def add_mock_as(domain, port)
-    # TODO - pass in actual domain
-    include_endpoint MockAS.new(domain, port)
-  end
-
     # Methods for defining and running SIPp-based tests (only needed for the live
   # calls where we need real media)
 
