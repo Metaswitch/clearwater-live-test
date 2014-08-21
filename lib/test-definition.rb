@@ -60,6 +60,15 @@ module RedGreen
   end
 end
 
+class SkipThisTest < Exception
+  attr_accessor :why_skipped, :how_to_enable
+  def initialize why_skipped, how_to_enable=nil
+    super why_skipped
+    @why_skipped = why_skipped
+    @how_to_enable = how_to_enable
+  end
+end
+
 class TestDefinition
   attr_accessor :name, :current_label_id
   attr_writer :timeout
@@ -115,6 +124,9 @@ class TestDefinition
           puts "  #{e.class} thrown:"
           puts "   - #{e}"
           puts e.backtrace.map { |line| "     - " + line }.join("\n")
+        rescue SkipThisTest => e
+          puts RedGreen::Color.yellow("Skipped") + " (#{e.why_skipped})"
+          puts "   - #{e.how_to_enable}" if e.how_to_enable
         end
       end
     end
@@ -260,6 +272,34 @@ class TestDefinition
       TestDefinition.unset_current_test
     end
     return retval
+  end
+
+  def skip
+    raise SkipThisTest.new "Test disabled"
+  end
+
+  def skip_unless_pstn
+    raise SkipThisTest.new "No PSTN support", "Call with PSTN=true to run test" unless ENV['PSTN']
+  end
+
+  def skip_unless_mmtel
+    raise SkipThisTest.new "No MMTel TAS support" if ENV['NOMMTEL']
+  end
+
+  def skip_unless_hostname
+    raise SkipThisTest.new "No hostname given", "Call with HOSTNAME=<publicly accessible hostname/IP of this machine>" unless ENV['HOSTNAME']
+  end
+
+  def skip_unless_ellis_api_key
+    raise SkipThisTest.new "No Ellis API key given", "Call with ELLIS_API_KEY=<key>" unless ENV['ELLIS_API_KEY']
+  end
+
+  def skip_if_udp
+    raise SkipThisTest.new "Test is not valid for UDP" unless @transport == :udp
+  end
+
+  def skip_unless_live
+    raise SkipThisTest.new "No live number given", "Call with LIVENUMBER=<number>" unless ENV['LIVENUMBER']
   end
 
   private
@@ -460,93 +500,4 @@ class TestDefinition
   end
 end
 
-class SkippedTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    puts RedGreen::Color.yellow("Skipped") + " (Test disabled)"
-  end
-end
 
-class PSTNTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['PSTN']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No PSTN support)"
-      puts "   - Call with PSTN=true to run test"
-    end
-  end
-end
-
-class MMTelTestDefinition < TestDefinition
-  def run(*args)
-    unless ENV['NOMMTEL']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No MMTel TAS support)"
-    end
-  end
-end
-
-class MMTelPSTNTestDefinition < PSTNTestDefinition
-  def run(*args)
-    clear_diags
-    unless ENV['NOMMTEL']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No MMTel TAS support)"
-    end
-  end
-end
-
-
-class LiveTestDefinition < PSTNTestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['LIVENUMBER']
-      # The live call takes approximately 10 seconds to run so extend the timeout
-      # for this test.
-      @timeout = 20
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No live number given)"
-      puts "   - Call with LIVENUMBER=<number>"
-    end
-  end
-end
-
-class ASTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['HOSTNAME']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No hostname given)"
-      puts "   - Call with HOSTNAME=<publicly accessible hostname/IP of this machine>"
-    end
-  end
-end
-
-class EllisPrivilegesTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['ELLIS_API_KEY']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No Ellis API key)"
-      puts "   - Call with ELLIS_API_KEY=<key>"
-    end
-  end
-end
-
-class NotValidForUDPASTestDefinition < ASTestDefinition
-  def run(domain, transport, *args)
-    clear_diags
-    if transport == :udp
-      puts RedGreen::Color.yellow("Skipped") + " (Test is not valid for UDP)"
-    else
-      super
-    end
-  end
-end
