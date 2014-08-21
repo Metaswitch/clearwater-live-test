@@ -60,6 +60,7 @@ end
 
 class TestDefinition
   attr_accessor :name, :current_label_id
+  attr_reader :deployment
   attr_writer :timeout
 
   @@tests = []
@@ -524,6 +525,18 @@ class NotValidForUDPASTestDefinition < ASTestDefinition
       puts RedGreen::Color.yellow("Skipped") + " (Test is not valid for UDP)"
     else
       super
+    end
+  end
+end
+
+class MementoTestDefinition < TestDefinition
+  def run(*args)
+    clear_diags
+    if ENV['MEMENTO']
+      super
+    else
+      puts RedGreen::Color.yellow("Skipped") + " (No memento hostname given)"
+      puts "   - Call with MEMENTO=<publicly accessible hostname/IP of memento cluster>"
     end
   end
 end
