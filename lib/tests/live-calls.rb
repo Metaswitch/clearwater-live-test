@@ -32,7 +32,7 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-TestDefinition.new("Live Call - Dial out to a real number") do |t|
+SIPpTestDefinition.new("Live Call - Dial out to a real number") do |t|
   t.skip_unless_live
   t.skip_unless_pstn
 
@@ -40,7 +40,7 @@ TestDefinition.new("Live Call - Dial out to a real number") do |t|
   # for this test.
   t.timeout = 20
 
-  sip_caller = t.add_pstn_sip_endpoint
+  sip_caller = t.add_pstn_sipp_endpoint
   live_callee = t.add_fake_endpoint(ENV['LIVENUMBER'])
 
   t.set_scenario(

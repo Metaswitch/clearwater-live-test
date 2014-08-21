@@ -37,7 +37,7 @@ require "snmp"
 require 'resolv'
 require_relative "ellis"
 require_relative "quaff-endpoint"
-require_relative "sipp-endpoint"
+require_relative "fake-endpoint"
 
 # Source: RedGreen gem - https://github.com/kule/redgreen
 module RedGreen
@@ -224,27 +224,10 @@ class TestDefinition
     include_endpoint FakeEndpoint.new(username, @deployment)
   end
 
-    # Methods for defining and running SIPp-based tests (only needed for the live
-  # calls where we need real media)
-
-  def add_sip_endpoint
-    line = provision_line
-    include_endpoint SIPpEndpoint.new(line, @transport)
-  end
-
-  def add_pstn_sip_endpoint
-    line = provision_pstn_line
-    include_endpoint SIPpEndpoint.new(line, @transport)
-  end
-
-  def set_scenario(scenario)
-    @scenario = scenario
-  end
-
   def run(deployment, transport)
+    before_run
     @deployment = deployment
     @transport = transport
-    clear_diags
     @quaff_scenario_blocks = []
     @quaff_threads = []
     TestDefinition.set_current_test(self)
@@ -254,13 +237,7 @@ class TestDefinition
       print "(#{@endpoints.map { |e| e.sip_uri }.join ", "}) "
       @quaff_setup_blk.call if @quaff_setup_blk
       @quaff_threads = @quaff_scenario_blocks.map { |blk| Thread.new &blk }
-      if @scenario
-        sipp_scripts = create_sipp_scripts
-        @sipp_pids = launch_sipp sipp_scripts
-        retval = wait_for_sipp
-      else
-        retval = true
-      end
+      retval = extra_validation
       verify_snmp_stats if ENV['SNMP'] != "N"
     ensure
       retval &= cleanup
@@ -299,6 +276,13 @@ class TestDefinition
 
   private
 
+  def before_run
+  end
+
+  def extra_validation
+    return true
+  end
+
   # Methods for provisioning/retrieving various types of users
 
   def provision_line
@@ -322,6 +306,9 @@ class TestDefinition
   def include_endpoint new_endpoint
     @endpoints << new_endpoint
     new_endpoint
+  end
+
+  def on_failure
   end
 
   def cleanup
@@ -357,16 +344,7 @@ class TestDefinition
       @quaff_cleanup_blk.call
     end
 
-    # If we failed any call scenario, dump out the log files.
-    unless retval
-      @endpoints.each do |e|
-        log_file_name = File.join(File.dirname(__FILE__),
-                                  "..",
-                                  "scripts",
-                                  "#{@name} - #{@transport.to_s.upcase} - #{e.sip_uri}.log")
-        File.write(log_file_name, e.msg_log.join("\n\n================\n\n"))
-      end
-    end
+    on_failure unless retval
 
     # Reverse the endpoints list so that associated public IDs are
     # deleted before the default public ID (which was created first).
@@ -421,78 +399,5 @@ class TestDefinition
     end
   end
 
-  def create_sipp_scripts
-    sipp_scripts = []
-    # Filter out AS scenario as it will go into a separate SIPp file
-    grouped_scripts = @scenario.group_by { |s| s.sender.element_type }
-    grouped_scripts.each do |element_type, scenario|
-      sipp_scripts.push(create_sipp_script(scenario, element_type)) unless scenario.empty?
-    end
-    sipp_scripts
-  end
-
-  def create_sipp_script(scenario, element_type)
-    sipp_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
-      "<scenario name=\"#{@name} - #{element_type.to_s}\">\n" +
-      scenario.each { |s| s.to_s }.join("\n") +
-      "\n" +
-      "  <ResponseTimeRepartition value=\"10, 20, 30, 40, 50, 100, 150, 200\" />\n" +
-      "  <CallLengthRepartition value=\"10, 50, 100, 500, 1000, 5000, 10000\" />\n" +
-      "</scenario>"
-    output_file_name = File.join(File.dirname(__FILE__),
-                                 "..",
-                                 "scripts",
-                                 "#{@name} - #{@transport.to_s.upcase} - #{element_type.to_s}.xml")
-    File.write(output_file_name, sipp_xml)
-    { scenario_file: output_file_name, element_type: element_type }
-  end
-
-
-  def launch_sipp(sipp_scripts)
-    sipp_pids = sipp_scripts.map do |s|
-      fail "No scenario file" if s[:scenario_file].nil?
-
-      @deployment = ENV['PROXY'] if ENV['PROXY']
-      transport_flag = s[:element_type] == :as ? "t1" : { udp: "u1", tcp: "t1" }[@transport]
-      cmd = "sudo TERM=xterm ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{s[:scenario_file]}\" #{@deployment}"
-      cmd += " -p 5070" if s[:element_type] == :as
-      Process.spawn(cmd, :out => "/dev/null", :err => "#{s[:scenario_file]}.err")
-    end
-    fail if sipp_pids.any? { |pid| pid.nil? }
-    sipp_pids
-  end
-
-  def get_diags
-    Dir["scripts/#{@name} - #{@transport.to_s.upcase}*"]
-  end
-
-  def clear_diags
-    get_diags.each do |d|
-      File.unlink(d)
-    end
-  end
-
-  def wait_for_sipp
-    # Limit test execution to 10 seconds
-    return_codes = ( Timeout::timeout(@timeout) { Process.waitall.map { |p| p[1].exitstatus } } rescue nil )
-    if return_codes.nil? or return_codes.any? { |rc| rc != 0 }
-      TestDefinition.record_failure
-      if return_codes.nil?
-        puts RedGreen::Color.red("ERROR (TIMED OUT)")
-        @sipp_pids.each { |pid| Process.kill("SIGKILL", pid) rescue puts "Could not kill process with pid #{pid}" }
-      else
-        puts RedGreen::Color.red("ERROR (#{return_codes.join ", "})")
-      end
-      puts "  Diags can be found at:"
-      get_diags.each do |d|
-        puts "   - #{d}"
-      end
-      return false
-    else
-      clear_diags
-      return true
-    end
-  end
 end
-
 

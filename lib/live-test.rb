@@ -39,10 +39,8 @@ require 'require_all'
 require 'rest-client'
 require 'joker'
 require_relative 'test-definition'
+require_relative 'sipp-test-definition'
 require_relative 'ellis'
-require_relative 'sipp-phase'
-require_relative 'sipp-endpoint'
-require_relative 'fake-endpoint'
 
 def run_tests(domain, glob="*")
   # Load and run all the tests
