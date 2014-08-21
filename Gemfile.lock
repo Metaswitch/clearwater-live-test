@@ -16,6 +16,7 @@ GEM
     erubis (2.7.0)
     facter (2.1.0)
       CFPropertyList (~> 2.2.6)
+    forwarder (0.1.1)
     git (1.2.5)
     jeweler (1.8.4)
       bundler (~> 1.0)
@@ -52,6 +53,7 @@ PLATFORMS
 DEPENDENCIES
   erubis
   facter
+  forwarder
   joker!
   pry
   quaff

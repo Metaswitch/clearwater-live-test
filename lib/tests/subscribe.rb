@@ -33,6 +33,7 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
+  t.skip
 
   ep1 = t.add_endpoint
   t.add_quaff_setup do
@@ -42,7 +43,7 @@ TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
 
-    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342]})
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>], "From" => %Q[<#{ep1.uri}>;tag=2342342342]})
 
     # 200 and NOTIFY can come in any order, so expect either of them, twice
     call.recv_any_of [200, "NOTIFY"]
