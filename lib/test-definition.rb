@@ -160,28 +160,28 @@ class TestDefinition
 
   # Methods for defining Quaff endpoints
 
-  def add_endpoint
-    line = provision_line
-    include_endpoint QuaffEndpoint.new(line, @transport)
+  def add_endpoint line=nil
+    line ||= provision_line
+    include_endpoint QuaffEndpoint.new(line, @transport, @endpoints.length)
   end
 
   def add_specific_endpoint user_part
     line = provision_specific_line user_part
-    include_endpoint QuaffEndpoint.new(line, @transport)
+    add_endpoint line
   end
 
   def add_pstn_endpoint
     line = provision_pstn_line
-    include_endpoint QuaffEndpoint.new(line, @transport)
+    add_endpoint line
   end
 
   def add_public_identity(ep)
     line = provision_associated_line ep
-    include_endpoint QuaffEndpoint.new(line, @transport)
+    add_endpoint line
   end
 
   def add_new_binding(ep)
-    include_endpoint QuaffEndpoint.new(ep.line_info, @transport)
+    add_endpoint ep.line_info
   end
 
 

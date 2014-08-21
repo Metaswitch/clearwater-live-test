@@ -37,16 +37,14 @@ require 'json'
 require 'erubis'
 require 'cgi'
 require 'quaff'
-require 'forwarder'
+require_relative 'endpoint'
 
-class QuaffEndpoint
-  extend Forwarder
-  forward_all :incoming_call, :outgoing_call, :terminate, :register, :unregister, :msg_trace, :uri, :sdp_port, :sdp_socket, :msg_log, :local_port, to: :quaff
-  forward_all :password, :sip_uri, :domain, :private_id, :pstn, :transport, :set_simservs, :set_ifc, :domain, to: :line_info
-  attr_reader :quaff, :line_info
+class QuaffEndpoint < Endpoint
+  forward_all :incoming_call, :outgoing_call, :terminate, :register, :unregister, :msg_trace, :uri, :sdp_port, :sdp_socket, :msg_log, :local_port, :contact_header, :contact_header=, :no_new_calls?, to: :quaff
+  attr_reader :quaff
 
-  def initialize(line_info, transport)
-    @line_info = line_info
+  def initialize(line_info, transport, endpoint_idx)
+    super line_info, transport, endpoint_idx
     registrar = ENV['PROXY'] || domain
     if transport == :tcp then
       @quaff = Quaff::TCPSIPEndpoint.new(sip_uri,
@@ -61,12 +59,12 @@ class QuaffEndpoint
                                          :anyport,
                                          registrar)
     end
-    @quaff.instance_id = line_info.instance_id
+    @quaff.instance_id = instance_id
   end
 
   def cleanup
     @quaff.terminate
-    @line_info.cleanup
+    super
   end
 
 end

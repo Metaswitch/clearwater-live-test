@@ -123,6 +123,73 @@ TestDefinition.new("Filtering - Accept-Contact negated match") do |t|
   end
 end
 
+TestDefinition.new("Filtering - RFC3841 example") do |t|
+  caller = t.add_endpoint
+  callee_binding1 = t.add_endpoint
+  callee_binding2 = t.add_new_binding callee_binding1
+  callee_binding3 = t.add_new_binding callee_binding1
+  callee_binding4 = t.add_new_binding callee_binding1
+  callee_binding5 = t.add_new_binding callee_binding1
+
+  t.add_quaff_setup do
+    callee_binding1.contact_header += ';audio;video;methods="INVITE,BYE";q=0.2'
+    callee_binding2.contact_header += ';audio="FALSE";methods="INVITE";actor="msg-taker";q=0.2'
+    callee_binding3.contact_header += ';audio;actor="msg-taker";methods="INVITE";video;q=0.3'
+    callee_binding4.contact_header += ';audio;methods="INVITE,OPTIONS";q=0.2'
+    callee_binding5.contact_header += ';q=0.5'
+
+    caller.register
+    callee_binding1.register
+    callee_binding2.register
+    callee_binding3.register
+    callee_binding4.register
+    ok = callee_binding5.register
+    fail "200 OK Contact header did not contain 5 bindings" unless ok.headers["Contact"].length == 5
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee_binding1.uri)
+
+    call.send_request("MESSAGE",
+                      "hello world\r\n",
+                      {"Content-Type" => "text/plain",
+                        "Accept-Contact" => ["*;audio;require", "*;video;explicit", '*;methods="BYE";class="business";q=1.0'],
+                      "Reject-Contact" => '*;actor="msg-taker";video'})
+    call.recv_response("200")
+    call.end_call
+
+  end
+
+  t.add_quaff_scenario do
+    # Wait long enough to ensure the call is forked
+    sleep 0.3
+
+    # Call should be forked to bindings 1, 4 and 5 simultaneously -
+    # answer it from 5 and check that 1 and 4 have a call come in
+    call2 = callee_binding5.incoming_call
+    call2.recv_request("MESSAGE")
+    call2.send_response("200", "OK")
+    call2.end_call
+
+    fail "Call was not forked to binding 1" if callee_binding1.no_new_calls?
+    fail "Call was not forked to binding 4" if callee_binding4.no_new_calls?
+
+    # Expect binding 3 to be rejected because it matches the Reject-Contact
+    fail "Call was forked to binding 3" unless callee_binding3.no_new_calls?
+    # Expect binding 2 to be rejected because audio is required
+    fail "Call was forked to binding 2" unless callee_binding2.no_new_calls?
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee_binding1.unregister
+    callee_binding2.unregister
+    callee_binding3.unregister
+    callee_binding4.unregister
+    callee_binding5.unregister
+  end
+end
+
 TestDefinition.new("Filtering - Reject-Contact no match") do |t|
   caller = t.add_endpoint
   callee = t.add_endpoint

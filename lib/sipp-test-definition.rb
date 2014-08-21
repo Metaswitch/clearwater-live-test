@@ -42,12 +42,12 @@ class SIPpTestDefinition < TestDefinition
 
   def add_sipp_endpoint
     line = provision_line
-    include_endpoint SIPpEndpoint.new(line, @transport)
+    include_endpoint SIPpEndpoint.new(line, @transport, @endpoints.length)
   end
 
   def add_pstn_sipp_endpoint
     line = provision_pstn_line
-    include_endpoint SIPpEndpoint.new(line, @transport)
+    include_endpoint SIPpEndpoint.new(line, @transport, @endpoints.length)
   end
 
   def set_scenario(scenario)
