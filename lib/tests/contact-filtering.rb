@@ -81,6 +81,40 @@ TestDefinition.new("Filtering - Accept-Contact no match") do |t|
                       {"Content-Type" => "text/plain", "Accept-Contact" => "*;+sip.instance=\"<wrong>\";explicit;require"})
     call.recv_response("480")
     call.end_call
+    fail unless callee.no_new_calls?
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee.unregister
+  end
+end
+
+TestDefinition.new("Filtering - Accept-Contact negated match") do |t|
+  caller = t.add_endpoint
+  callee = t.add_endpoint
+
+  t.add_quaff_setup do
+    callee.contact_header += ';+sip.test="hello,goodbye"'
+    caller.register
+    callee.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee.uri)
+
+    call.send_request("MESSAGE",
+                      "hello world\r\n",
+                      {"Content-Type" => "text/plain", "Accept-Contact" => "*;+sip.test=\"!hello\";explicit;require"})
+    call.recv_response("200")
+    call.end_call
+  end
+
+  t.add_quaff_scenario do
+    call2 = callee.incoming_call
+    call2.recv_request("MESSAGE")
+    call2.send_response("200", "OK")
+    call2.end_call
   end
 
   t.add_quaff_cleanup do
@@ -121,7 +155,7 @@ TestDefinition.new("Filtering - Reject-Contact no match") do |t|
   end
 end
 
-TestDefinition.new("Basic Call - Messages - Reject-Contact match") do |t|
+TestDefinition.new("Filtering - Reject-Contact match") do |t|
   caller = t.add_endpoint
   callee = t.add_endpoint
 
@@ -135,9 +169,11 @@ TestDefinition.new("Basic Call - Messages - Reject-Contact match") do |t|
 
     call.send_request("MESSAGE",
                       "hello world\r\n",
-                      {"Content-Type" => "text/plain", "Reject-Contact" => "*;+sip.instance=\"<urn:uuid:#{callee.instance_id}>\""})
+                      {"Content-Type" => "text/plain",
+                        "Reject-Contact" => "*;+sip.instance=\"<urn:uuid:#{callee.instance_id}>\""})
     call.recv_response("480")
     call.end_call
+    fail unless callee.no_new_calls?
   end
 
   t.add_quaff_cleanup do
@@ -147,61 +183,3 @@ TestDefinition.new("Basic Call - Messages - Reject-Contact match") do |t|
 end
 
 
-TestDefinition.new("Basic Call - Pracks") do |t|
-  caller = t.add_endpoint
-  callee = t.add_endpoint
-
-  t.add_quaff_setup do
-    caller.register
-    callee.register
-  end
-
-  t.add_quaff_scenario do
-    call = caller.outgoing_call(callee.uri)
-
-    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain", "Supported" => "100rel"})
-    call.recv_response("100")
-
-    # For a PRACK, we create the dialog early, on the 180 response
-    ringing_msg = call.recv_response_and_create_dialog("180")
-
-    call.new_transaction
-    call.send_request("PRACK", "", {"RAck" => "#{ringing_msg.header("RSeq")} #{ringing_msg.header("CSeq")}"})
-    call.recv_response("200")
-
-    call.recv_response_and_create_dialog("200")
-
-    call.new_transaction
-    call.send_request("ACK")
-
-    sleep 1
-    call.new_transaction
-    call.send_request("BYE")
-    call.recv_response("200")
-    call.end_call
-  end
-
-  t.add_quaff_scenario do
-    call2 = callee.incoming_call
-    original_invite = call2.recv_request("INVITE")
-    call2.send_response("100", "Trying")
-    call2.send_response("180", "Ringing", "", nil, {"Require" => "100rel", "RSeq" => "1"})
-
-    call2.recv_request("PRACK")
-    call2.send_response("200", "OK")
-
-    # Send this 200 in the original transaction, not the PRACK transaction
-    call2.assoc_with_msg(original_invite)
-    call2.send_response("200", "OK", "hello world\r\n", nil, {"Content-Type" => "text/plain"})
-    call2.recv_request("ACK")
-
-    call2.recv_request("BYE")
-    call2.send_response("200", "OK")
-    call2.end_call
-  end
-
-  t.add_quaff_cleanup do
-    caller.unregister
-    callee.unregister
-  end
-end
