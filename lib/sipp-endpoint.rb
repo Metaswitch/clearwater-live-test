@@ -36,7 +36,6 @@ require 'rest_client'
 require 'json'
 require 'erubis'
 require 'cgi'
-require_relative 'ellis-endpoint'
 
 class SIPpEndpoint
   extend Forwarder

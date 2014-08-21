@@ -39,6 +39,7 @@ require 'require_all'
 require 'rest-client'
 require 'joker'
 require_relative 'test-definition'
+require_relative 'ellis'
 require_relative 'sipp-phase'
 require_relative 'sipp-endpoint'
 require_relative 'fake-endpoint'
@@ -49,44 +50,9 @@ def run_tests(domain, glob="*")
   require_all 'lib/tests'
   TestDefinition.run_all(domain, Wildcard[glob, true])
 
-  destroy_leaked_numbers(domain)
+  EllisProvisionedLine.destroy_leaked_numbers(domain)
 
   exit (TestDefinition.failures == 0) ? 0 : 1
-end
-
-def destroy_leaked_numbers(domain)
-  # Despite trying to clean up numbers, we might occasionally leak them (for example if we get caught out by Cassandra's eventual consistency limitation), attempt to destroy them now.
-
-  ellis=
-    if ENV['ELLIS']
-      "http://#{ENV['ELLIS']}"
-    else
-      "http://ellis.#{domain}"
-    end
-
-  r = RestClient.post("#{ellis}/session",
-                      username: "system.test@#{domain}",
-                      password: "Please enter your details")
-  cookie = r.cookies
-  r = RestClient::Request.execute(method: :get,
-                                  url: "#{ellis}/accounts/system.test@#{domain}/numbers",
-                                  cookies: cookie)
-  j = JSON.parse(r)
-
-  # Destroy default SIP URIs last
-  default_numbers = j["numbers"].select { |n| is_default_public_id? n }
-  ordered_numbers = (j["numbers"] - default_numbers) + default_numbers
-  ordered_numbers.each do |n|
-    begin
-      puts "Deleting leaked number: #{n["sip_uri"]}"
-      RestClient::Request.execute(method: :delete,
-                                  url: "#{ellis}/accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/",
-                                  cookies: cookie)
-    rescue StandardError
-      puts "Failed to delete leaked number, check Ellis logs"
-      next
-    end
-  end
 end
 
 def is_default_public_id? number

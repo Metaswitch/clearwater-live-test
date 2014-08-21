@@ -35,7 +35,9 @@
 require 'timeout'
 require "snmp"
 require 'resolv'
+require_relative "ellis"
 require_relative "quaff-endpoint"
+require_relative "sipp-endpoint"
 
 # Source: RedGreen gem - https://github.com/kule/redgreen
 module RedGreen
@@ -66,6 +68,8 @@ class TestDefinition
   @@current_test = nil
   @@failures = 0
 
+# Class methods
+
   def self.add_instance(i)
     @@tests << i
   end
@@ -88,6 +92,7 @@ class TestDefinition
     repeat = ENV['REPEAT'].to_i
     req_transports = ENV['TRANSPORT'].downcase.split(',').map { |t| t.to_sym }
     transports = [:tcp, :udp].select { |t| req_transports.include? t }
+
     unless req_transports == transports
       STDERR.puts "ERROR: Unsupported transports #{req_transports - transports} requested"
       exit 2
@@ -129,6 +134,8 @@ class TestDefinition
     @@current_test.current_label_id.to_s
   end
 
+  # Instance methods
+
   def initialize(name, &blk)
     TestDefinition.add_instance self
     @name = name
@@ -137,6 +144,149 @@ class TestDefinition
     @blk = blk
     @current_label_id = 0
     @timeout = 10
+  end
+
+  # Methods for defining Quaff endpoints
+
+  def add_endpoint
+    line = provision_line
+    include_endpoint QuaffEndpoint.new(line, @transport)
+  end
+
+  def add_specific_endpoint user_part
+    line = provision_specific_line user_part
+    include_endpoint QuaffEndpoint.new(line, @transport)
+  end
+
+  def add_pstn_endpoint
+    line = provision_pstn_line
+    include_endpoint QuaffEndpoint.new(line, @transport)
+  end
+
+  def add_public_identity(ep)
+    line = provision_associated_line ep
+    include_endpoint QuaffEndpoint.new(line, @transport)
+  end
+
+  def add_new_binding(ep)
+    include_endpoint QuaffEndpoint.new(ep.line_info, @transport)
+  end
+
+
+  # Methods for defining Quaff-based test scenarios
+  def add_quaff_setup &blk
+    @quaff_setup_blk = blk
+  end
+
+  def add_quaff_scenario &blk
+    @quaff_scenario_blocks.push blk
+  end
+
+  def add_quaff_cleanup &blk
+    @quaff_cleanup_blk = blk
+  end
+
+  # Methods for defining application servers
+
+  def add_as port
+    c = Quaff::TCPSIPEndpoint.new("as1@#{@deployment}",
+                                  nil,
+                                  nil,
+                                  port,
+                                  nil)
+    @as_list.push c
+    c
+  end
+
+  def add_udp_as port
+    c = Quaff::UDPSIPEndpoint.new("as1@#{@deployment}",
+                                  nil,
+                                  nil,
+                                  port,
+                                  nil)
+    @as_list.push c
+    c
+  end
+
+  def add_fake_endpoint(username)
+    include_endpoint FakeEndpoint.new(username, @deployment)
+  end
+
+  def add_mock_as(domain, port)
+    # TODO - pass in actual domain
+    include_endpoint MockAS.new(domain, port)
+  end
+
+    # Methods for defining and running SIPp-based tests (only needed for the live
+  # calls where we need real media)
+
+  def add_sip_endpoint
+    line = provision_line
+    include_endpoint SIPpEndpoint.new(line)
+  end
+
+  def add_pstn_sip_endpoint
+    line = provision_pstn_line
+    include_endpoint SIPpEndpoint.new(line)
+  end
+
+  def set_scenario(scenario)
+    @scenario = scenario
+  end
+
+    def run(deployment, transport)
+    @deployment = deployment
+    @transport = transport
+    clear_diags
+    @quaff_scenario_blocks = []
+    @quaff_threads = []
+    TestDefinition.set_current_test(self)
+    retval = false
+    begin
+      @blk.call(self)
+      print "(#{@endpoints.map { |e| e.sip_uri }.join ", "}) "
+      @quaff_setup_blk.call if @quaff_setup_blk
+      @quaff_threads = @quaff_scenario_blocks.map { |blk| Thread.new &blk }
+      if @scenario
+        sipp_scripts = create_sipp_scripts
+        @sipp_pids = launch_sipp sipp_scripts
+        retval = wait_for_sipp
+      else
+        retval = true
+      end
+      verify_snmp_stats if ENV['SNMP'] != "N"
+    ensure
+      retval &= cleanup
+      TestDefinition.unset_current_test
+    end
+    return retval
+  end
+
+  private
+
+  # Methods for provisioning/retrieving various types of users
+
+  def provision_line
+    EllisProvisionedLine.new(@deployment)
+  end
+
+  def provision_specific_line
+    EllisProvisionedLine.specific_line(user_part, @deployment)
+  end
+
+  def provision_pstn_line
+    EllisProvisionedLine.new_pstn_line(@deployment)
+  end
+
+  def provision_associated_line ep
+    line = EllisProvisionedLine.associated_public_identity(ep)
+    fail "Added public identity does not share private ID" unless line.private_id == ep.private_id
+    line
+  end
+
+  def include_endpoint new_endpoint
+    @endpoints << new_endpoint
+    new_endpoint
   end
 
   def cleanup
@@ -198,164 +348,6 @@ class TestDefinition
     retval
   end
 
-  # @@TODO - Don't pass transport in once UDP authentication is fixed
-  def add_sip_endpoint
-    new_endpoint = SIPpEndpoint.new EllisEndpoint.new(false, @deployment, @transport)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_as port
-    c = Quaff::TCPSIPEndpoint.new("as1@#{@deployment}",
-                                  nil,
-                                  nil,
-                                  port,
-                                  nil)
-    @as_list.push c
-    c
-  end
-
-  def add_udp_as port
-    c = Quaff::UDPSIPEndpoint.new("as1@#{@deployment}",
-                                  nil,
-                                  nil,
-                                  port,
-                                  nil)
-    @as_list.push c
-    c
-  end
-
-  def add_endpoint
-    provisioner = EllisEndpoint.new(false, @deployment, @transport)
-    new_endpoint = QuaffEndpoint.new(provisioner, @deployment)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_specific_endpoint user_part
-    provisioner = EllisEndpoint.new(false, @deployment, @transport, nil, user_part)
-    new_endpoint = QuaffEndpoint.new(provisioner, @deployment)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  # @@TODO - Don't pass transport in once UDP authentication is fixed
-  def add_pstn_endpoint
-    provisioner = EllisEndpoint.new(true, @deployment, @transport)
-    new_endpoint = QuaffEndpoint.new(provisioner, @deployment)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_pstn_sip_endpoint
-    new_endpoint = SIPpEndpoint.new EllisEndpoint.new(true, @deployment, @transport)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_quaff_setup &blk
-    @quaff_setup_blk = blk
-  end
-
-  def add_quaff_scenario &blk
-    @quaff_scenario_blocks.push blk
-  end
-
-  def add_quaff_cleanup &blk
-    @quaff_cleanup_blk = blk
-  end
-
-  def add_public_identity(ep)
-    new_endpoint = SIPpEndpoint.new EllisEndpoint.new(ep.pstn,
-                                                      ep.domain,
-                                                      ep.transport,
-                                                      ep)
-    fail "Added public identity does not share private ID" unless new_endpoint.private_id == ep.private_id
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_quaff_public_identity(ep)
-    provisioner = EllisEndpoint.new(ep.pstn,
-                                    ep.domain,
-                                    ep.transport,
-                                    ep)
-    new_endpoint = QuaffEndpoint.new(provisioner, @deployment)
-    fail "Added public identity does not share private ID" unless new_endpoint.private_id == ep.private_id
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_fake_endpoint(username)
-    new_endpoint = FakeEndpoint.new(username, @deployment)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_mock_as(domain, port)
-    # TODO - pass in actual domain
-    new_endpoint = MockAS.new(domain, port)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def set_scenario(scenario)
-    @scenario = scenario
-  end
-
-  def create_sipp_scripts
-    sipp_scripts = []
-    # Filter out AS scenario as it will go into a separate SIPp file
-    grouped_scripts = @scenario.group_by { |s| s.sender.element_type }
-    grouped_scripts.each do |element_type, scenario|
-      sipp_scripts.push(create_sipp_script(scenario, element_type)) unless scenario.empty?
-    end
-    sipp_scripts
-  end
-
-  def create_sipp_script(scenario, element_type)
-    sipp_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
-      "<scenario name=\"#{@name} - #{element_type.to_s}\">\n" +
-      scenario.each { |s| s.to_s }.join("\n") +
-      "\n" +
-      "  <ResponseTimeRepartition value=\"10, 20, 30, 40, 50, 100, 150, 200\" />\n" +
-      "  <CallLengthRepartition value=\"10, 50, 100, 500, 1000, 5000, 10000\" />\n" +
-      "</scenario>"
-    output_file_name = File.join(File.dirname(__FILE__),
-                                 "..",
-                                 "scripts",
-                                 "#{@name} - #{@transport.to_s.upcase} - #{element_type.to_s}.xml")
-    File.write(output_file_name, sipp_xml)
-    { scenario_file: output_file_name, element_type: element_type }
-  end
-
-  def run(deployment, transport)
-    @deployment = deployment
-    @transport = transport
-    clear_diags
-    @quaff_scenario_blocks = []
-    @quaff_threads = []
-    TestDefinition.set_current_test(self)
-    retval = false
-    begin
-      @blk.call(self)
-      print "(#{@endpoints.map { |e| e.username }.join ", "}) "
-      @quaff_setup_blk.call if @quaff_setup_blk
-      @quaff_threads = @quaff_scenario_blocks.map { |blk| Thread.new &blk }
-      if @scenario
-        sipp_scripts = create_sipp_scripts
-        @sipp_pids = launch_sipp sipp_scripts
-        retval = wait_for_sipp
-      else
-        retval = true
-      end
-      verify_snmp_stats if ENV['SNMP'] != "N"
-    ensure
-      retval &= cleanup
-      TestDefinition.unset_current_test
-    end
-    return retval
-  end
 
   def verify_snmp_stats
     latency_threshold = 250
@@ -393,6 +385,33 @@ class TestDefinition
       puts "No SNMP responses from Bono"
     end
   end
+
+  def create_sipp_scripts
+    sipp_scripts = []
+    # Filter out AS scenario as it will go into a separate SIPp file
+    grouped_scripts = @scenario.group_by { |s| s.sender.element_type }
+    grouped_scripts.each do |element_type, scenario|
+      sipp_scripts.push(create_sipp_script(scenario, element_type)) unless scenario.empty?
+    end
+    sipp_scripts
+  end
+
+  def create_sipp_script(scenario, element_type)
+    sipp_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
+      "<scenario name=\"#{@name} - #{element_type.to_s}\">\n" +
+      scenario.each { |s| s.to_s }.join("\n") +
+      "\n" +
+      "  <ResponseTimeRepartition value=\"10, 20, 30, 40, 50, 100, 150, 200\" />\n" +
+      "  <CallLengthRepartition value=\"10, 50, 100, 500, 1000, 5000, 10000\" />\n" +
+      "</scenario>"
+    output_file_name = File.join(File.dirname(__FILE__),
+                                 "..",
+                                 "scripts",
+                                 "#{@name} - #{@transport.to_s.upcase} - #{element_type.to_s}.xml")
+    File.write(output_file_name, sipp_xml)
+    { scenario_file: output_file_name, element_type: element_type }
+  end
+
 
   def launch_sipp(sipp_scripts)
     sipp_pids = sipp_scripts.map do |s|
