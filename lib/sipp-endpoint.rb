@@ -39,11 +39,12 @@ require 'cgi'
 
 class SIPpEndpoint
   extend Forwarder
-  forward_all :username, :password, :sip_uri, :domain, :private_id, :pstn, :transport, :set_simservs, :set_ifc, :cleanup, :element_type, :instance_id, to: :provisioner
-  attr_reader :provisioner
+  forward_all :username, :password, :sip_uri, :domain, :private_id, :pstn, :set_simservs, :set_ifc, :cleanup, :element_type, :instance_id, to: :line_info
+  attr_reader :line_info, :transport
 
-  def initialize(provisioner)
-    @provisioner = provisioner
+  def initialize(line_info, transport)
+    @line_info = line_info
+    @transport = transport
   end
 
   def send(message, options={})
@@ -67,16 +68,16 @@ class SIPpEndpoint
     register_flow = []
     if auth_reqd
       register_flow << send("REGISTER")
-      if @provisioner.transport == :tcp
+      if @transport == :tcp
         register_flow << recv("401", save_auth: true)
-      elsif @provisioner.transport == :udp
+      elsif @transport == :udp
         # In some situations, bono will allow a message through if the IP, port
         # and username match a recent REGISTER.  Since ellis allocates numbers
         # pretty deterministically, this happens quite often.
         register_flow << recv("200", optional: true, next_label: label_id, save_nat_ip: true)
         register_flow << recv("401", save_auth: true)
       else
-        throw "Unrecognized transport #{@provisioner.transport}"
+        throw "Unrecognized transport #{@transport}"
       end
       register_flow << send("REGISTER", auth_header: true)
     else

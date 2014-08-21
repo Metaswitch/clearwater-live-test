@@ -222,19 +222,19 @@ class TestDefinition
 
   def add_sip_endpoint
     line = provision_line
-    include_endpoint SIPpEndpoint.new(line)
+    include_endpoint SIPpEndpoint.new(line, @transport)
   end
 
   def add_pstn_sip_endpoint
     line = provision_pstn_line
-    include_endpoint SIPpEndpoint.new(line)
+    include_endpoint SIPpEndpoint.new(line, @transport)
   end
 
   def set_scenario(scenario)
     @scenario = scenario
   end
 
-    def run(deployment, transport)
+  def run(deployment, transport)
     @deployment = deployment
     @transport = transport
     clear_diags
