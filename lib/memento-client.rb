@@ -17,7 +17,6 @@ module Memento
       @from_name = xmlnode.xpath('./from/name').text
       @answered = (xmlnode.xpath('./answered').text == "1") or (xmlnode.xpath('./answered').text == "true")
       @outgoing = (xmlnode.xpath('./outgoing').text == "0") or (xmlnode.xpath('./outgoing').text == "true")
-      @start_string = DateTime.parse(xmlnode.xpath('./start-time').text)
       @start_time = DateTime.parse(xmlnode.xpath('./start-time').text).to_time
       @answered_time = DateTime.parse(xmlnode.xpath('./answer-time').text).to_time if @answered
       @end_time = DateTime.parse(xmlnode.xpath('./end-time').text).to_time if @answered
@@ -40,23 +39,25 @@ module Memento
     end
 
     def to_s
-      if @answered and @outgoing
-        "Call to #{to_name} (#{to_uri}) made at #{@start_string} and lasting #{duration}"
-      elsif @answered and not @outgoing
-        "Call from #{from_name} (#{from_uri}) received at #{@start_string} and lasting #{duration}"
-      elsif @outgoing
-        "Unanswered call to #{to_name} (#{to_uri}) made at #{@start_string}"
+      if @answered
+        if @outgoing
+          "Call to #{to_name} (#{to_uri}) made at #{@start_time} and lasting #{duration}"
+        else
+          "Call from #{from_name} (#{from_uri}) received at #{@start_time} and lasting #{duration}"
+        end
       else
-        "Unanswered call from #{from_name} (#{from_uri}) received at #{@start_string}"
+        if @outgoing
+          "Unanswered call to #{to_name} (#{to_uri}) made at #{@start_time}"
+        else
+          "Unanswered call from #{from_name} (#{from_uri}) received at #{@start_time}"
+        end
       end
     end
   end
 
   class CallList < Array
     def self.from_xml xmlnode
-      call_list = CallList.new
-      xmlnode.xpath("//calls/call").each { |call_xml| call_list << Call.new(call_xml) }
-      call_list
+      CallList.new(xmlnode.xpath("//calls/call").map { |call_xml| Call.new(call_xml) })
     end
 
     def to_s
@@ -72,7 +73,7 @@ module Memento
   class Client
 
     def initialize schema_path, memento_server, sip_uri, username, password
-      @@schema = Nokogiri::XML::RelaxNG(File.open(schema_path))
+      @@schema ||= Nokogiri::XML::RelaxNG(File.open(schema_path))
       url = "https://#{memento_server}/org.projectclearwater.call-list/users/#{sip_uri}/call-list.xml"
       @request = HTTPI::Request.new(url)
       @request.auth.digest(username, password)
@@ -81,6 +82,8 @@ module Memento
 
     def get_call_list encoding="gzip", debug=false
       @request.headers["Accept-Encoding"] = encoding
+      puts @request.headers if debug
+      HTTPI.log = debug
       response = HTTPI.get(@request)
       puts response.headers if debug
       puts response.body if debug
