@@ -46,14 +46,14 @@ class EllisProvisionedLine
               :pstn,
               :transport
 
-  def self.destroy_leaked_numbers domain
+  def self.destroy_leaked_numbers(domain)
 
-    r = RestClient.post(ellis_url2(domain, "session"),
+    r = RestClient.post(ellis_url(domain, "session"),
                         username: "system.test@#{domain}",
                         password: "Please enter your details")
     cookie = r.cookies
     r = RestClient::Request.execute(method: :get,
-                                    url: ellis_url2(domain, "accounts/system.test@#{domain}/numbers"),
+                                    url: ellis_url(domain, "accounts/system.test@#{domain}/numbers"),
                                     cookies: cookie)
     j = JSON.parse(r)
 
@@ -64,9 +64,9 @@ class EllisProvisionedLine
       begin
         puts "Deleting leaked number: #{n["sip_uri"]}"
         RestClient::Request.execute(method: :delete,
-                                    url: ellis_url2(domain, "accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/"),
+                                    url: ellis_url(domain, "accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/"),
                                     cookies: cookie)
-      rescue StandardError
+      rescue
         puts "Failed to delete leaked number, check Ellis logs"
         next
       end
@@ -153,6 +153,15 @@ class EllisProvisionedLine
     @instance_id = "%08x-%04x-%04x-%04x-%04x%08x" % ary
   end
 
+  def self.ellis_url domain, path
+    if ENV['ELLIS']
+      "http://#{ENV['ELLIS']}/#{path}"
+    else
+      "http://ellis.#{domain}/#{path}"
+    end
+  end
+
+
 private
 
   def verify!
@@ -238,15 +247,7 @@ private
   end
 
   def ellis_url path
-    EllisProvisionedLine.ellis_url2 @domain, path
-  end
-
-  def self.ellis_url2 domain, path
-    if ENV['ELLIS']
-      "http://#{ENV['ELLIS']}/#{path}"
-    else
-      "http://ellis.#{domain}/#{path}"
-    end
+    EllisProvisionedLine.ellis_url @domain, path
   end
 
   def account_username

@@ -60,7 +60,7 @@ module RedGreen
   end
 end
 
-class SkipThisTest < Exception
+class SkipThisTest < StandardError
   attr_accessor :why_skipped, :how_to_enable
   def initialize why_skipped, how_to_enable=nil
     super why_skipped
@@ -95,6 +95,16 @@ class TestDefinition
     @@failures
   end
 
+  def self.get_diags
+    Dir["scripts/*.log"]
+  end
+
+  def self.clear_diags
+    get_diags.each do |d|
+      File.unlink(d)
+    end
+  end
+
   def self.run_all(deployment, glob)
     ENV['REPEAT'] ||= "1"
     ENV['TRANSPORT'] ||= "tcp,udp"
@@ -106,6 +116,7 @@ class TestDefinition
       STDERR.puts "ERROR: Unsupported transports #{req_transports - transports} requested"
       exit 2
     end
+    clear_diags
     tests_to_run = @@tests.select { |t| t.name =~ glob }
     repeat.times do |r|
       puts "Test iteration #{r + 1}" if repeat != 1
@@ -118,15 +129,15 @@ class TestDefinition
           elsif success == false
             record_failure
           end # Do nothing if success == nil - that means we skipped a test
+        rescue SkipThisTest => e
+          puts RedGreen::Color.yellow("Skipped") + " (#{e.why_skipped})"
+          puts "   - #{e.how_to_enable}" if e.how_to_enable
         rescue StandardError => e
           record_failure
           puts RedGreen::Color.red("Failed")
           puts "  #{e.class} thrown:"
           puts "   - #{e}"
           puts e.backtrace.map { |line| "     - " + line }.join("\n")
-        rescue SkipThisTest => e
-          puts RedGreen::Color.yellow("Skipped") + " (#{e.why_skipped})"
-          puts "   - #{e.how_to_enable}" if e.how_to_enable
         end
       end
     end
@@ -309,6 +320,14 @@ class TestDefinition
   end
 
   def on_failure
+    # If we failed any call scenario, dump out the log files.
+    @endpoints.each do |e|
+        log_file_name = File.join(File.dirname(__FILE__),
+                                  "..",
+                                  "scripts",
+                                  "#{@name.tr(' ','_')}_#{@transport.to_s.upcase}_#{e.sip_uri}.log")
+        File.write(log_file_name, e.msg_log.join("\n\n================\n\n"))
+      end
   end
 
   def cleanup

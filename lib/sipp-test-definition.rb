@@ -59,18 +59,6 @@ class SIPpTestDefinition < TestDefinition
     clear_diags
   end
 
-  def on_failure
-    # If we failed any call scenario, dump out the log files.
-    @endpoints.each do |e|
-        log_file_name = File.join(File.dirname(__FILE__),
-                                  "..",
-                                  "scripts",
-                                  "#{@name} - #{@transport.to_s.upcase} - #{e.sip_uri}.log")
-        File.write(log_file_name, e.msg_log.join("\n\n================\n\n"))
-      end
-  end
-
-
   def extra_validation
     sipp_scripts = create_sipp_scripts
     @sipp_pids = launch_sipp sipp_scripts
@@ -116,6 +104,10 @@ class SIPpTestDefinition < TestDefinition
     end
     fail if sipp_pids.any? { |pid| pid.nil? }
     sipp_pids
+  end
+
+  def on_failure
+    # SIPp dumps out its own log files
   end
 
   def get_diags
