@@ -59,7 +59,7 @@ class QuaffEndpoint < Endpoint
                                          :anyport,
                                          registrar)
     end
-    @quaff.instance_id = instance_id
+    @quaff.instance_id = @line_info.instance_id
   end
 
   def cleanup
