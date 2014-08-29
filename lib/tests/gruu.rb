@@ -68,18 +68,17 @@ TestDefinition.new("GRUU - REGISTER - two bindings with and without GRUU") do |t
 end
 
 TestDefinition.new("GRUU - REGISTER - instance ID requires escaping") do |t|
-  binding1 = t.add_endpoint
-  binding2 = t.add_new_binding binding1, false
+  binding = t.add_endpoint(nil, false)
 
   t.add_quaff_scenario do
-    binding2.contact_header += ";+sip.instance=\"geo:37.786971,-122.399677;crs=Moon-2011;u=35\""
-    ok = binding2.register
+    binding.contact_header += ";+sip.instance=\"geo:37.786971,-122.399677;crs=Moon-2011;u=35\""
+    ok = binding.register
     contact_headers = ok.headers['Contact']
-    fail "pub-gruu was not correctly escaped" unless get_pub_gruu(contact_headers[0]) == "#{binding2.sip_uri};gr=geo:37.786971%2c-122.399677%3bcrs%3dMoon-2011%3bu%3d35"
+    fail "pub-gruu was not correctly escaped" unless get_pub_gruu(contact_headers[0]) == "#{binding.sip_uri};gr=geo:37.786971%2c-122.399677%3bcrs%3dMoon-2011%3bu%3d35"
   end
 
   t.add_quaff_cleanup do
-    binding2.unregister
+    binding.unregister
   end
 end
 
@@ -165,6 +164,42 @@ TestDefinition.new("GRUU - Call - second endpoint GRUU as target") do |t|
 
   t.add_quaff_scenario do
     call2 = binding2.incoming_call
+    call2.recv_request("MESSAGE")
+    call2.send_response("200", "OK")
+    call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    binding1.unregister
+    binding2.unregister
+    caller.unregister
+  end
+end
+
+TestDefinition.new("GRUU - Call - only GRUU as target") do |t|
+  caller = t.add_endpoint
+  binding1 = t.add_endpoint
+  binding2 = t.add_new_binding binding1, false
+
+  t.add_quaff_setup do
+    caller.register
+    binding1.register
+    binding2.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(binding1.expected_pub_gruu)
+
+    call.send_request("MESSAGE",
+                      "hello world\r\n",
+                      {"Content-Type" => "text/plain"})
+    call.recv_response("200")
+    call.end_call
+    fail "Call was incorrectly forked to both endpoints" unless binding2.no_new_calls?
+  end
+
+  t.add_quaff_scenario do
+    call2 = binding1.incoming_call
     call2.recv_request("MESSAGE")
     call2.send_response("200", "OK")
     call2.end_call
