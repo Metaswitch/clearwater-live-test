@@ -32,7 +32,9 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-MMTelTestDefinition.new("Call Barring - Outbound Rejection") do |t|
+TestDefinition.new("Call Barring - Outbound Rejection") do |t|
+  t.skip_unless_mmtel
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   caller.set_simservs ocb: { active: true,
@@ -40,12 +42,12 @@ MMTelTestDefinition.new("Call Barring - Outbound Rejection") do |t|
                                         allow: false } ]
                             }
 
-  t.add_quaff_setup do 
-    caller.register 
+  t.add_quaff_setup do
+    caller.register
     callee.register
   end
 
-  t.add_quaff_scenario do 
+  t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
     call.send_request("INVITE")
@@ -61,7 +63,10 @@ MMTelTestDefinition.new("Call Barring - Outbound Rejection") do |t|
   end
 end
 
-MMTelPSTNTestDefinition.new("Call Barring - Allow non-international call") do |t|
+TestDefinition.new("Call Barring - Allow non-international call") do |t|
+  t.skip_unless_mmtel
+  t.skip_unless_pstn
+
   caller = t.add_pstn_endpoint
   callee = t.add_endpoint
   caller.set_simservs ocb: { active: true,
@@ -73,7 +78,7 @@ MMTelPSTNTestDefinition.new("Call Barring - Allow non-international call") do |t
     caller.register
     callee.register
   end
- 
+
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.sip_uri)
 
@@ -106,15 +111,18 @@ MMTelPSTNTestDefinition.new("Call Barring - Allow non-international call") do |t
     call2.send_response("200", "OK")
     call2.end_call
   end
-  
+
   t.add_quaff_cleanup do
     caller.unregister
     callee.unregister
   end
- 
+
 end
 
-MMTelPSTNTestDefinition.new("Call Barring - Reject international call") do |t|
+TestDefinition.new("Call Barring - Reject international call") do |t|
+  t.skip_unless_mmtel
+  t.skip_unless_pstn
+
   caller = t.add_pstn_endpoint
   callee = t.add_fake_endpoint("011447854481549")
   caller.set_simservs ocb: { active: true,
@@ -138,10 +146,12 @@ MMTelPSTNTestDefinition.new("Call Barring - Reject international call") do |t|
   t.add_quaff_cleanup do
     caller.unregister
   end
-  
+
 end
 
-MMTelTestDefinition.new("Call Barring - Inbound Rejection") do |t|
+TestDefinition.new("Call Barring - Inbound Rejection") do |t|
+  t.skip_unless_mmtel
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   callee.set_simservs icb: { active: true,

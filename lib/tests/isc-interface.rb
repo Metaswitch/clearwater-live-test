@@ -35,7 +35,9 @@ require 'quaff'
 
 EXPECTED_EXPIRY = ENV['EXPIRES'] || "300"
 
-ASTestDefinition.new("ISC Interface - Terminating") do |t|
+TestDefinition.new("ISC Interface - Terminating") do |t|
+  t.skip_unless_hostname
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   as = t.add_as 5070
@@ -89,7 +91,10 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
   end
 end
 
-NotValidForUDPASTestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t|
+TestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t|
+  t.skip_if_udp
+  t.skip_unless_hostname
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   as = t.add_udp_as 5070
@@ -143,7 +148,9 @@ NotValidForUDPASTestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t
   end
 end
 
-ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
+TestDefinition.new("ISC Interface - Terminating Failed") do |t|
+  t.skip_unless_hostname
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   as = t.add_as 5070
@@ -199,7 +206,9 @@ def validate_expiry c, expected_expiry
       incoming_call.end_call
 end
 
-ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
+TestDefinition.new("ISC Interface - Third-party Registration") do |t|
+  t.skip_unless_hostname
+
   caller = t.add_endpoint
   as = t.add_as 5070
 
@@ -213,7 +222,9 @@ ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
   end
 end
 
-ASTestDefinition.new("ISC Interface - Third-party Registration - implicit registration") do |t|
+TestDefinition.new("ISC Interface - Third-party Registration - implicit registration") do |t|
+  t.skip_unless_hostname
+
   caller = t.add_endpoint
   ep2 = t.add_quaff_public_identity(caller)
 
@@ -242,7 +253,10 @@ ASTestDefinition.new("ISC Interface - Third-party Registration - implicit regist
   end
 end
 
-NotValidForUDPASTestDefinition.new("ISC Interface - Redirect") do |t|
+TestDefinition.new("ISC Interface - Redirect") do |t|
+  t.skip_unless_hostname
+  t.skip_if_udp
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   callee2 = t.add_endpoint
@@ -322,7 +336,10 @@ NotValidForUDPASTestDefinition.new("ISC Interface - Redirect") do |t|
   end
 end
 
-NotValidForUDPASTestDefinition.new("ISC Interface - B2BUA") do |t|
+TestDefinition.new("ISC Interface - B2BUA") do |t|
+  t.skip_unless_hostname
+  t.skip_if_udp
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   callee2 = t.add_endpoint

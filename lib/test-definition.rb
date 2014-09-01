@@ -35,7 +35,9 @@
 require 'timeout'
 require "snmp"
 require 'resolv'
+require_relative "ellis"
 require_relative "quaff-endpoint"
+require_relative "fake-endpoint"
 
 # Source: RedGreen gem - https://github.com/kule/redgreen
 module RedGreen
@@ -58,6 +60,15 @@ module RedGreen
   end
 end
 
+class SkipThisTest < StandardError
+  attr_accessor :why_skipped, :how_to_enable
+  def initialize why_skipped, how_to_enable=nil
+    super why_skipped
+    @why_skipped = why_skipped
+    @how_to_enable = how_to_enable
+  end
+end
+
 class TestDefinition
   attr_accessor :name, :current_label_id
   attr_writer :timeout
@@ -65,6 +76,8 @@ class TestDefinition
   @@tests = []
   @@current_test = nil
   @@failures = 0
+
+# Class methods
 
   def self.add_instance(i)
     @@tests << i
@@ -82,16 +95,28 @@ class TestDefinition
     @@failures
   end
 
+  def self.get_diags
+    Dir["scripts/*.log"]
+  end
+
+  def self.clear_diags
+    get_diags.each do |d|
+      File.unlink(d)
+    end
+  end
+
   def self.run_all(deployment, glob)
     ENV['REPEAT'] ||= "1"
     ENV['TRANSPORT'] ||= "tcp,udp"
     repeat = ENV['REPEAT'].to_i
     req_transports = ENV['TRANSPORT'].downcase.split(',').map { |t| t.to_sym }
     transports = [:tcp, :udp].select { |t| req_transports.include? t }
+
     unless req_transports == transports
       STDERR.puts "ERROR: Unsupported transports #{req_transports - transports} requested"
       exit 2
     end
+    clear_diags
     tests_to_run = @@tests.select { |t| t.name =~ glob }
     repeat.times do |r|
       puts "Test iteration #{r + 1}" if repeat != 1
@@ -104,6 +129,9 @@ class TestDefinition
           elsif success == false
             record_failure
           end # Do nothing if success == nil - that means we skipped a test
+        rescue SkipThisTest => e
+          puts RedGreen::Color.yellow("Skipped") + " (#{e.why_skipped})"
+          puts "   - #{e.how_to_enable}" if e.how_to_enable
         rescue StandardError => e
           record_failure
           puts RedGreen::Color.red("Failed")
@@ -129,6 +157,8 @@ class TestDefinition
     @@current_test.current_label_id.to_s
   end
 
+  # Instance methods
+
   def initialize(name, &blk)
     TestDefinition.add_instance self
     @name = name
@@ -137,6 +167,167 @@ class TestDefinition
     @blk = blk
     @current_label_id = 0
     @timeout = 10
+  end
+
+  # Methods for defining Quaff endpoints
+
+  def add_endpoint
+    line = provision_line
+    include_endpoint QuaffEndpoint.new(line, @transport)
+  end
+
+  def add_specific_endpoint user_part
+    line = provision_specific_line user_part
+    include_endpoint QuaffEndpoint.new(line, @transport)
+  end
+
+  def add_pstn_endpoint
+    line = provision_pstn_line
+    include_endpoint QuaffEndpoint.new(line, @transport)
+  end
+
+  def add_public_identity(ep)
+    line = provision_associated_line ep
+    include_endpoint QuaffEndpoint.new(line, @transport)
+  end
+
+  def add_new_binding(ep)
+    include_endpoint QuaffEndpoint.new(ep.line_info, @transport)
+  end
+
+
+  # Methods for defining Quaff-based test scenarios
+  def add_quaff_setup &blk
+    @quaff_setup_blk = blk
+  end
+
+  def add_quaff_scenario &blk
+    @quaff_scenario_blocks.push blk
+  end
+
+  def add_quaff_cleanup &blk
+    @quaff_cleanup_blk = blk
+  end
+
+  # Methods for defining application servers
+
+  def add_as port
+    c = Quaff::TCPSIPEndpoint.new("as1@#{@deployment}",
+                                  nil,
+                                  nil,
+                                  port,
+                                  nil)
+    @as_list.push c
+    c
+  end
+
+  def add_udp_as port
+    c = Quaff::UDPSIPEndpoint.new("as1@#{@deployment}",
+                                  nil,
+                                  nil,
+                                  port,
+                                  nil)
+    @as_list.push c
+    c
+  end
+
+  def add_fake_endpoint(username)
+    include_endpoint FakeEndpoint.new(username, @deployment)
+  end
+
+  def run(deployment, transport)
+    before_run
+    @deployment = deployment
+    @transport = transport
+    @quaff_scenario_blocks = []
+    @quaff_threads = []
+    TestDefinition.set_current_test(self)
+    retval = false
+    begin
+      @blk.call(self)
+      print "(#{@endpoints.map { |e| e.sip_uri }.join ", "}) "
+      @quaff_setup_blk.call if @quaff_setup_blk
+      @quaff_threads = @quaff_scenario_blocks.map { |blk| Thread.new &blk }
+      retval = extra_validation
+      verify_snmp_stats if ENV['SNMP'] != "N"
+    ensure
+      retval &= cleanup
+      TestDefinition.unset_current_test
+    end
+    return retval
+  end
+
+  def skip
+    raise SkipThisTest.new "Test disabled"
+  end
+
+  def skip_unless_pstn
+    raise SkipThisTest.new "No PSTN support", "Call with PSTN=true to run test" unless ENV['PSTN']
+  end
+
+  def skip_unless_mmtel
+    raise SkipThisTest.new "No MMTel TAS support" if ENV['NOMMTEL']
+  end
+
+  def skip_unless_hostname
+    raise SkipThisTest.new "No hostname given", "Call with HOSTNAME=<publicly accessible hostname/IP of this machine>" unless ENV['HOSTNAME']
+  end
+
+  def skip_unless_ellis_api_key
+    raise SkipThisTest.new "No Ellis API key given", "Call with ELLIS_API_KEY=<key>" unless ENV['ELLIS_API_KEY']
+  end
+
+  def skip_if_udp
+    raise SkipThisTest.new "Test is not valid for UDP" unless @transport == :udp
+  end
+
+  def skip_unless_live
+    raise SkipThisTest.new "No live number given", "Call with LIVENUMBER=<number>" unless ENV['LIVENUMBER']
+  end
+
+  private
+
+  def before_run
+  end
+
+  def extra_validation
+    return true
+  end
+
+  # Methods for provisioning/retrieving various types of users
+
+  def provision_line
+    EllisProvisionedLine.new(@deployment)
+  end
+
+  def provision_specific_line
+    EllisProvisionedLine.specific_line(user_part, @deployment)
+  end
+
+  def provision_pstn_line
+    EllisProvisionedLine.new_pstn_line(@deployment)
+  end
+
+  def provision_associated_line ep
+    line = EllisProvisionedLine.associated_public_identity(ep)
+    fail "Added public identity does not share private ID" unless line.private_id == ep.private_id
+    line
+  end
+
+  def include_endpoint new_endpoint
+    @endpoints << new_endpoint
+    new_endpoint
+  end
+
+  def on_failure
+    # If we failed any call scenario, dump out the log files.
+    @endpoints.each do |e|
+        log_file_name = File.join(File.dirname(__FILE__),
+                                  "..",
+                                  "scripts",
+                                  "#{@name.tr(' ','_')}_#{@transport.to_s.upcase}_#{e.sip_uri}.log")
+        File.write(log_file_name, e.msg_log.join("\n\n================\n\n"))
+      end
   end
 
   def cleanup
@@ -172,16 +363,7 @@ class TestDefinition
       @quaff_cleanup_blk.call
     end
 
-    # If we failed any call scenario, dump out the log files.
-    unless retval
-      @endpoints.each do |e|
-        log_file_name = File.join(File.dirname(__FILE__),
-                                  "..",
-                                  "scripts",
-                                  "#{@name} - #{@transport.to_s.upcase} - #{e.sip_uri}.log")
-        File.write(log_file_name, e.msg_log.join("\n\n================\n\n"))
-      end
-    end
+    on_failure unless retval
 
     # Reverse the endpoints list so that associated public IDs are
     # deleted before the default public ID (which was created first).
@@ -198,160 +380,6 @@ class TestDefinition
     retval
   end
 
-  # @@TODO - Don't pass transport in once UDP authentication is fixed
-  def add_sip_endpoint
-    new_endpoint = SIPpEndpoint.new(false, @deployment, @transport)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_as port
-    c = Quaff::TCPSIPEndpoint.new("as1@#{@deployment}",
-                                  nil,
-                                  nil,
-                                  port,
-                                  nil)
-    @as_list.push c
-    c
-  end
-
-  def add_udp_as port
-    c = Quaff::UDPSIPEndpoint.new("as1@#{@deployment}",
-                                  nil,
-                                  nil,
-                                  port,
-                                  nil)
-    @as_list.push c
-    c
-  end
-
-  def add_endpoint
-    new_endpoint = QuaffEndpoint.new(false, @deployment, @transport)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_specific_endpoint user_part
-    new_endpoint = QuaffEndpoint.new(false, @deployment, @transport, nil, user_part)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  # @@TODO - Don't pass transport in once UDP authentication is fixed
-  def add_pstn_endpoint
-    new_endpoint = QuaffEndpoint.new(true, @deployment, @transport)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_pstn_sip_endpoint
-    new_endpoint = SIPpEndpoint.new(true, @deployment, @transport)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_quaff_setup &blk
-    @quaff_setup_blk = blk
-  end
-
-  def add_quaff_scenario &blk
-    @quaff_scenario_blocks.push blk
-  end
-
-  def add_quaff_cleanup &blk
-    @quaff_cleanup_blk = blk
-  end
-
-  def add_public_identity(ep)
-    new_endpoint = SIPpEndpoint.new(ep.pstn,
-                                    ep.domain,
-                                    ep.transport,
-                                    ep)
-    fail "Added public identity does not share private ID" unless new_endpoint.private_id == ep.private_id
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_quaff_public_identity(ep)
-    new_endpoint = QuaffEndpoint.new(ep.pstn,
-                                     ep.domain,
-                                     ep.transport,
-                                     ep)
-    fail "Added public identity does not share private ID" unless new_endpoint.private_id == ep.private_id
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_fake_endpoint(username)
-    new_endpoint = FakeEndpoint.new(username, @deployment)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def add_mock_as(domain, port)
-    # TODO - pass in actual domain
-    new_endpoint = MockAS.new(domain, port)
-    @endpoints << new_endpoint
-    new_endpoint
-  end
-
-  def set_scenario(scenario)
-    @scenario = scenario
-  end
-
-  def create_sipp_scripts
-    sipp_scripts = []
-    # Filter out AS scenario as it will go into a separate SIPp file
-    grouped_scripts = @scenario.group_by { |s| s.sender.element_type }
-    grouped_scripts.each do |element_type, scenario|
-      sipp_scripts.push(create_sipp_script(scenario, element_type)) unless scenario.empty?
-    end
-    sipp_scripts
-  end
-
-  def create_sipp_script(scenario, element_type)
-    sipp_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" +
-      "<scenario name=\"#{@name} - #{element_type.to_s}\">\n" +
-      scenario.each { |s| s.to_s }.join("\n") +
-      "\n" +
-      "  <ResponseTimeRepartition value=\"10, 20, 30, 40, 50, 100, 150, 200\" />\n" +
-      "  <CallLengthRepartition value=\"10, 50, 100, 500, 1000, 5000, 10000\" />\n" +
-      "</scenario>"
-    output_file_name = File.join(File.dirname(__FILE__),
-                                 "..",
-                                 "scripts",
-                                 "#{@name} - #{@transport.to_s.upcase} - #{element_type.to_s}.xml")
-    File.write(output_file_name, sipp_xml)
-    { scenario_file: output_file_name, element_type: element_type }
-  end
-
-  def run(deployment, transport)
-    @deployment = deployment
-    @transport = transport
-    clear_diags
-    @quaff_scenario_blocks = []
-    @quaff_threads = []
-    TestDefinition.set_current_test(self)
-    retval = false
-    begin
-      @blk.call(self)
-      print "(#{@endpoints.map { |e| e.username }.join ", "}) "
-      @quaff_setup_blk.call if @quaff_setup_blk
-      @quaff_threads = @quaff_scenario_blocks.map { |blk| Thread.new &blk }
-      if @scenario
-        sipp_scripts = create_sipp_scripts
-        @sipp_pids = launch_sipp sipp_scripts
-        retval = wait_for_sipp
-      else
-        retval = true
-      end
-      verify_snmp_stats if ENV['SNMP'] != "N"
-    ensure
-      retval &= cleanup
-      TestDefinition.unset_current_test
-    end
-    return retval
-  end
 
   def verify_snmp_stats
     latency_threshold = 250
@@ -390,140 +418,5 @@ class TestDefinition
     end
   end
 
-  def launch_sipp(sipp_scripts)
-    sipp_pids = sipp_scripts.map do |s|
-      fail "No scenario file" if s[:scenario_file].nil?
-
-      @deployment = ENV['PROXY'] if ENV['PROXY']
-      transport_flag = s[:element_type] == :as ? "t1" : { udp: "u1", tcp: "t1" }[@transport]
-      cmd = "sudo TERM=xterm ./sipp -m 1 -t #{transport_flag} --trace_msg --trace_err -max_socket 100 -sf \"#{s[:scenario_file]}\" #{@deployment}"
-      cmd += " -p 5070" if s[:element_type] == :as
-      Process.spawn(cmd, :out => "/dev/null", :err => "#{s[:scenario_file]}.err")
-    end
-    fail if sipp_pids.any? { |pid| pid.nil? }
-    sipp_pids
-  end
-
-  def get_diags
-    Dir["scripts/#{@name} - #{@transport.to_s.upcase}*"]
-  end
-
-  def clear_diags
-    get_diags.each do |d|
-      File.unlink(d)
-    end
-  end
-
-  def wait_for_sipp
-    # Limit test execution to 10 seconds
-    return_codes = ( Timeout::timeout(@timeout) { Process.waitall.map { |p| p[1].exitstatus } } rescue nil )
-    if return_codes.nil? or return_codes.any? { |rc| rc != 0 }
-      TestDefinition.record_failure
-      if return_codes.nil?
-        puts RedGreen::Color.red("ERROR (TIMED OUT)")
-        @sipp_pids.each { |pid| Process.kill("SIGKILL", pid) rescue puts "Could not kill process with pid #{pid}" }
-      else
-        puts RedGreen::Color.red("ERROR (#{return_codes.join ", "})")
-      end
-      puts "  Diags can be found at:"
-      get_diags.each do |d|
-        puts "   - #{d}"
-      end
-      return false
-    else
-      clear_diags
-      return true
-    end
-  end
 end
 
-class SkippedTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    puts RedGreen::Color.yellow("Skipped") + " (Test disabled)"
-  end
-end
-
-class PSTNTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['PSTN']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No PSTN support)"
-      puts "   - Call with PSTN=true to run test"
-    end
-  end
-end
-
-class MMTelTestDefinition < TestDefinition
-  def run(*args)
-    unless ENV['NOMMTEL']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No MMTel TAS support)"
-    end
-  end
-end
-
-class MMTelPSTNTestDefinition < PSTNTestDefinition
-  def run(*args)
-    clear_diags
-    unless ENV['NOMMTEL']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No MMTel TAS support)"
-    end
-  end
-end
-
-
-class LiveTestDefinition < PSTNTestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['LIVENUMBER']
-      # The live call takes approximately 10 seconds to run so extend the timeout
-      # for this test.
-      @timeout = 20
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No live number given)"
-      puts "   - Call with LIVENUMBER=<number>"
-    end
-  end
-end
-
-class ASTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['HOSTNAME']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No hostname given)"
-      puts "   - Call with HOSTNAME=<publicly accessible hostname/IP of this machine>"
-    end
-  end
-end
-
-class EllisPrivilegesTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['ELLIS_API_KEY']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No Ellis API key)"
-      puts "   - Call with ELLIS_API_KEY=<key>"
-    end
-  end
-end
-
-class NotValidForUDPASTestDefinition < ASTestDefinition
-  def run(domain, transport, *args)
-    clear_diags
-    if transport == :udp
-      puts RedGreen::Color.yellow("Skipped") + " (Test is not valid for UDP)"
-    else
-      super
-    end
-  end
-end

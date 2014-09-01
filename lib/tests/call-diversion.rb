@@ -32,7 +32,9 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-MMTelTestDefinition.new("Call Diversion - Not registered") do |t|
+TestDefinition.new("Call Diversion - Not registered") do |t|
+  t.skip_unless_mmtel
+
   caller = t.add_endpoint
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
@@ -54,7 +56,7 @@ MMTelTestDefinition.new("Call Diversion - Not registered") do |t|
     call.recv_response("100")
     call.recv_response("181")
 
-    # Call is diverted to callee2 
+    # Call is diverted to callee2
     call.recv_response("180")
     call.recv_response_and_create_dialog("200")
 
@@ -88,7 +90,9 @@ MMTelTestDefinition.new("Call Diversion - Not registered") do |t|
   end
 end
 
-MMTelTestDefinition.new("Call Diversion - Busy") do |t|
+TestDefinition.new("Call Diversion - Busy") do |t|
+  t.skip_unless_mmtel
+
   caller = t.add_endpoint
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
@@ -157,7 +161,9 @@ MMTelTestDefinition.new("Call Diversion - Busy") do |t|
 
 end
 
-MMTelTestDefinition.new("Call Diversion - No answer") do |t|
+TestDefinition.new("Call Diversion - No answer") do |t|
+  t.skip_unless_mmtel
+
   caller = t.add_endpoint
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
@@ -227,7 +233,9 @@ MMTelTestDefinition.new("Call Diversion - No answer") do |t|
   end
 end
 
-MMTelTestDefinition.new("Call Diversion - Bad target URI") do |t|
+TestDefinition.new("Call Diversion - Bad target URI") do |t|
+  t.skip_unless_mmtel
+
   caller = t.add_endpoint
   callee = t.add_endpoint
 

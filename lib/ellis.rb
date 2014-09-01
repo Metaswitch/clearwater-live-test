@@ -37,7 +37,7 @@ require 'json'
 require 'erubis'
 require 'cgi'
 
-class EllisEndpoint
+class EllisProvisionedLine
   attr_reader :username,
               :password,
               :sip_uri,
@@ -46,9 +46,35 @@ class EllisEndpoint
               :pstn,
               :transport
 
-  def initialize(pstn, deployment, transport, shared_identity = nil, specific_id = nil)
+  def self.destroy_leaked_numbers(domain)
+
+    r = RestClient.post(ellis_url(domain, "session"),
+                        username: "system.test@#{domain}",
+                        password: "Please enter your details")
+    cookie = r.cookies
+    r = RestClient::Request.execute(method: :get,
+                                    url: ellis_url(domain, "accounts/system.test@#{domain}/numbers"),
+                                    cookies: cookie)
+    j = JSON.parse(r)
+
+    # Destroy default SIP URIs last
+    default_numbers = j["numbers"].select { |n| is_default_public_id? n }
+    ordered_numbers = (j["numbers"] - default_numbers) + default_numbers
+    ordered_numbers.each do |n|
+      begin
+        puts "Deleting leaked number: #{n["sip_uri"]}"
+        RestClient::Request.execute(method: :delete,
+                                    url: ellis_url(domain, "accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/"),
+                                    cookies: cookie)
+      rescue
+        puts "Failed to delete leaked number, check Ellis logs"
+        next
+      end
+    end
+  end
+
+  def initialize(deployment, pstn = false, shared_identity = nil, specific_id = nil)
     @domain = deployment
-    @transport = transport
     @pstn = pstn
     @@security_cookie ||= get_security_cookie
     if specific_id
@@ -60,6 +86,18 @@ class EllisEndpoint
       @password = shared_identity.password
     end
     verify!
+  end
+
+  def self.specific_line user_part, deployment
+    EllisProvisionedLine.new deployment, false, nil, user_part
+  end
+
+  def self.new_pstn_line deployment
+    EllisProvisionedLine.new deployment, true
+  end
+
+  def self.associated_public_identity ep
+    EllisProvisionedLine.new ep.domain, ep.pstn, ep
   end
 
   def element_type
@@ -114,6 +152,15 @@ class EllisEndpoint
     ary[3] = (ary[3] & 0x3fff) | 0x8000
     @instance_id = "%08x-%04x-%04x-%04x-%04x%08x" % ary
   end
+
+  def self.ellis_url domain, path
+    if ENV['ELLIS']
+      "http://#{ENV['ELLIS']}/#{path}"
+    else
+      "http://ellis.#{domain}/#{path}"
+    end
+  end
+
 
 private
 
@@ -200,11 +247,7 @@ private
   end
 
   def ellis_url path
-    if ENV['ELLIS']
-      "http://#{ENV['ELLIS']}/#{path}"
-    else
-      "http://ellis.#{@domain}/#{path}"
-    end
+    EllisProvisionedLine.ellis_url @domain, path
   end
 
   def account_username
