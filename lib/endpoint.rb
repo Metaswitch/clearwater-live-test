@@ -32,41 +32,35 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-require 'rest_client'
-require 'json'
-require 'erubis'
-require 'cgi'
-require 'quaff'
 require 'forwarder'
-require_relative 'endpoint'
 
-class QuaffEndpoint < Endpoint
+class Endpoint
   extend Forwarder
-  forward_all :incoming_call, :outgoing_call, :terminate, :register, :unregister, :msg_trace, :uri, :sdp_port, :sdp_socket, :msg_log, :local_port, :contact_header, :contact_header=, :no_new_calls?, to: :quaff
-  attr_reader :quaff
+  forward_all :password, :username, :sip_uri, :domain, :private_id, :pstn, :transport, :set_simservs, :set_ifc, :domain, :instance_id, to: :line_info
+  attr_reader :line_info, :transport
+
+  def element_type
+    :endpoint
+  end
 
   def initialize(line_info, transport, endpoint_idx)
-    super line_info, transport, endpoint_idx
-    registrar = ENV['PROXY'] || domain
-    if transport == :tcp then
-      @quaff = Quaff::TCPSIPEndpoint.new(sip_uri,
-                                         private_id,
-                                         password,
-                                         :anyport,
-                                         registrar)
-    else
-      @quaff = Quaff::UDPSIPEndpoint.new(sip_uri,
-                                         private_id,
-                                         password,
-                                         :anyport,
-                                         registrar)
-    end
-    @quaff.instance_id = @line_info.instance_id
+    @endpoint_idx = endpoint_idx
+    @transport = transport
+    @line_info = line_info
+  end
+
+  # Algorithmically determined from the public identity (using algorithm in RFC4122)
+  def instance_id
+    return @instance_id if @instance_id
+
+    ary = Digest::SHA1.new.digest(@line_info.sip_uri + @endpoint_idx.to_s).unpack("NnnnnN")
+    ary[2] = (ary[2] & 0x0fff) | 0x5000
+    ary[3] = (ary[3] & 0x3fff) | 0x8000
+    @instance_id = "%08x-%04x-%04x-%04x-%04x%08x" % ary
   end
 
   def cleanup
-    @quaff.terminate
-    super
+    @line_info.cleanup
   end
 
 end
