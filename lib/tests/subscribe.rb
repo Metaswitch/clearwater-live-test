@@ -32,9 +32,32 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
-  t.skip
+module Quaff
+  class Call
+    def recv_200_and_notify
+      resp1 = recv_any_of [200, "NOTIFY"]
+      resp2 = recv_any_of [200, "NOTIFY"]
 
+      notify = resp1.method ? resp1 : resp2
+      return notify
+    end
+  end
+end
+
+def validate_notify xml_s
+  xsd = Nokogiri::XML::Schema(File.read("schemas/reginfo.xsd"))
+  reginfo_xml = Nokogiri::XML.parse(xml_s)
+  errors = false
+  xsd.validate(reginfo_xml).each do |error|
+    puts error.message
+    errors = true
+  end
+  if errors
+    fail "Could not validate XML - see above errors. XML was:\n\n#{xml_s}"
+  end
+end
+
+TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
   ep1 = t.add_endpoint
   t.add_quaff_setup do
     ep1.register
@@ -46,8 +69,8 @@ TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
     call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>], "From" => %Q[<#{ep1.uri}>;tag=2342342342]})
 
     # 200 and NOTIFY can come in any order, so expect either of them, twice
-    call.recv_any_of [200, "NOTIFY"]
-    call.recv_any_of [200, "NOTIFY"]
+    notify = call.recv_200_and_notify
+    validate_notify notify.body
 
     call.send_response("200", "OK")
 
@@ -59,8 +82,8 @@ TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
     call.update_branch
     call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342], "Expires" => 0})
 
-    call.recv_any_of [200, "NOTIFY"]
-    call.recv_any_of [200, "NOTIFY"]
+    notify = call.recv_200_and_notify
+    validate_notify notify.body
 
     call.send_response("200", "OK")
 
@@ -74,3 +97,4 @@ TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
   end
 
 end
+
