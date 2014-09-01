@@ -37,9 +37,11 @@ require 'json'
 require 'erubis'
 require 'cgi'
 require 'quaff'
+require 'forwarder'
 require_relative 'endpoint'
 
 class QuaffEndpoint < Endpoint
+  extend Forwarder
   forward_all :incoming_call, :outgoing_call, :terminate, :register, :unregister, :msg_trace, :uri, :sdp_port, :sdp_socket, :msg_log, :local_port, :contact_header, :contact_header=, :no_new_calls?, to: :quaff
   attr_reader :quaff
 

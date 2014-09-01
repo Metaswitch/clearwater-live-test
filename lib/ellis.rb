@@ -100,10 +100,6 @@ class EllisProvisionedLine
     EllisProvisionedLine.new ep.domain, ep.pstn, ep
   end
 
-  def element_type
-    :endpoint
-  end
-
   def cleanup
     delete_number
     @sip_uri = nil
