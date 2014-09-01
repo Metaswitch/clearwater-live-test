@@ -36,16 +36,9 @@ require 'rest_client'
 require 'json'
 require 'erubis'
 require 'cgi'
+require_relative 'endpoint'
 
-class SIPpEndpoint
-  extend Forwarder
-  forward_all :username, :password, :sip_uri, :domain, :private_id, :pstn, :set_simservs, :set_ifc, :cleanup, :element_type, :instance_id, to: :line_info
-  attr_reader :line_info, :transport
-
-  def initialize(line_info, transport)
-    @line_info = line_info
-    @transport = transport
-  end
+class SIPpEndpoint < Endpoint
 
   def send(message, options={})
     SIPpPhase.new(message, self, options)
