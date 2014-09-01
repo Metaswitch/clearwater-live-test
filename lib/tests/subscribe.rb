@@ -33,8 +33,6 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
-  t.skip
-
   ep1 = t.add_endpoint
   t.add_quaff_setup do
     ep1.register
