@@ -33,6 +33,8 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("Filtering - Accept-Contact") do |t|
+  t.skip
+
   caller = t.add_endpoint
   callee = t.add_endpoint
 
@@ -65,6 +67,8 @@ TestDefinition.new("Filtering - Accept-Contact") do |t|
 end
 
 TestDefinition.new("Filtering - Accept-Contact no match") do |t|
+  t.skip
+
   caller = t.add_endpoint
   callee = t.add_endpoint
 
@@ -91,6 +95,8 @@ TestDefinition.new("Filtering - Accept-Contact no match") do |t|
 end
 
 TestDefinition.new("Filtering - Accept-Contact negated match") do |t|
+  t.skip
+
   caller = t.add_endpoint
   callee = t.add_endpoint
 
@@ -124,6 +130,8 @@ TestDefinition.new("Filtering - Accept-Contact negated match") do |t|
 end
 
 TestDefinition.new("Filtering - RFC3841 example") do |t|
+  t.skip
+
   caller = t.add_endpoint
   callee_binding1 = t.add_endpoint
   callee_binding2 = t.add_new_binding callee_binding1
@@ -191,6 +199,8 @@ TestDefinition.new("Filtering - RFC3841 example") do |t|
 end
 
 TestDefinition.new("Filtering - Reject-Contact no match") do |t|
+  t.skip
+
   caller = t.add_endpoint
   callee = t.add_endpoint
 
@@ -223,6 +233,8 @@ TestDefinition.new("Filtering - Reject-Contact no match") do |t|
 end
 
 TestDefinition.new("Filtering - Reject-Contact match") do |t|
+  t.skip
+
   caller = t.add_endpoint
   callee = t.add_endpoint
 

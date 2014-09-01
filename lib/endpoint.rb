@@ -36,8 +36,12 @@ require 'forwarder'
 
 class Endpoint
   extend Forwarder
-  forward_all :password, :sip_uri, :domain, :private_id, :pstn, :transport, :set_simservs, :set_ifc, :domain, :instance_id, to: :line_info
+  forward_all :password, :username, :sip_uri, :domain, :private_id, :pstn, :transport, :set_simservs, :set_ifc, :domain, :instance_id, to: :line_info
   attr_reader :line_info, :transport
+
+  def element_type
+    :endpoint
+  end
 
   def initialize(line_info, transport, endpoint_idx)
     @endpoint_idx = endpoint_idx
