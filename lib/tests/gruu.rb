@@ -275,3 +275,100 @@ TestDefinition.new("GRUU - Call - unknown GRUU as target") do |t|
     caller.unregister
   end
 end
+
+TestDefinition.new("GRUU - Call - unknown GRUU as target - no GRUUs assigned") do |t|
+  caller = t.add_endpoint
+  binding1 = t.add_endpoint nil, false
+  binding2 = t.add_new_binding binding1, false
+
+  t.add_quaff_setup do
+    caller.register
+    binding1.register
+    binding2.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(binding2.sip_uri + ";gr=nonsense")
+
+    call.send_request("MESSAGE",
+                      "hello world\r\n",
+                      {"Content-Type" => "text/plain"})
+    call.recv_response("480")
+    call.end_call
+  end
+
+  t.add_quaff_cleanup do
+    binding1.unregister
+    binding2.unregister
+    caller.unregister
+  end
+end
+
+TestDefinition.new("GRUU - Call - Reject-Contact interop") do |t|
+  caller = t.add_endpoint
+  binding1 = t.add_endpoint
+  binding2 = t.add_new_binding binding1
+
+  t.add_quaff_setup do
+    caller.register
+    binding1.contact_header += ";audio"
+    binding1.register
+    binding2.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(binding1.expected_pub_gruu)
+
+    call.send_request("MESSAGE",
+                      "hello world\r\n",
+                      {"Content-Type" => "text/plain",
+                      "Reject-Contact" => "*;audio"})
+    call.recv_response("480")
+    call.end_call
+  end
+
+  t.add_quaff_cleanup do
+    binding1.unregister
+    binding2.unregister
+    caller.unregister
+  end
+end
+
+TestDefinition.new("GRUU - Call - Accept-Contact interop") do |t|
+  caller = t.add_endpoint
+  binding1 = t.add_endpoint
+  binding2 = t.add_new_binding binding1
+
+  t.add_quaff_setup do
+    caller.register
+    binding1.contact_header += ";audio"
+    binding2.contact_header += ";audio"
+    binding1.register
+    binding2.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(binding1.expected_pub_gruu)
+
+    call.send_request("MESSAGE",
+                      "hello world\r\n",
+                      {"Content-Type" => "text/plain",
+                        "Accept-Contact" => "*;audio"})
+    call.recv_response("200")
+    call.end_call
+    fail "Call was incorrectly forked to both endpoints" unless binding2.no_new_calls?
+  end
+
+  t.add_quaff_scenario do
+    call2 = binding1.incoming_call
+    call2.recv_request("MESSAGE")
+    call2.send_response("200", "OK")
+    call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    binding1.unregister
+    binding2.unregister
+    caller.unregister
+  end
+end
