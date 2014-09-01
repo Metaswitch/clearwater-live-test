@@ -98,3 +98,35 @@ TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
 
 end
 
+TestDefinition.new("SIP SUBSCRIBE/NOTIFY with a GRUU") do |t|
+  ep1 = t.add_endpoint
+
+  t.add_quaff_setup do
+    ep1.register
+  end
+
+  t.add_quaff_scenario do
+    call = ep1.outgoing_call(ep1.uri)
+
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342]})
+
+    # 200 and NOTIFY can come in any order, so expect either of them, twice
+    notify = call.recv_200_and_notify
+
+    call.send_response("200", "OK")
+
+    validate_notify notify.body
+    xmldoc = Nokogiri::XML.parse(notify.body) do |config|
+      config.noblanks
+    end
+    fail "Binding 1 has no pub-gruu node" unless (xmldoc.child.child.children[0].children[1].name == "pub-gruu")
+    fail "Binding 1 has an incorrect pub-gruu node" unless (xmldoc.child.child.children[0].children[1].content == ep1.expected_pub_gruu)
+
+  end
+
+  t.add_quaff_cleanup do
+    ep1.unregister
+  end
+
+
+end

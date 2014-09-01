@@ -432,37 +432,3 @@ TestDefinition.new("GRUU - Call - AoR with other param as target") do |t|
   end
 end
 
-TestDefinition.new("GRUU - NOTIFY") do |t|
-  binding1 = t.add_endpoint
-
-  t.add_quaff_setup do
-    binding1.register
-  end
-
-  t.add_quaff_scenario do
-    call = binding1.outgoing_call(binding1.uri)
-
-    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{binding1.uri}>;tag=1231231231], "From" => %Q[<#{binding1.uri}>;tag=2342342342]})
-
-    # 200 and NOTIFY can come in any order, so expect either of them, twice
-    resp1 = call.recv_any_of [200, "NOTIFY"]
-    resp2 = call.recv_any_of [200, "NOTIFY"]
-
-    notify = resp1.method ? resp1 : resp2
-
-    call.send_response("200", "OK")
-
-    xmldoc = Nokogiri::XML.parse(notify.body) do |config|
-      config.noblanks
-    end
-    fail "Binding 1 has no pub-gruu node" unless (xmldoc.child.child.children[0].children[1].name == "pub-gruu")
-    fail "Binding 1 has an incorrect pub-gruu node" unless (xmldoc.child.child.children[0].children[1].content == binding1.expected_pub_gruu)
-
-  end
-
-  t.add_quaff_cleanup do
-    binding1.unregister
-  end
-
-
-end
