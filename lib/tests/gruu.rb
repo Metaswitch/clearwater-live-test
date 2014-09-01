@@ -32,6 +32,8 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
+require 'nokogiri'
+
 def get_pub_gruu contact_header
   md = /pub-gruu=(?<gruu>".+?"|.+?;)/.match(contact_header)
   if md and md['gruu']
@@ -58,6 +60,27 @@ TestDefinition.new("GRUU - REGISTER - two bindings with and without GRUU") do |t
     contact_headers = ok.headers['Contact']
     fail "Binding 2 has a pub-gruu" if (get_pub_gruu(contact_headers[1]) != "")
     fail "Binding 1 has no pub-gruu (expected #{binding1.expected_pub_gruu})" unless
+      (get_pub_gruu(contact_headers[0]) == binding1.expected_pub_gruu)
+  end
+
+  t.add_quaff_cleanup do
+    binding1.unregister
+    binding2.unregister
+  end
+end
+
+TestDefinition.new("GRUU - REGISTER - binding suggested GRUU") do |t|
+  binding1 = t.add_endpoint
+  binding2 = t.add_new_binding binding1, false
+
+  t.add_quaff_scenario do
+    binding1.contact_header += ";pub-gruu=ok"
+    binding1.register
+    binding2.contact_header += ";pub-gruu=hello"
+    ok = binding2.register
+    contact_headers = ok.headers['Contact']
+    fail "Binding 2 was allowed to suggest a pub-gruu" if (get_pub_gruu(contact_headers[1]) != "")
+    fail "Binding 1 was allowed to suggest a pub-gruu" unless
       (get_pub_gruu(contact_headers[0]) == binding1.expected_pub_gruu)
   end
 
@@ -371,4 +394,75 @@ TestDefinition.new("GRUU - Call - Accept-Contact interop") do |t|
     binding2.unregister
     caller.unregister
   end
+end
+
+TestDefinition.new("GRUU - Call - AoR with other param as target") do |t|
+  caller = t.add_endpoint
+  binding1 = t.add_endpoint
+  binding2 = t.add_new_binding binding1
+
+  t.add_quaff_setup do
+    caller.register
+    binding1.register
+    binding2.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(binding2.sip_uri + ";arbitrary-param=\"an;gr=y\"")
+
+    call.send_request("MESSAGE",
+                      "hello world\r\n",
+                      {"Content-Type" => "text/plain"})
+    call.recv_response("200")
+    call.end_call
+    fail "Call was not forked to both endpoints" if binding1.no_new_calls?
+  end
+
+  t.add_quaff_scenario do
+    call2 = binding2.incoming_call
+    call2.recv_request("MESSAGE")
+    call2.send_response("200", "OK")
+    call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    binding1.unregister
+    binding2.unregister
+    caller.unregister
+  end
+end
+
+TestDefinition.new("GRUU - NOTIFY") do |t|
+  binding1 = t.add_endpoint
+
+  t.add_quaff_setup do
+    binding1.register
+  end
+
+  t.add_quaff_scenario do
+    call = binding1.outgoing_call(binding1.uri)
+
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{binding1.uri}>;tag=1231231231], "From" => %Q[<#{binding1.uri}>;tag=2342342342]})
+
+    # 200 and NOTIFY can come in any order, so expect either of them, twice
+    resp1 = call.recv_any_of [200, "NOTIFY"]
+    resp2 = call.recv_any_of [200, "NOTIFY"]
+
+    notify = resp1.method ? resp1 : resp2
+
+    call.send_response("200", "OK")
+
+    xmldoc = Nokogiri::XML.parse(notify.body) do |config|
+      config.noblanks
+    end
+    fail "Binding 1 has no pub-gruu node" unless (xmldoc.child.child.children[0].children[1].name == "pub-gruu")
+    fail "Binding 1 has an incorrect pub-gruu node" unless (xmldoc.child.child.children[0].children[1].content == binding1.expected_pub_gruu)
+
+  end
+
+  t.add_quaff_cleanup do
+    binding1.unregister
+  end
+
+
 end
