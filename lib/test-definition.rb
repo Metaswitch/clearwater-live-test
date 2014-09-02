@@ -325,7 +325,7 @@ class TestDefinition
         log_file_name = File.join(File.dirname(__FILE__),
                                   "..",
                                   "scripts",
-                                  "#{@name.tr(' ','_')}_#{@transport.to_s.upcase}_#{e.sip_uri}.log")
+                                  "#{@name.tr(' /','_')}_#{@transport.to_s.upcase}_#{e.sip_uri}.log")
         File.write(log_file_name, e.msg_log.join("\n\n================\n\n"))
       end
   end

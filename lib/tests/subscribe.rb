@@ -44,8 +44,8 @@ module Quaff
   end
 end
 
-def validate_notify xml_s
-  xsd = Nokogiri::XML::Schema(File.read("schemas/reginfo.xsd"))
+def validate_notify xml_s, schema_file="schemas/reginfo.xsd"
+  xsd = Nokogiri::XML::Schema(File.read(schema_file))
   reginfo_xml = Nokogiri::XML.parse(xml_s)
   errors = false
   xsd.validate(reginfo_xml).each do |error|
@@ -53,7 +53,7 @@ def validate_notify xml_s
     errors = true
   end
   if errors
-    fail "Could not validate XML - see above errors. XML was:\n\n#{xml_s}"
+    fail "Could not validate XML against #{schema_file} - see above errors. XML was:\n\n#{xml_s}"
   end
 end
 
@@ -116,11 +116,14 @@ TestDefinition.new("SIP SUBSCRIBE/NOTIFY with a GRUU") do |t|
     call.send_response("200", "OK")
 
     validate_notify notify.body
+
     xmldoc = Nokogiri::XML.parse(notify.body) do |config|
       config.noblanks
     end
+
     fail "Binding 1 has no pub-gruu node" unless (xmldoc.child.child.children[0].children[1].name == "pub-gruu")
-    fail "Binding 1 has an incorrect pub-gruu node" unless (xmldoc.child.child.children[0].children[1].content == ep1.expected_pub_gruu)
+    fail "Binding 1 has an incorrect pub-gruu node" unless (xmldoc.child.child.children[0].children[1]['uri'] == ep1.expected_pub_gruu)
+    validate_notify xmldoc.child.child.children[0].children[1].dup.to_s, "schemas/gruuinfo.xsd"
 
   end
 
@@ -130,3 +133,4 @@ TestDefinition.new("SIP SUBSCRIBE/NOTIFY with a GRUU") do |t|
 
 
 end
+
