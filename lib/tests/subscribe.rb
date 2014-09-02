@@ -59,6 +59,7 @@ end
 
 TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
   ep1 = t.add_endpoint
+
   t.add_quaff_setup do
     ep1.register
   end
@@ -66,11 +67,10 @@ TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
 
-    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>], "From" => %Q[<#{ep1.uri}>;tag=2342342342]})
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342]})
 
     # 200 and NOTIFY can come in any order, so expect either of them, twice
-    notify = call.recv_200_and_notify
-    validate_notify notify.body
+    notify1 = call.recv_200_and_notify
 
     call.send_response("200", "OK")
 
@@ -82,14 +82,15 @@ TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
     call.update_branch
     call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342], "Expires" => 0})
 
-    notify = call.recv_200_and_notify
-    validate_notify notify.body
+    notify2 = call.recv_200_and_notify
 
     call.send_response("200", "OK")
 
     ep1.register # Re-registration
 
     call.end_call
+    validate_notify notify1.body
+    validate_notify notify2.body
   end
 
   t.add_quaff_cleanup do
@@ -108,13 +109,12 @@ TestDefinition.new("SIP SUBSCRIBE/NOTIFY with a GRUU") do |t|
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
 
-    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342]})
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=qwertyuiop], "From" => %Q[<#{ep1.uri}>;tag=asdfghjkl]})
 
     # 200 and NOTIFY can come in any order, so expect either of them, twice
     notify = call.recv_200_and_notify
 
     call.send_response("200", "OK")
-
     validate_notify notify.body
 
     xmldoc = Nokogiri::XML.parse(notify.body) do |config|
@@ -124,7 +124,6 @@ TestDefinition.new("SIP SUBSCRIBE/NOTIFY with a GRUU") do |t|
     fail "Binding 1 has no pub-gruu node" unless (xmldoc.child.child.children[0].children[1].name == "pub-gruu")
     fail "Binding 1 has an incorrect pub-gruu node" unless (xmldoc.child.child.children[0].children[1]['uri'] == ep1.expected_pub_gruu)
     validate_notify xmldoc.child.child.children[0].children[1].dup.to_s, "schemas/gruuinfo.xsd"
-
   end
 
   t.add_quaff_cleanup do
