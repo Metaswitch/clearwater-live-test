@@ -389,20 +389,24 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
 end
 
 # Test INVITE where the mobile device rejects the call with a 480.
-# TODO BLOCKED. Need to be able to set the sip.phone parameter on an endpoint first.
 TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
   t.skip
-  #t.skip_unless_gemini
-  #t.skip_unless_ellis_api_key
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
 
   caller = t.add_endpoint
   callee_voip = t.add_endpoint
+  callee_voip2 = t.add_new_binding callee_voip
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  #callee_voip2.msg_trace = true
 
   t.add_quaff_setup do
     caller.register
     callee_voip.register
+    callee_voip2.contact_header = "<sip:quaff@:#{@cxn.local_port};transport=#{@cxn.transport};ob>;+sip.phone"
+    ok = callee_voip2.register
+    fail "200 OK Contact header did not contain 2 bindings" unless ok.headers["Contact"].length == 2
     callee_mobile.register
   end
 
@@ -637,7 +641,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Missing twin prefix") do |t|
 end
 
 # Test SUBSCRIBE with correct twin-prefix
-TestDefinition.new("Gemini - SUBSCRIBE - Mainline") do |t|
+TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
   t.skip_unless_gemini
   t.skip_unless_ellis_api_key
 
@@ -664,7 +668,59 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mainline") do |t|
     call = caller.outgoing_call(callee_voip.uri)
 
     call.send_request("SUBSCRIBE")
-    call.recv_response("100")
+    call.recv_response_and_create_dialog("200")
+    call.recv_request("NOTIFY")
+    call.send_response("200", "OK")
+    call.end_call
+  end
+
+  t.add_quaff_scenario do
+    call_voip = callee_voip.incoming_call
+
+    call_voip.recv_request("SUBSCRIBE")
+    call_voip.send_response("500", "Server Error")
+    call_voip.end_call
+  end
+
+  t.add_quaff_scenario do
+    call_mobile = callee_mobile.incoming_call
+
+    call_mobile.recv_request("SUBSCRIBE")
+    call_mobile.send_response("200", "OK")
+    call_mobile.send_request("NOTIFY")
+    call_mobile.recv_response("200")
+    call_mobile.end_call
+  end
+end
+
+# Test SUBSCRIBE with correct twin-prefix
+TestDefinition.new("Gemini - SUBSCRIBE - Joint 408") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
+  caller = t.add_endpoint
+  callee_voip = t.add_endpoint
+  callee_mobile_id = "123" + callee_voip.username
+  callee_mobile = t.add_specific_endpoint callee_mobile_id
+
+  t.add_quaff_setup do
+    caller.register
+    callee_voip.register
+    callee_mobile.register
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee_voip.unregister
+    callee_mobile.unregister
+  end
+
+  callee_voip.set_ifc server_name: "mobile-twinned@#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1", method: "SUBSCRIBE"
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee_voip.uri)
+
+    call.send_request("SUBSCRIBE")
     call.recv_response("408")
     call.end_call
   end
