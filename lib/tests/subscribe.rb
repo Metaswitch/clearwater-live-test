@@ -99,7 +99,7 @@ TestDefinition.new("SUBSCRIBE - reg-event") do |t|
 
 end
 
-TestDefinition.new("SIP SUBSCRIBE/NOTIFY with a GRUU") do |t|
+TestDefinition.new("SUBSCRIBE - reg-event with a GRUU") do |t|
   ep1 = t.add_endpoint
 
   t.add_quaff_setup do
