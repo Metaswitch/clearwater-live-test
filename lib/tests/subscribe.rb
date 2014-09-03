@@ -57,7 +57,7 @@ def validate_notify xml_s, schema_file="schemas/reginfo.xsd"
   end
 end
 
-TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
+TestDefinition.new("SUBSCRIBE - reg-event") do |t|
   ep1 = t.add_endpoint
 
   t.add_quaff_setup do

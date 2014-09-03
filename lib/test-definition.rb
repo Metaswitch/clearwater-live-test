@@ -285,6 +285,10 @@ class TestDefinition
     raise SkipThisTest.new "No live number given", "Call with LIVENUMBER=<number>" unless ENV['LIVENUMBER']
   end
 
+  def skip_unless_gemini
+    raise SkipThisTest.new "No gemini hostname provided", "Call with GEMINI=<hostname>" unless ENV['GEMINI']
+  end
+
   private
 
   def before_run
@@ -300,7 +304,7 @@ class TestDefinition
     EllisProvisionedLine.new(@deployment)
   end
 
-  def provision_specific_line
+  def provision_specific_line user_part
     EllisProvisionedLine.specific_line(user_part, @deployment)
   end
 
