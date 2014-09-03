@@ -171,9 +171,9 @@ class TestDefinition
 
   # Methods for defining Quaff endpoints
 
-  def add_endpoint line=nil
+  def add_endpoint line=nil, use_instance_id=true
     line ||= provision_line
-    include_endpoint QuaffEndpoint.new(line, @transport, @endpoints.length)
+    include_endpoint QuaffEndpoint.new(line, @transport, @endpoints.length, use_instance_id)
   end
 
   def add_specific_endpoint user_part
@@ -191,8 +191,8 @@ class TestDefinition
     add_endpoint line
   end
 
-  def add_new_binding(ep)
-    add_endpoint ep.line_info
+  def add_new_binding(ep, use_instance_id=true)
+    add_endpoint ep.line_info, use_instance_id
   end
 
 
@@ -329,7 +329,7 @@ class TestDefinition
         log_file_name = File.join(File.dirname(__FILE__),
                                   "..",
                                   "scripts",
-                                  "#{@name.tr(' ','_')}_#{@transport.to_s.upcase}_#{e.sip_uri}.log")
+                                  "#{@name.tr(' /','_')}_#{@transport.to_s.upcase}_#{e.sip_uri}.log")
         File.write(log_file_name, e.msg_log.join("\n\n================\n\n"))
       end
   end

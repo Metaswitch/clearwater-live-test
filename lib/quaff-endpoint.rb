@@ -45,7 +45,7 @@ class QuaffEndpoint < Endpoint
   forward_all :incoming_call, :outgoing_call, :terminate, :register, :unregister, :msg_trace, :uri, :sdp_port, :sdp_socket, :msg_log, :local_port, :contact_header, :contact_header=, :no_new_calls?, to: :quaff
   attr_reader :quaff
 
-  def initialize(line_info, transport, endpoint_idx)
+  def initialize(line_info, transport, endpoint_idx, use_instance_id=true)
     super line_info, transport, endpoint_idx
     registrar = ENV['PROXY'] || domain
     if transport == :tcp then
@@ -61,12 +61,17 @@ class QuaffEndpoint < Endpoint
                                          :anyport,
                                          registrar)
     end
-    @quaff.instance_id = instance_id
+
+    @quaff.instance_id = instance_id if use_instance_id
   end
 
   def cleanup
     @quaff.terminate
     super
+  end
+
+  def expected_pub_gruu
+    "#{sip_uri};gr=urn:uuid:#{instance_id}"
   end
 
 end

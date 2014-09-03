@@ -9,6 +9,7 @@ gem 'snmp'
 gem 'quaff'
 gem 'facter'
 gem 'forwarder'
+gem 'nokogiri'
 
 group :development do
   gem 'pry'
