@@ -432,3 +432,38 @@ TestDefinition.new("GRUU - Call - AoR with other param as target") do |t|
   end
 end
 
+TestDefinition.new("GRUU - Call - GRUU with other param as target") do |t|
+  caller = t.add_endpoint
+  binding1 = t.add_endpoint
+  binding2 = t.add_new_binding binding1
+
+  t.add_quaff_setup do
+    caller.register
+    binding1.register
+    binding2.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(binding2.expected_pub_gruu + ";meaningless-param")
+
+    call.send_request("MESSAGE",
+                      "hello world\r\n",
+                      {"Content-Type" => "text/plain"})
+    call.recv_response("200")
+    call.end_call
+    fail "Call was incorrectly forked to both endpoints" unless binding1.no_new_calls?
+  end
+
+  t.add_quaff_scenario do
+    call2 = binding2.incoming_call
+    call2.recv_request("MESSAGE")
+    call2.send_response("200", "OK")
+    call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    binding1.unregister
+    binding2.unregister
+    caller.unregister
+  end
+end
