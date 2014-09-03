@@ -390,29 +390,31 @@ end
 
 # Test INVITE where the mobile device rejects the call with a 480.
 TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
-  t.skip
   t.skip_unless_gemini
   t.skip_unless_ellis_api_key
 
   caller = t.add_endpoint
   callee_voip = t.add_endpoint
-  callee_voip2 = t.add_new_binding callee_voip
+  callee_voip_phone = t.add_new_binding callee_voip
+
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  #callee_voip2.msg_trace = true
 
   t.add_quaff_setup do
     caller.register
     callee_voip.register
-    callee_voip2.contact_header = "<sip:quaff@:#{@cxn.local_port};transport=#{@cxn.transport};ob>;+sip.phone"
-    ok = callee_voip2.register
+
+    callee_voip_phone.contact_header += ";+sip.phone"
+    ok = callee_voip_phone.register
     fail "200 OK Contact header did not contain 2 bindings" unless ok.headers["Contact"].length == 2
+
     callee_mobile.register
   end
 
   t.add_quaff_cleanup do
     caller.unregister
     callee_voip.unregister
+    callee_voip_phone.unregister
     callee_mobile.unregister
   end
 
@@ -424,6 +426,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
     call.send_request("INVITE")
 
     call.recv_response("100")
+    call.recv_response("180")
     call.recv_response("180")
     call.recv_response("180")
 
@@ -447,26 +450,28 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
-
-    # TODO this INVITE isn't being sent on because it's failing the contact filtering check
-    # (this used to pass as we were checking for required rather than require).
-    invite2 = call_voip.recv_request("INVITE")
-    fail "Call for VoIP device does not include the Accept-Contact header" unless invite2.all_headers("Accept-Contact").include? "*;require;+sip.phone;explicit"
-
-    call_voip.send_response("100", "Trying")
-    call_voip.send_response("180", "Ringing")
-
-    call_voip.assoc_with_msg(invite)
     call_voip.send_response("480", "Temporarily Unavailable")
-
-    call_voip.assoc_with_msg(invite2)
-    call_voip.send_response("200", "OK")
-
     call_voip.recv_request("ACK")
-    call_voip.recv_request("BYE")
-    call_voip.send_response("200", "OK")
 
     call_voip.end_call
+  end
+
+  t.add_quaff_scenario do
+    call_voip_phone = callee_voip_phone.incoming_call
+
+    invite_phone = call_voip_phone.recv_request("INVITE")
+    fail "Call for VoIP device does not include the Accept-Contact header" unless invite_phone.all_headers("Accept-Contact").include? "*;+sip.phone;explicit;require"
+
+    call_voip_phone.send_response("100", "Trying")
+    call_voip_phone.send_response("180", "Ringing")
+
+    call_voip_phone.send_response("200", "OK")
+
+    call_voip_phone.recv_request("ACK")
+    call_voip_phone.recv_request("BYE")
+    call_voip_phone.send_response("200", "OK")
+
+    call_voip_phone.end_call
   end
 
   t.add_quaff_scenario do
@@ -476,9 +481,6 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
-
-    sleep 0.3
-
     call_mobile.send_response("480", "Temporarily Unavailable")
     call_mobile.end_call
   end
