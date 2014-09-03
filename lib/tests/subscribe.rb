@@ -32,7 +32,7 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-TestDefinition.new("SIP SUBSCRIBE-NOTIFY") do |t|
+TestDefinition.new("SUBSCRIBE - reg-event") do |t|
   ep1 = t.add_endpoint
   t.add_quaff_setup do
     ep1.register
