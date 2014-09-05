@@ -245,7 +245,7 @@ class TestDefinition
     retval = false
     begin
       @blk.call(self)
-      print "(#{@endpoints.map { |e| e.sip_uri }.join ", "}) "
+      print "(#{@endpoints.map { |e| e.username }.uniq.join ", "}) "
       @quaff_setup_blk.call if @quaff_setup_blk
       @quaff_threads = @quaff_scenario_blocks.map { |blk| Thread.new &blk }
       retval = extra_validation
