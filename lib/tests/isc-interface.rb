@@ -83,10 +83,16 @@ TestDefinition.new("ISC Interface - Terminating") do |t|
       incoming_call.send_response("100", "Trying")
 
       incoming_call.send_response("200", "OK")
-      incoming_call.recv_request("ACK")
 
-      incoming_call.recv_request("BYE")
-      incoming_call.send_response("200", "OK")
+      # We expect an ACK and a BYE - protect against them being sent out-of-order
+      bye_ack = incoming_call.recv_any_of ["ACK", "BYE"]
+      if bye_ack.method == "ACK"
+          incoming_call.recv_request("BYE")
+          incoming_call.send_response("200", "OK")
+      else
+          incoming_call.send_response("200", "OK")
+          incoming_call.recv_request("ACK")
+      end
       incoming_call.end_call
   end
 end
@@ -392,8 +398,14 @@ TestDefinition.new("ISC Interface - B2BUA") do |t|
     incoming_call.send_response("200", "OK")
 
     # We expect an ACK and a BYE - protect against them being sent out-of-order
-    incoming_call.recv_any_of ["ACK", "BYE"]
-    incoming_call.recv_any_of ["ACK", "BYE"]
+    bye_ack = incoming_call.recv_any_of ["ACK", "BYE"]
+    if bye_ack.method == "ACK"
+        incoming_call.recv_request("BYE")
+        incoming_call.send_response("200", "OK")
+    else
+        incoming_call.send_response("200", "OK")
+        incoming_call.recv_request("ACK")
+    end
 
     # Get the BYE, OK it, and pass it back
     incoming_call.send_response("200", "OK")
