@@ -241,6 +241,8 @@ class TestDefinition
     @transport = transport
     @quaff_scenario_blocks = []
     @quaff_threads = []
+    @quaff_setup_blk = nil
+    @quaff_cleanup_blk = nil
     TestDefinition.set_current_test(self)
     retval = false
     begin
@@ -278,7 +280,7 @@ class TestDefinition
   end
 
   def skip_if_udp
-    raise SkipThisTest.new "Test is not valid for UDP" unless @transport == :udp
+    raise SkipThisTest.new "Test is not valid for UDP" if @transport == :udp
   end
 
   def skip_unless_live
