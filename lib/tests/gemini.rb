@@ -706,6 +706,8 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
 
     call_mobile.send_response("200", "OK")
     sleep 0.3
+
+    call_mobile.new_transaction
     call_mobile.send_request("NOTIFY")
     call_mobile.recv_response("200")
     call_mobile.end_call
