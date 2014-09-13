@@ -1,4 +1,4 @@
-# @file sipp-endpoint.rb
+# @file ellis-endpoint.rb
 #
 # Project Clearwater - IMS in the Cloud
 # Copyright (C) 2013  Metaswitch Networks Ltd
@@ -122,14 +122,14 @@ class EllisProvisionedLine
     )
   end
 
-  def set_ifc(options={})
-    options = default_ifcs.merge(options)
+  def set_ifc(options=[{}], template="ifcs.xml.erb")
+    options.map! { |o| default_ifcs.merge(o) }
     erb_src = File.read(File.join(File.dirname(__FILE__),
                                   "..",
                                   "templates",
-                                  "ifcs.xml.erb"))
+                                  template))
     erb = Erubis::Eruby.new(erb_src)
-    ifcs = erb.result(options)
+    ifcs = erb.result(ifcs: options)
 
     RestClient::Request.execute(
       method: :put,

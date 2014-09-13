@@ -1,0 +1,48 @@
+<element name="call-list" xmlns="http://relaxng.org/ns/structure/1.0">
+  <element name="calls">
+    <zeroOrMore>
+      <element name="call" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+        <element name="to">
+          <element name="uri">
+            <data type="anyURI"/>
+          </element>
+          <optional>
+          <element name="name">
+            <text/>
+          </element>
+          </optional>
+        </element>
+        <element name="from">
+          <element name="uri">
+            <data type="anyURI"/>
+          </element>
+          <optional>
+          <element name="name">
+            <text/>
+          </element>
+          </optional>
+        </element>
+        <element name="outgoing">
+          <data type="boolean"/>
+        </element>
+        <element name="start-time">
+          <data type="dateTime"/>
+        </element>
+        <element name="answered">
+          <data type="boolean"/>
+        </element>
+        <optional>
+          <element name="answer-time">
+            <data type="dateTime"/>
+          </element>
+        </optional>
+        <optional>
+          <element name="end-time">
+            <data type="dateTime"/>
+          </element>
+        </optional>
+      </element>
+    </zeroOrMore>
+  </element>
+</element>
+
