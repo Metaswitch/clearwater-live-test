@@ -48,6 +48,8 @@ There are various modifiers you can use to determine which subset of tests you w
  - `HOSTNAME=<host>` - publicly accessible hostname of the machine running the tests, used for the dummy AS.
  - `EXPIRES=<number>` - maximum Expires header expected from Sprout, used for the dummy AS.
  - `GEMINI=<host>` - hostname of the the Gemini cluster. If the Gemini application server is integrated with Sprout rather than running as a standalone, this should be set to the Sprout cluster.
+ - `MEMENTO_SIP=<host>` - hostname of the Memento (SIP) cluster. If the Memento application server is integrated with Sprout rather than running as a standalone, this should be set to the Sprout cluster.
+ - `MEMENTO_HTTP=<host>` - hostname of the Memento (HTTP) cluster.
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
 
     rake test[test.cw-ngv.com] TESTS="Call Barring*" PSTN=true
