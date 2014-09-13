@@ -35,8 +35,8 @@ require 'quaff'
 require_relative '../memento-client'
 
 ANONYMOUS_URI="Anonymous"
-MEMENTO_SIP_URI="#{ENV['MEMENTO_SIP_DOMAIN']}:5054;transport=tcp"
-MEMENTO_HTTP_URI="#{ENV['MEMENTO_DOMAIN']}"
+MEMENTO_SIP_URI="#{ENV['MEMENTO_SIP']}:5054;transport=tcp"
+MEMENTO_HTTP_URI="#{ENV['MEMENTO_HTTP']}"
 SCHEMA="schemas/memento-schema.rng"
 
 # Set iFCs for memento and mmtel
@@ -88,7 +88,9 @@ def check_no_call_list_entry user, caller_id
 end
 
 # Test trying to retrieve a call list with an incorrect password
-MementoTestDefinition.new("Memento - Incorrect Password") do |t|
+TestDefinition.new("Memento - Incorrect Password") do |t|
+  t.skip_unless_memento
+
   user = t.add_endpoint
 
   # Attempt to access the call list with the wrong password. Expect a 403.
@@ -97,7 +99,9 @@ MementoTestDefinition.new("Memento - Incorrect Password") do |t|
 end
 
 # Test trying to retrieve someone else's call list
-MementoTestDefinition.new("Memento - Wrong Call List") do |t|
+TestDefinition.new("Memento - Wrong Call List") do |t|
+  t.skip_unless_memento
+
   user1 = t.add_endpoint
   user2 = t.add_endpoint
 
@@ -107,7 +111,9 @@ MementoTestDefinition.new("Memento - Wrong Call List") do |t|
 end
 
 # Test basic call
-MementoTestDefinition.new("Memento - Basic Call") do |t|
+TestDefinition.new("Memento - Basic Call") do |t|
+  t.skip_unless_memento
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   random_caller_id = SecureRandom::hex
@@ -170,7 +176,9 @@ MementoTestDefinition.new("Memento - Basic Call") do |t|
 end
 
 # Test call to unknown number
-MementoTestDefinition.new("Memento - Unknown Number") do |t|
+TestDefinition.new("Memento - Unknown Number") do |t|
+  t.skip_unless_memento
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   random_caller_id = SecureRandom::hex
@@ -206,7 +214,9 @@ MementoTestDefinition.new("Memento - Unknown Number") do |t|
 end
 
 # Test rejected call
-MementoTestDefinition.new("Memento - Rejected Call") do |t|
+TestDefinition.new("Memento - Rejected Call") do |t|
+  t.skip_unless_memento
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   random_caller_id = SecureRandom::hex
@@ -256,7 +266,9 @@ MementoTestDefinition.new("Memento - Rejected Call") do |t|
 end
 
 # Test cancelled call
-MementoTestDefinition.new("Memento - Cancelled Call") do |t|
+TestDefinition.new("Memento - Cancelled Call") do |t|
+  t.skip_unless_memento
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   random_caller_id = SecureRandom::hex
@@ -320,7 +332,9 @@ MementoTestDefinition.new("Memento - Cancelled Call") do |t|
 end
 
 # Test basic call with privacy turned on
-MementoTestDefinition.new("Memento - Privacy Call") do |t|
+TestDefinition.new("Memento - Privacy Call") do |t|
+  t.skip_unless_memento
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   random_caller_id = SecureRandom::hex
@@ -388,7 +402,9 @@ MementoTestDefinition.new("Memento - Privacy Call") do |t|
 end
 
 # Test barred call
-MementoTestDefinition.new("Memento - Barred Call") do |t|
+TestDefinition.new("Memento - Barred Call") do |t|
+  t.skip_unless_memento
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   random_caller_id = SecureRandom::hex
@@ -432,7 +448,9 @@ MementoTestDefinition.new("Memento - Barred Call") do |t|
 end
 
 # Test call which is busy call forwarded
-MementoTestDefinition.new("Memento - Busy Call Forwarding") do |t|
+TestDefinition.new("Memento - Busy Call Forwarding") do |t|
+  t.skip_unless_memento
+
   caller = t.add_endpoint
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint

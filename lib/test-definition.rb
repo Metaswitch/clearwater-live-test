@@ -292,6 +292,10 @@ class TestDefinition
     raise SkipThisTest.new "No gemini hostname provided", "Call with GEMINI=<hostname>" unless ENV['GEMINI']
   end
 
+  def skip_unless_memento
+    raise SkipThisTest.new "No memento hostnames provided", "Call with MEMENTO_SIP=<SIP hostname> and MEMENTO_HTTP=<HTTP hostname>" unless ENV['MEMENTO_SIP'] && ENV['MEMENTO_HTTP']
+  end
+
   private
 
   def before_run
@@ -425,112 +429,4 @@ class TestDefinition
     end
   end
 
-end
-
-class PSTNTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['PSTN']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No PSTN support)"
-      puts "   - Call with PSTN=true to run test"
-    end
-  end
-end
-
-class MMTelTestDefinition < TestDefinition
-  def run(*args)
-    unless ENV['NOMMTEL']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No MMTel TAS support)"
-    end
-  end
-end
-
-class MMTelPSTNTestDefinition < PSTNTestDefinition
-  def run(*args)
-    clear_diags
-    unless ENV['NOMMTEL']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No MMTel TAS support)"
-    end
-  end
-end
-
-
-class LiveTestDefinition < PSTNTestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['LIVENUMBER']
-      # The live call takes approximately 10 seconds to run so extend the timeout
-      # for this test.
-      @timeout = 20
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No live number given)"
-      puts "   - Call with LIVENUMBER=<number>"
-    end
-  end
-end
-
-class ASTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['HOSTNAME']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No hostname given)"
-      puts "   - Call with HOSTNAME=<publicly accessible hostname/IP of this machine>"
-    end
-  end
-end
-
-class EllisPrivilegesTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['ELLIS_API_KEY']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No Ellis API key)"
-      puts "   - Call with ELLIS_API_KEY=<key>"
-    end
-  end
-end
-
-class NotValidForUDPASTestDefinition < ASTestDefinition
-  def run(domain, transport, *args)
-    clear_diags
-    if transport == :udp
-      puts RedGreen::Color.yellow("Skipped") + " (Test is not valid for UDP)"
-    else
-      super
-    end
-  end
-end
-
-class MementoTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['MEMENTO_SIP_DOMAIN'] && ENV['MEMENTO_HTTP_DOMAIN']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No memento hostname given)"
-      puts "   - Call with MEMENTO_SIP_DOMAIN=<SIP hostname/IP of memento cluster> and MEMENTO_HTTP_DOMAIN=<HTTP hostname/IP of memento cluster>"
-    end
-  end
-end
-
-class GeminiTestDefinition < TestDefinition
-  def run(*args)
-    clear_diags
-    if ENV['GEMINI']
-      super
-    else
-      puts RedGreen::Color.yellow("Skipped") + " (No gemini hostname given)"
-      puts "   - Call with GEMINI=<publicly accessible hostname/IP of gemini cluster>"
-    end
-  end
 end
