@@ -34,40 +34,72 @@
 require 'quaff'
 require_relative '../memento-client'
 
-# Retrieve the last call record from the call list
-def check_call_list_entry caller, callee, outgoing, answered, caller_id = 0, anonymous = false
-  if outgoing
-    client = Memento::Client.new "schemas/memento-schema.rng", "#{ENV['CALL_LIST']}", caller.sip_uri, caller.private_id, caller.password
-    log_string = "Caller's call record"
-  else
-    client = Memento::Client.new "schemas/memento-schema.rng", "#{ENV['CALL_LIST']}", callee.sip_uri, callee.private_id, callee.password
-    log_string = "Callee's call record"
-  end
+# Set iFCs for memento and mmtel
+def set_memento_ifcs endpoint, deployment
+  endpoint.set_ifc [{server_name: "#{ENV['MEMENTO_SIP_DOMAIN']}:5054;transport=tcp", priority: 0, session_case: 0},
+                    {server_name: "mmtel.#{deployment}", priority: 1, session_case: 0},
+                    {server_name: "mmtel.#{deployment}", priority: 2, session_case: 1},
+                    {server_name: "#{ENV['MEMENTO_SIP_DOMAIN']}:5054;transport=tcp", priority: 3, session_case: 1}]
+end
 
+# Retrieve the last call record from the call list
+def check_users_call_list user, from, to, answered, caller_id = 0
   # Find the most recent call
+  client = Memento::Client.new "schemas/memento-schema.rng", "#{ENV['MEMENTO_HTTP_DOMAIN']}", user.sip_uri, user.private_id, user.password
   call_list = client.get_call_list
   call = call_list[-1]
 
-  # Check some fields
-  if anonymous
-    fail "#{log_string} doesn't contain anonmyised caller" unless call.from_uri == "sip:anonymous@anonymous.invalid"
+  # Determine whether the call was incoming or outgoing
+  outgoing = (user == from)
+
+  # Check some fields are as expected. First the From URI.
+  if caller_id == "Anonymous"
+    fail "Call record doesn't contain anonmyised from\n#{call.xml}" unless call.from_uri == "sip:anonymous@anonymous.invalid"
   else
-    fail "#{log_string} contains wrong from_uri; found: #{call.from_uri}, expected: #{caller.sip_uri}" unless call.from_uri == caller.sip_uri
+    fail "Call record contains wrong from_uri; found: #{call.from_uri}, expected: #{from.sip_uri}\n#{call.xml}" unless call.from_uri == from.sip_uri
   end
+
+  # From name
   if !outgoing
-    fail "#{log_string} contains wrong from_name; found: #{call.from_name}, expected: #{caller_id}" unless call.from_name == caller_id
+    fail "Call record contains wrong from_name; found: #{call.from_name}, expected: #{caller_id}\n#{call.xml}" unless call.from_name == caller_id
   end
-  fail "#{log_string} contains wrong to_uri; found: #{call.to_uri}, expected: #{callee.sip_uri}" unless call.to_uri == callee.sip_uri
-  fail "#{log_string} has not correctly recorded whether or not the call was answered" unless call.answered == answered
-  fail "#{log_string} has recorded wrong call direction" unless call.outgoing == outgoing
+
+  # To URI
+  fail "Call record contains wrong to_uri; found: #{call.to_uri}, expected: #{to.sip_uri}\n#{call.xml}" unless call.to_uri == to.sip_uri
+
+  # Was the call answered?
+  fail "Call record has not correctly recorded whether or not the call was answered\n#{call.xml}" unless call.answered == answered
+
+  # Call direction
+  fail "Call record has recorded wrong call direction\n#{call.xml}" unless call.outgoing == outgoing
 end
 
-# Retrieve the callee's call list and check there are no calls
+
+# Retrieve the user's call list and check there are no calls
 # recorded from the specified caller_id
-def check_no_call_list_entry callee, caller_id
-    client = Memento::Client.new "schemas/memento-schema.rng", "#{ENV['CALL_LIST']}", callee.sip_uri, callee.private_id, callee.password
-    call_list = client.get_call_list
-    call_list.each { |call| fail "Unexpected call list entry" if call.from_name == caller_id }
+def check_no_call_list_entry user, caller_id
+  client = Memento::Client.new "schemas/memento-schema.rng", "#{ENV['MEMENTO_HTTP_DOMAIN']}", user.sip_uri, user.private_id, user.password
+  call_list = client.get_call_list
+  call_list.each { |call| fail "Unexpected call list entry" if call.from_name == caller_id }
+end
+
+# Test trying to retrieve a call list with an incorrect password
+MementoTestDefinition.new("Memento - Incorrect Password") do |t|
+  user = t.add_endpoint
+
+  # Attempt to access the call list with the wrong password. Expect a 403.
+  client = Memento::Client.new "schemas/memento-schema.rng", "#{ENV['MEMENTO_HTTP_DOMAIN']}", user.sip_uri, user.private_id, "Wrong password"
+  call_list = client.get_call_list(rc=403)
+end
+
+# Test trying to retrieve someone else's call list
+MementoTestDefinition.new("Memento - Wrong Call List") do |t|
+  user1 = t.add_endpoint
+  user2 = t.add_endpoint
+
+  # As user2, attempt to access user1's call list. Expect a 404.
+  client = Memento::Client.new "schemas/memento-schema.rng", "#{ENV['MEMENTO_HTTP_DOMAIN']}", user1.sip_uri, user2.private_id, user2.password
+  call_list = client.get_call_list(rc=404)
 end
 
 # Test basic call
@@ -84,16 +116,11 @@ MementoTestDefinition.new("Memento - Basic Call") do |t|
   t.add_quaff_cleanup do
     caller.unregister
     callee.unregister
-
-    if ENV['CALL_LIST']
-      check_call_list_entry caller, callee, true, true
-      check_call_list_entry caller, callee, false, true, random_caller_id
-    end
   end
 
   # Set iFCs
-  caller.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
-  callee.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
+  set_memento_ifcs caller, t.deployment
+  set_memento_ifcs callee, t.deployment
 
   # Make a call
   t.add_quaff_scenario do
@@ -117,6 +144,8 @@ MementoTestDefinition.new("Memento - Basic Call") do |t|
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
+
+    check_users_call_list(user=caller, from=caller, to=callee, answered=true)
   end
 
   t.add_quaff_scenario do
@@ -131,6 +160,8 @@ MementoTestDefinition.new("Memento - Basic Call") do |t|
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
     call2.end_call
+
+    check_users_call_list(user=callee, from=caller, to=callee, answered=true, caller_id=random_caller_id)
   end
 end
 
@@ -146,15 +177,10 @@ MementoTestDefinition.new("Memento - Unknown Number") do |t|
 
   t.add_quaff_cleanup do
     caller.unregister
-
-    if ENV['CALL_LIST']
-      check_call_list_entry caller, callee, true, false
-      check_no_call_list_entry callee, random_caller_id
-    end
   end
 
   # Set iFCs
-  caller.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
+  set_memento_ifcs caller, t.deployment
 
   # Make a call to an unknown number
   t.add_quaff_scenario do
@@ -169,6 +195,9 @@ MementoTestDefinition.new("Memento - Unknown Number") do |t|
     call.recv_response("480")
     call.send_request("ACK")
     call.end_call
+
+    check_users_call_list(user=caller, from=caller, to=callee, answered=false)
+    check_no_call_list_entry(user=callee, caller_id=random_caller_id)
   end
 end
 
@@ -186,16 +215,11 @@ MementoTestDefinition.new("Memento - Rejected Call") do |t|
   t.add_quaff_cleanup do
     caller.unregister
     callee.unregister
-
-    if ENV['CALL_LIST']
-      check_call_list_entry caller, callee, true, false
-      check_call_list_entry caller, callee, false, false, random_caller_id
-    end
   end
 
   # Set iFCs
-  caller.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
-  callee.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
+  set_memento_ifcs caller, t.deployment
+  set_memento_ifcs callee, t.deployment
 
   # Make a call which is rejected by the remote endpoint
   t.add_quaff_scenario do
@@ -211,6 +235,8 @@ MementoTestDefinition.new("Memento - Rejected Call") do |t|
     call.recv_response("486")
     call.send_request("ACK")
     call.end_call
+
+    check_users_call_list(user=caller, from=caller, to=callee, answered=false)
   end
 
   t.add_quaff_scenario do
@@ -220,6 +246,8 @@ MementoTestDefinition.new("Memento - Rejected Call") do |t|
     call2.send_response("486", "Busy Here")
     call2.recv_request("ACK")
     call2.end_call
+
+    check_users_call_list(user=callee, from=caller, to=callee, answered=false, caller_id=random_caller_id)
   end
 end
 
@@ -237,16 +265,11 @@ MementoTestDefinition.new("Memento - Cancelled Call") do |t|
   t.add_quaff_cleanup do
     caller.unregister
     callee.unregister
-
-    if ENV['CALL_LIST']
-      check_call_list_entry caller, callee, true, false
-      check_call_list_entry caller, callee, false, false, random_caller_id
-    end
   end
 
   # Set iFCs
-  caller.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
-  callee.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
+  set_memento_ifcs caller, t.deployment
+  set_memento_ifcs callee, t.deployment
 
   # Make a call which is cancelled by the caller
   t.add_quaff_scenario do
@@ -267,6 +290,8 @@ MementoTestDefinition.new("Memento - Cancelled Call") do |t|
     call.recv_response("487")
     call.send_request("ACK")
     call.end_call
+
+    check_users_call_list(user=caller, from=caller, to=callee, answered=false)
   end
 
   t.add_quaff_scenario do
@@ -285,6 +310,8 @@ MementoTestDefinition.new("Memento - Cancelled Call") do |t|
     call2.recv_request("ACK")
 
     call2.end_call
+
+    check_users_call_list(user=callee, from=caller, to=callee, answered=false, caller_id=random_caller_id)
   end
 end
 
@@ -302,16 +329,11 @@ MementoTestDefinition.new("Memento - Privacy Call") do |t|
   t.add_quaff_cleanup do
     caller.unregister
     callee.unregister
-
-    if ENV['CALL_LIST']
-      check_call_list_entry caller, callee, true, true
-      check_call_list_entry caller, callee, false, true, "Anonymous", true
-    end
   end
 
   # Set iFCs
-  caller.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
-  callee.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
+  set_memento_ifcs caller, t.deployment
+  set_memento_ifcs callee, t.deployment
 
   caller.set_simservs oip: { active: true },
                       oir: { active: true,
@@ -340,6 +362,8 @@ MementoTestDefinition.new("Memento - Privacy Call") do |t|
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
+
+    check_users_call_list(user=caller, from=caller, to=callee, answered=true)
   end
 
   t.add_quaff_scenario do
@@ -354,6 +378,8 @@ MementoTestDefinition.new("Memento - Privacy Call") do |t|
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
     call2.end_call
+
+    check_users_call_list(user=callee, from=caller, to=callee, answered=true, caller_id="Anonymous")
   end
 end
 
@@ -371,16 +397,11 @@ MementoTestDefinition.new("Memento - Barred Call") do |t|
   t.add_quaff_cleanup do
     caller.unregister
     callee.unregister
-
-    if ENV['CALL_LIST']
-      check_call_list_entry caller, callee, true, false
-      check_no_call_list_entry callee, random_caller_id
-    end
   end
 
   # Set iFCs
-  caller.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
-  callee.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
+  set_memento_ifcs caller, t.deployment
+  set_memento_ifcs callee, t.deployment
 
   caller.set_simservs ocb: { active: true,
                              rules: [ { conditions: [],
@@ -400,6 +421,9 @@ MementoTestDefinition.new("Memento - Barred Call") do |t|
     call.recv_response("603")
     call.send_request("ACK")
     call.end_call
+
+    check_users_call_list(user=caller, from=caller, to=callee, answered=false)
+    check_no_call_list_entry(user=callee, caller_id=random_caller_id)
   end
 end
 
@@ -420,18 +444,12 @@ MementoTestDefinition.new("Memento - Busy Call Forwarding") do |t|
     caller.unregister
     callee1.register
     callee2.unregister
-
-    if ENV['CALL_LIST']
-      check_call_list_entry caller, callee1, true, true
-      check_call_list_entry caller, callee1, false, false, random_caller_id
-      check_call_list_entry caller, callee2, false, true, random_caller_id
-    end
   end
 
   # Set iFCs
-  caller.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
-  callee1.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
-  callee2.set_memento_ifc memento: "#{ENV['MEMENTO']}:5054;transport=tcp", mmtel: "mmtel.#{t.deployment}"
+  set_memento_ifcs caller, t.deployment
+  set_memento_ifcs callee1, t.deployment
+  set_memento_ifcs callee2, t.deployment
 
   callee1.set_simservs cdiv: { active: true,
                                rules: [ { conditions: ["busy"],
@@ -461,6 +479,8 @@ MementoTestDefinition.new("Memento - Busy Call Forwarding") do |t|
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
+
+    check_users_call_list(user=caller, from=caller, to=callee1, answered=true)
   end
 
   t.add_quaff_scenario do
@@ -471,6 +491,8 @@ MementoTestDefinition.new("Memento - Busy Call Forwarding") do |t|
     call1.recv_request("ACK")
 
     call1.end_call
+
+    check_users_call_list(user=callee1, from=caller, to=callee1, answered=false, caller_id=random_caller_id)
   end
 
   t.add_quaff_scenario do
@@ -484,5 +506,7 @@ MementoTestDefinition.new("Memento - Busy Call Forwarding") do |t|
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
     call2.end_call
+
+    check_users_call_list(user=callee2, from=caller, to=callee2, answered=true, caller_id=random_caller_id)
   end
 end

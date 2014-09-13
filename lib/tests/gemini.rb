@@ -49,7 +49,7 @@ GeminiTestDefinition.new("Gemini - INVITE - Missing twin prefix") do |t|
   end
 
   # Set iFCs
-  callee.set_ifc server_name: "#{ENV['GEMINI']}:5054;transport=TCP", session_case: "1"
+  callee.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP", session_case: "1"}]
 
   # Make a call. Gemini will reject the call with a 480
   t.add_quaff_scenario do
@@ -84,7 +84,7 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
   end
 
   # Set iFCs.
-  callee_voip.set_ifc server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"
+  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -164,7 +164,7 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
   end
 
   # Set iFCs
-  callee_voip.set_ifc server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"
+  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -243,7 +243,7 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
   end
 
   # Set iFCs
-  callee_voip.set_ifc server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"
+  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -319,7 +319,7 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
     callee_mobile.unregister
   end
 
-  callee_voip.set_ifc server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"
+  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -393,7 +393,7 @@ SkippedTestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") 
     callee_mobile.unregister
   end
 
-  callee_voip.set_ifc server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"
+  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -481,7 +481,7 @@ GeminiTestDefinition.new("Gemini - INVITE - Both reject, choose mobile response"
     callee_mobile.unregister
   end
 
-  callee_voip.set_ifc server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"
+  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -541,7 +541,7 @@ GeminiTestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") 
     callee_mobile.unregister
   end
 
-  callee_voip.set_ifc server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"
+  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -596,7 +596,7 @@ GeminiTestDefinition.new("Gemini - SUBSCRIBE - Missing twin prefix") do |t|
     callee.unregister
   end
 
-  callee.set_ifc server_name: "#{ENV['GEMINI']}:5054;transport=TCP", session_case: "1", method: "SUBSCRIBE"
+  callee.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP", session_case: "1", method: "SUBSCRIBE"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
@@ -627,7 +627,7 @@ GeminiTestDefinition.new("Gemini - SUBSCRIBE - Mainline") do |t|
     callee_mobile.unregister
   end
 
-  callee_voip.set_ifc server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1", method: "SUBSCRIBE"
+  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1", method: "SUBSCRIBE"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)

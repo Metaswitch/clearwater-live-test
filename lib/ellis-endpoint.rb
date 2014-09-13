@@ -88,31 +88,14 @@ class EllisEndpoint
     )
   end
 
-  def set_ifc(options={})
-    options = default_ifcs.merge(options)
+  def set_ifc(options=[{}], template="ifcs.xml.erb")
+    options.map! { |o| default_ifcs.merge(o) }
     erb_src = File.read(File.join(File.dirname(__FILE__),
                                   "..",
                                   "templates",
-                                  "ifcs.xml.erb"))
+                                  template))
     erb = Erubis::Eruby.new(erb_src)
-    ifcs = erb.result(options)
-
-    RestClient::Request.execute(
-      method: :put,
-      url: ellis_url("accounts/#{account_username}/numbers/#{CGI.escape(@sip_uri)}/ifcs"),
-      cookies: @@security_cookie,
-      payload: ifcs
-    )
-  end
-
-  def set_memento_ifc(options={})
-    options = default_ifcs.merge(options)
-    erb_src = File.read(File.join(File.dirname(__FILE__),
-                                  "..",
-                                  "templates",
-                                  "memento_ifcs.xml.erb"))
-    erb = Erubis::Eruby.new(erb_src)
-    ifcs = erb.result(options)
+    ifcs = erb.result(ifcs: options)
 
     RestClient::Request.execute(
       method: :put,

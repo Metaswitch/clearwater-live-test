@@ -1,24 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ServiceProfile>
+  <% ifcs.each do |ifc| %>
   <InitialFilterCriteria>
+    <% if ifc[:priority] %><Priority><%= ifc[:priority] %></Priority><% end %>
     <TriggerPoint>
       <ConditionTypeCNF>0</ConditionTypeCNF>
       <SPT>
         <ConditionNegated>0</ConditionNegated>
         <Group>0</Group>
-        <Method><% method ||= "INVITE" %><%= method %></Method>
+        <Method><% ifc[:method] ||= "INVITE" %><%= ifc[:method] %></Method>
         <Extension></Extension>
       </SPT>
       <SPT>
         <ConditionNegated>0</ConditionNegated>
         <Group>0</Group>
-        <SessionCase><% session_case ||= "*" %><%= session_case %></SessionCase>
+        <SessionCase><% ifc[:session_case] ||= "*" %><%= ifc[:session_case] %></SessionCase>
         <Extension></Extension>
       </SPT>
     </TriggerPoint>
     <ApplicationServer>
-      <ServerName>sip:<%= server_name %></ServerName>
+      <ServerName>sip:<%= ifc[:server_name] %></ServerName>
       <DefaultHandling>0</DefaultHandling>
     </ApplicationServer>
   </InitialFilterCriteria>
+  <% end %>
 </ServiceProfile>

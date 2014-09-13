@@ -532,11 +532,11 @@ end
 class MementoTestDefinition < TestDefinition
   def run(*args)
     clear_diags
-    if ENV['MEMENTO']
+    if ENV['MEMENTO_SIP_DOMAIN'] && ENV['MEMENTO_HTTP_DOMAIN']
       super
     else
       puts RedGreen::Color.yellow("Skipped") + " (No memento hostname given)"
-      puts "   - Call with MEMENTO=<publicly accessible hostname/IP of memento cluster>"
+      puts "   - Call with MEMENTO_SIP_DOMAIN=<SIP hostname/IP of memento cluster> and MEMENTO_HTTP_DOMAIN=<HTTP hostname/IP of memento cluster>"
     end
   end
 end

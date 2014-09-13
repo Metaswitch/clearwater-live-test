@@ -51,8 +51,8 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
   end
 
   sdp = ""
-  caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
-  callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
+  caller.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"}]
+  callee.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
@@ -105,8 +105,8 @@ NotValidForUDPASTestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t
   end
 
   sdp = ""
-  caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=UDP"
-  callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=UDP"
+  caller.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=UDP"}]
+  callee.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=UDP"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
@@ -159,8 +159,8 @@ ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
   end
 
   sdp = ""
-  caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
-  callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
+  caller.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"}]
+  callee.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
@@ -203,7 +203,7 @@ ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
   caller = t.add_endpoint
   as = t.add_as 5070
 
-  caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP", method: "REGISTER"
+  caller.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP", method: "REGISTER"}]
 
   t.add_quaff_scenario do
     caller.register
@@ -220,8 +220,8 @@ ASTestDefinition.new("ISC Interface - Third-party Registration - implicit regist
   as1 = t.add_as 5070
   as2 = t.add_as 5071
 
-  caller.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP", method: "REGISTER"
-  ep2.set_ifc server_name: "#{ENV['HOSTNAME']}:5071;transport=TCP", method: "REGISTER"
+  caller.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP", method: "REGISTER"}]
+  ep2.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5071;transport=TCP", method: "REGISTER"}]
 
   t.add_quaff_scenario do
     caller.register
@@ -249,7 +249,7 @@ NotValidForUDPASTestDefinition.new("ISC Interface - Redirect") do |t|
 
   as = t.add_as 5070
 
-  callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
+  callee.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"}]
 
   t.add_quaff_setup do
     caller.register
@@ -329,7 +329,7 @@ NotValidForUDPASTestDefinition.new("ISC Interface - B2BUA") do |t|
 
   as = t.add_as 5070
 
-  callee.set_ifc server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"
+  callee.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP"}]
 
   t.add_quaff_setup do
     caller.register
