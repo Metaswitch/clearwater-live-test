@@ -35,7 +35,9 @@ require 'quaff'
 
 EXPECTED_EXPIRY = ENV['EXPIRES'] || "300"
 
-ASTestDefinition.new("ISC Interface - Terminating") do |t|
+TestDefinition.new("ISC Interface - Terminating") do |t|
+  t.skip_unless_hostname
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   as = t.add_as 5070
@@ -81,15 +83,24 @@ ASTestDefinition.new("ISC Interface - Terminating") do |t|
       incoming_call.send_response("100", "Trying")
 
       incoming_call.send_response("200", "OK")
-      incoming_call.recv_request("ACK")
 
-      incoming_call.recv_request("BYE")
-      incoming_call.send_response("200", "OK")
+      # We expect an ACK and a BYE - protect against them being sent out-of-order
+      bye_ack = incoming_call.recv_any_of ["ACK", "BYE"]
+      if bye_ack.method == "ACK"
+          incoming_call.recv_request("BYE")
+          incoming_call.send_response("200", "OK")
+      else
+          incoming_call.send_response("200", "OK")
+          incoming_call.recv_request("ACK")
+      end
       incoming_call.end_call
   end
 end
 
-NotValidForUDPASTestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t|
+TestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t|
+  t.skip_if_udp
+  t.skip_unless_hostname
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   as = t.add_udp_as 5070
@@ -143,7 +154,9 @@ NotValidForUDPASTestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t
   end
 end
 
-ASTestDefinition.new("ISC Interface - Terminating Failed") do |t|
+TestDefinition.new("ISC Interface - Terminating Failed") do |t|
+  t.skip_unless_hostname
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   as = t.add_as 5070
@@ -199,7 +212,9 @@ def validate_expiry c, expected_expiry
       incoming_call.end_call
 end
 
-ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
+TestDefinition.new("ISC Interface - Third-party Registration") do |t|
+  t.skip_unless_hostname
+
   caller = t.add_endpoint
   as = t.add_as 5070
 
@@ -213,9 +228,11 @@ ASTestDefinition.new("ISC Interface - Third-party Registration") do |t|
   end
 end
 
-ASTestDefinition.new("ISC Interface - Third-party Registration - implicit registration") do |t|
+TestDefinition.new("ISC Interface - Third-party Registration - implicit registration") do |t|
+  t.skip_unless_hostname
+
   caller = t.add_endpoint
-  ep2 = t.add_quaff_public_identity(caller)
+  ep2 = t.add_public_identity(caller)
 
   as1 = t.add_as 5070
   as2 = t.add_as 5071
@@ -242,7 +259,10 @@ ASTestDefinition.new("ISC Interface - Third-party Registration - implicit regist
   end
 end
 
-NotValidForUDPASTestDefinition.new("ISC Interface - Redirect") do |t|
+TestDefinition.new("ISC Interface - Redirect") do |t|
+  t.skip_unless_hostname
+  t.skip_if_udp
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   callee2 = t.add_endpoint
@@ -322,7 +342,10 @@ NotValidForUDPASTestDefinition.new("ISC Interface - Redirect") do |t|
   end
 end
 
-NotValidForUDPASTestDefinition.new("ISC Interface - B2BUA") do |t|
+TestDefinition.new("ISC Interface - B2BUA") do |t|
+  t.skip_unless_hostname
+  t.skip_if_udp
+
   caller = t.add_endpoint
   callee = t.add_endpoint
   callee2 = t.add_endpoint
@@ -352,7 +375,7 @@ NotValidForUDPASTestDefinition.new("ISC Interface - B2BUA") do |t|
     invite_data = incoming_call.recv_request("INVITE")
     incoming_call.send_response("100", "Trying")
 
-    sprout_outbound = Quaff::TCPSource.new invite_data.source.remote_ip, 5052
+    sprout_outbound = Quaff::TCPSource.new invite_data.source.ip, 5052
 
     # Send a new call back to Sprout - send it to a different callee
     # to avoid looping (we could also set a specific header here and
@@ -375,8 +398,14 @@ NotValidForUDPASTestDefinition.new("ISC Interface - B2BUA") do |t|
     incoming_call.send_response("200", "OK")
 
     # We expect an ACK and a BYE - protect against them being sent out-of-order
-    incoming_call.recv_any_of ["ACK", "BYE"]
-    incoming_call.recv_any_of ["ACK", "BYE"]
+    bye_ack = incoming_call.recv_any_of ["ACK", "BYE"]
+    if bye_ack.method == "ACK"
+        incoming_call.recv_request("BYE")
+        incoming_call.send_response("200", "OK")
+    else
+        incoming_call.send_response("200", "OK")
+        incoming_call.recv_request("ACK")
+    end
 
     # Get the BYE, OK it, and pass it back
     incoming_call.send_response("200", "OK")

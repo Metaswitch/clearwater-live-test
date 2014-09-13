@@ -36,29 +36,33 @@ require 'rest_client'
 require 'json'
 require 'erubis'
 require 'cgi'
-require_relative 'ellis-endpoint'
 require 'quaff'
+require 'forwarder'
+require_relative 'endpoint'
 
-class QuaffEndpoint < EllisEndpoint
+class QuaffEndpoint < Endpoint
+  extend Forwarder
+  forward_all :incoming_call, :outgoing_call, :terminate, :register, :unregister, :msg_trace, :uri, :sdp_port, :sdp_socket, :msg_log, :local_port, :contact_header, :contact_header=, :no_new_calls?, to: :quaff
   attr_reader :quaff
 
-  def initialize(pstn, deployment, transport, shared_identity = nil, specific_id = nil)
-    super
-    registrar = ENV['PROXY'] || deployment
+  def initialize(line_info, transport, endpoint_idx, use_instance_id=true)
+    super line_info, transport, endpoint_idx
+    registrar = ENV['PROXY'] || domain
     if transport == :tcp then
-      @quaff = Quaff::TCPSIPEndpoint.new(@sip_uri,
-                                         @private_id,
-                                         @password,
+      @quaff = Quaff::TCPSIPEndpoint.new(sip_uri,
+                                         private_id,
+                                         password,
                                          :anyport,
                                          registrar)
     else
-      @quaff = Quaff::UDPSIPEndpoint.new(@sip_uri,
-                                         @private_id,
-                                         @password,
+      @quaff = Quaff::UDPSIPEndpoint.new(sip_uri,
+                                         private_id,
+                                         password,
                                          :anyport,
                                          registrar)
     end
-    @quaff.instance_id = instance_id
+
+    @quaff.instance_id = instance_id if use_instance_id
   end
 
   def cleanup
@@ -66,7 +70,8 @@ class QuaffEndpoint < EllisEndpoint
     super
   end
 
-  def method_missing meth, *args, &block
-    @quaff.send meth, *args, &block
+  def expected_pub_gruu
+    "#{sip_uri};gr=urn:uuid:#{instance_id}"
   end
+
 end

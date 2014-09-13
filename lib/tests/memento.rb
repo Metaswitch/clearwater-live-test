@@ -34,18 +34,23 @@
 require 'quaff'
 require_relative '../memento-client'
 
+ANONYMOUS_URI="Anonymous"
+MEMENTO_SIP_URI="#{ENV['MEMENTO_SIP_DOMAIN']}:5054;transport=tcp"
+MEMENTO_HTTP_URI="#{ENV['MEMENTO_DOMAIN']}"
+SCHEMA="schemas/memento-schema.rng"
+
 # Set iFCs for memento and mmtel
 def set_memento_ifcs endpoint, deployment
-  endpoint.set_ifc [{server_name: "#{ENV['MEMENTO_SIP_DOMAIN']}:5054;transport=tcp", priority: 0, session_case: 0},
+  endpoint.set_ifc [{server_name: MEMENTO_SIP_URI, priority: 0, session_case: 0},
                     {server_name: "mmtel.#{deployment}", priority: 1, session_case: 0},
                     {server_name: "mmtel.#{deployment}", priority: 2, session_case: 1},
-                    {server_name: "#{ENV['MEMENTO_SIP_DOMAIN']}:5054;transport=tcp", priority: 3, session_case: 1}]
+                    {server_name: MEMENTO_SIP_URI, priority: 3, session_case: 1}]
 end
 
 # Retrieve the last call record from the call list
 def check_users_call_list user, from, to, answered, caller_id = 0
   # Find the most recent call
-  client = Memento::Client.new "schemas/memento-schema.rng", "#{ENV['MEMENTO_HTTP_DOMAIN']}", user.sip_uri, user.private_id, user.password
+  client = Memento::Client.new SCHEMA, MEMENTO_HTTP_URI, user.sip_uri, user.private_id, user.password
   call_list = client.get_call_list
   call = call_list[-1]
 
@@ -53,7 +58,7 @@ def check_users_call_list user, from, to, answered, caller_id = 0
   outgoing = (user == from)
 
   # Check some fields are as expected. First the From URI.
-  if caller_id == "Anonymous"
+  if caller_id == ANONYMOUS_URI
     fail "Call record doesn't contain anonmyised from\n#{call.xml}" unless call.from_uri == "sip:anonymous@anonymous.invalid"
   else
     fail "Call record contains wrong from_uri; found: #{call.from_uri}, expected: #{from.sip_uri}\n#{call.xml}" unless call.from_uri == from.sip_uri
@@ -74,11 +79,10 @@ def check_users_call_list user, from, to, answered, caller_id = 0
   fail "Call record has recorded wrong call direction\n#{call.xml}" unless call.outgoing == outgoing
 end
 
-
 # Retrieve the user's call list and check there are no calls
 # recorded from the specified caller_id
 def check_no_call_list_entry user, caller_id
-  client = Memento::Client.new "schemas/memento-schema.rng", "#{ENV['MEMENTO_HTTP_DOMAIN']}", user.sip_uri, user.private_id, user.password
+  client = Memento::Client.new SCHEMA, MEMENTO_HTTP_URI, user.sip_uri, user.private_id, user.password
   call_list = client.get_call_list
   call_list.each { |call| fail "Unexpected call list entry" if call.from_name == caller_id }
 end
@@ -88,7 +92,7 @@ MementoTestDefinition.new("Memento - Incorrect Password") do |t|
   user = t.add_endpoint
 
   # Attempt to access the call list with the wrong password. Expect a 403.
-  client = Memento::Client.new "schemas/memento-schema.rng", "#{ENV['MEMENTO_HTTP_DOMAIN']}", user.sip_uri, user.private_id, "Wrong password"
+  client = Memento::Client.new SCHEMA, MEMENTO_HTTP_URI, user.sip_uri, user.private_id, "Wrong password"
   call_list = client.get_call_list(rc=403)
 end
 
@@ -98,7 +102,7 @@ MementoTestDefinition.new("Memento - Wrong Call List") do |t|
   user2 = t.add_endpoint
 
   # As user2, attempt to access user1's call list. Expect a 404.
-  client = Memento::Client.new "schemas/memento-schema.rng", "#{ENV['MEMENTO_HTTP_DOMAIN']}", user1.sip_uri, user2.private_id, user2.password
+  client = Memento::Client.new SCHEMA, MEMENTO_HTTP_URI, user1.sip_uri, user2.private_id, user2.password
   call_list = client.get_call_list(rc=404)
 end
 
@@ -379,7 +383,7 @@ MementoTestDefinition.new("Memento - Privacy Call") do |t|
     call2.send_response("200", "OK")
     call2.end_call
 
-    check_users_call_list(user=callee, from=caller, to=callee, answered=true, caller_id="Anonymous")
+    check_users_call_list(user=callee, from=caller, to=callee, answered=true, caller_id=ANONYMOUS_URI)
   end
 end
 

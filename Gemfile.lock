@@ -14,8 +14,9 @@ GEM
     abnf-parsing (0.2.2)
     coderay (1.0.9)
     erubis (2.7.0)
-    facter (2.1.0)
+    facter (2.2.0)
       CFPropertyList (~> 2.2.6)
+    forwarder (0.1.1)
     git (1.2.5)
     httpclient (2.4.0)
     httpi (2.2.5)
@@ -36,7 +37,7 @@ GEM
       coderay (~> 1.0.5)
       method_source (~> 0.8)
       slop (~> 3.4)
-    quaff (0.6.1)
+    quaff (0.6.4)
       abnf-parsing (>= 0.2.0)
       facter (>= 1.7.3)
       milenage (>= 0.1.0)
@@ -59,6 +60,7 @@ PLATFORMS
 DEPENDENCIES
   erubis
   facter
+  forwarder
   httpclient
   httpi
   joker!

@@ -36,9 +36,9 @@ require 'rest_client'
 require 'json'
 require 'erubis'
 require 'cgi'
-require_relative 'ellis-endpoint'
+require_relative 'endpoint'
 
-class SIPpEndpoint < EllisEndpoint
+class SIPpEndpoint < Endpoint
 
   def send(message, options={})
     SIPpPhase.new(message, self, options)

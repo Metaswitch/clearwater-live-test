@@ -1,7 +1,7 @@
-# @file mock-as.rb
+# @file endpoint.rb
 #
 # Project Clearwater - IMS in the Cloud
-# Copyright (C) 2013  Metaswitch Networks Ltd
+# Copyright (C) 2013 Metaswitch Networks Ltd
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -32,39 +32,35 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-require 'json'
-require 'erubis'
-require 'resolv'
+require 'forwarder'
 
-class MockAS
-  attr_accessor :domain, :port, :username
+class Endpoint
+  extend Forwarder
+  forward_all :password, :username, :sip_uri, :domain, :private_id, :pstn, :transport, :set_simservs, :set_ifc, :domain, :instance_id, to: :line_info
+  attr_reader :line_info, :transport
 
-  def initialize(domain, port)
-    Resolv::DNS.new.getaddress(domain).to_s rescue fail "Could not resolve AS server: #{domain}" 
-    @domain = domain
-    @port = port
-    @username = "mock_as"
-  end
-  
   def element_type
-    :as
+    :endpoint
+  end
+
+  def initialize(line_info, transport, endpoint_idx)
+    @endpoint_idx = endpoint_idx
+    @transport = transport
+    @line_info = line_info
+  end
+
+  # Algorithmically determined from the public identity (using algorithm in RFC4122)
+  def instance_id
+    return @instance_id if @instance_id
+
+    ary = Digest::SHA1.new.digest(@line_info.sip_uri + @endpoint_idx.to_s).unpack("NnnnnN")
+    ary[2] = (ary[2] & 0x0fff) | 0x5000
+    ary[3] = (ary[3] & 0x3fff) | 0x8000
+    @instance_id = "%08x-%04x-%04x-%04x-%04x%08x" % ary
   end
 
   def cleanup
+    @line_info.cleanup
   end
-
-  def send(message, options={})
-    SIPpPhase.new(message, self, options)
-  end
-
-  def recv(message, options={})
-    if (Integer(message) rescue false)
-      SIPpPhase.new("__receive_response", self, options.merge(response: message))
-    else
-      SIPpPhase.new("__receive_request", self, options.merge(request: message))
-    end
-  end
-
-private
 
 end

@@ -17,7 +17,15 @@
         <SessionCase><% ifc[:session_case] ||= "*" %><%= ifc[:session_case] %></SessionCase>
         <Extension></Extension>
       </SPT>
-    </TriggerPoint>
+      <% if defined?(session_case) %>
+       <SPT>
+        <ConditionNegated>0</ConditionNegated>
+        <Group>0</Group>
+        <SessionCase><%= session_case %></SessionCase>
+        <Extension></Extension>
+      </SPT>
+      <% end %>
+   </TriggerPoint>
     <ApplicationServer>
       <ServerName>sip:<%= ifc[:server_name] %></ServerName>
       <DefaultHandling>0</DefaultHandling>

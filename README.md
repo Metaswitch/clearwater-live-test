@@ -41,13 +41,13 @@ There are various modifiers you can use to determine which subset of tests you w
  - `TESTS="<glob>"` - to only run tests whos name matches the given glob.
  - `PSTN=true` - to run the PSTN-specific tests (your deployment must have PSTN numbers allocated).
  - `LIVENUMBER=<number>` - to allow running of tests that dial out to real devices (your deployment must have an IBCF node and a working PSTN) the live number given may be dialled as part of running the test and the test will expect it to be answered (so make it a real one!).
- - `REPEATS=<number>` - to allow the suite of tests to be run multiple times.
+ - `REPEAT=<number>` - to allow the suite of tests to be run multiple times.
  - `TRANSPORT=<transports>` - Comma-separated transports to test with.  Allowed tranports are `TCP` and `UDP`.  If not specified, all tests will be run twice, for each transport type.
  - `PROXY=<host>` - to force the tests to run against a particular Bono instance.
  - `ELLIS=<host>` - to override the default FQDN for Ellis.  Useful when running against an AIO node.
  - `HOSTNAME=<host>` - publicly accessible hostname of the machine running the tests, used for the dummy AS.
  - `EXPIRES=<number>` - maximum Expires header expected from Sprout, used for the dummy AS.
-
+ - `GEMINI=<host>` - hostname of the the Gemini cluster. If the Gemini application server is integrated with Sprout rather than running as a standalone, this should be set to the Sprout cluster.
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
 
     rake test[test.cw-ngv.com] TESTS="Call Barring*" PSTN=true

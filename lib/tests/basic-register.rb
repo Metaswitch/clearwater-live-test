@@ -53,7 +53,7 @@ end
 
 TestDefinition.new("Multiple Identities") do |t|
   ep1 = t.add_endpoint
-  ep2 = t.add_quaff_public_identity(ep1)
+  ep2 = t.add_public_identity(ep1)
 
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)

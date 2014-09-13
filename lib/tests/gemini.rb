@@ -33,10 +33,20 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 require 'quaff'
 
+GEMINI_MT_SIP_URI="mobile-twinned@#{ENV['GEMINI']}:5054;transport=TCP"
+TWIN_PREFIX=";twin-prefix=123"
+TERM_REG = 1
+
 # Test INVITE with a missing twin-prefix
-GeminiTestDefinition.new("Gemini - INVITE - Missing twin prefix") do |t|
+TestDefinition.new("Gemini - INVITE - Missing twin prefix") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
   caller = t.add_endpoint
   callee = t.add_endpoint
+
+  # Set iFCs
+  callee.set_ifc [{server_name: GEMINI_MT_SIP_URI, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -47,9 +57,6 @@ GeminiTestDefinition.new("Gemini - INVITE - Missing twin prefix") do |t|
     caller.unregister
     callee.register
   end
-
-  # Set iFCs
-  callee.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP", session_case: "1"}]
 
   # Make a call. Gemini will reject the call with a 480
   t.add_quaff_scenario do
@@ -65,11 +72,17 @@ end
 
 # Test INVITE where the VoIP device answers so the mobile device
 # receives a CANCEL
-GeminiTestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
+TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
   caller = t.add_endpoint
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+
+  # Set iFCs.
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -82,9 +95,6 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
     callee_voip.unregister
     callee_mobile.unregister
   end
-
-  # Set iFCs.
-  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -99,7 +109,7 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    sleep 0.3
 
     call.new_transaction
     call.send_request("BYE")
@@ -145,11 +155,17 @@ end
 
 # Test INVITE where the mobile device accepts the call so the VoIP
 # device receives a CANCEL
-GeminiTestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
+TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
   caller = t.add_endpoint
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+
+  # Set iFCs.
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -162,9 +178,6 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
     callee_voip.unregister
     callee_mobile.unregister
   end
-
-  # Set iFCs
-  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -179,7 +192,7 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    sleep 0.3
 
     call.new_transaction
     call.send_request("BYE")
@@ -224,11 +237,17 @@ end
 
 # Test INVITE where the VoIP device rejects the call and the mobile
 # device accepts it
-GeminiTestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
+TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
   caller = t.add_endpoint
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+
+  # Set iFCs.
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -242,13 +261,10 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
     callee_mobile.unregister
   end
 
-  # Set iFCs
-  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
-
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    # Make the INVITE, and receive 100/180 from each forl
+    # Make the INVITE, and receive 100/180 from each fork
     call.send_request("INVITE")
     call.recv_response("100")
     call.recv_response("180")
@@ -259,7 +275,7 @@ GeminiTestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    sleep 0.3
 
     call.new_transaction
     call.send_request("BYE")
@@ -301,11 +317,17 @@ end
 
 # Test INVITE where the mobile device rejects the call and the VoIP
 # device accepts it
-GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
+TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
   caller = t.add_endpoint
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+
+  # Set iFCs.
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -318,8 +340,6 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
     callee_voip.unregister
     callee_mobile.unregister
   end
-
-  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -334,7 +354,7 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    sleep 0.3
 
     call.new_transaction
     call.send_request("BYE")
@@ -374,26 +394,37 @@ GeminiTestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
 end
 
 # Test INVITE where the mobile device rejects the call with a 480.
-# TODO BLOCKED. Need to be able to set the sip.phone parameter on an endpoint first.
-SkippedTestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
+TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
   caller = t.add_endpoint
   callee_voip = t.add_endpoint
+  callee_voip_phone = t.add_new_binding callee_voip
+
+  # Set iFCs.
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
+
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
   t.add_quaff_setup do
     caller.register
     callee_voip.register
+
+    callee_voip_phone.contact_header += ";+sip.phone"
+    ok = callee_voip_phone.register
+    fail "200 OK Contact header did not contain 2 bindings" unless ok.headers["Contact"].length == 2
+
     callee_mobile.register
   end
 
   t.add_quaff_cleanup do
     caller.unregister
     callee_voip.unregister
+    callee_voip_phone.unregister
     callee_mobile.unregister
   end
-
-  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -403,12 +434,13 @@ SkippedTestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") 
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("180")
+    call.recv_response("180")
 
     call.recv_response_and_create_dialog("200")
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    sleep 0.3
 
     call.new_transaction
     call.send_request("BYE")
@@ -424,26 +456,28 @@ SkippedTestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") 
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
-
-    # TODO this INVITE isn't being sent on because it's failing the contact filtering check
-    # (this used to pass as we were checking for required rather than require).
-    invite2 = call_voip.recv_request("INVITE")
-    fail "Call for VoIP device does not include the Accept-Contact header" unless invite2.all_headers("Accept-Contact").include? "*;require;+sip.phone;explicit"
-
-    call_voip.send_response("100", "Trying")
-    call_voip.send_response("180", "Ringing")
-
-    call_voip.assoc_with_msg(invite)
     call_voip.send_response("480", "Temporarily Unavailable")
-
-    call_voip.assoc_with_msg(invite2)
-    call_voip.send_response("200", "OK")
-
     call_voip.recv_request("ACK")
-    call_voip.recv_request("BYE")
-    call_voip.send_response("200", "OK")
 
     call_voip.end_call
+  end
+
+  t.add_quaff_scenario do
+    call_voip_phone = callee_voip_phone.incoming_call
+
+    invite_phone = call_voip_phone.recv_request("INVITE")
+    fail "Call for VoIP device does not include the Accept-Contact header" unless invite_phone.all_headers("Accept-Contact").include? "*;+sip.phone;explicit;require"
+
+    call_voip_phone.send_response("100", "Trying")
+    call_voip_phone.send_response("180", "Ringing")
+
+    call_voip_phone.send_response("200", "OK")
+
+    call_voip_phone.recv_request("ACK")
+    call_voip_phone.recv_request("BYE")
+    call_voip_phone.send_response("200", "OK")
+
+    call_voip_phone.end_call
   end
 
   t.add_quaff_scenario do
@@ -453,9 +487,6 @@ SkippedTestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") 
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
-
-    sleep 0.3
-
     call_mobile.send_response("480", "Temporarily Unavailable")
     call_mobile.end_call
   end
@@ -463,11 +494,17 @@ end
 
 # Test INVITE where both devices reject the call, and the mobile device has the
 # best response
-GeminiTestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |t|
+TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
   caller = t.add_endpoint
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+
+  # Set iFCs.
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -480,8 +517,6 @@ GeminiTestDefinition.new("Gemini - INVITE - Both reject, choose mobile response"
     callee_voip.unregister
     callee_mobile.unregister
   end
-
-  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -523,11 +558,17 @@ end
 
 # Test INVITE where both devices reject the call, and the VoIP device has the
 # best response
-GeminiTestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
+TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
   caller = t.add_endpoint
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+
+  # Set iFCs.
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -540,8 +581,6 @@ GeminiTestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") 
     callee_voip.unregister
     callee_mobile.unregister
   end
-
-  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
@@ -582,9 +621,15 @@ GeminiTestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") 
 end
 
 # Test SUBSCRIBE with missing twin prefix
-GeminiTestDefinition.new("Gemini - SUBSCRIBE - Missing twin prefix") do |t|
+TestDefinition.new("Gemini - SUBSCRIBE - Missing twin prefix") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
   caller = t.add_endpoint
   callee = t.add_endpoint
+
+  # Set iFCs.
+  callee.set_ifc [{server_name: GEMINI_MT_SIP_URI, session_case: TERM_REG, method: "SUBSCRIBE"}]
 
   t.add_quaff_setup do
     caller.register
@@ -595,8 +640,6 @@ GeminiTestDefinition.new("Gemini - SUBSCRIBE - Missing twin prefix") do |t|
     caller.unregister
     callee.unregister
   end
-
-  callee.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP", session_case: "1", method: "SUBSCRIBE"}]
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
@@ -609,11 +652,17 @@ GeminiTestDefinition.new("Gemini - SUBSCRIBE - Missing twin prefix") do |t|
 end
 
 # Test SUBSCRIBE with correct twin-prefix
-GeminiTestDefinition.new("Gemini - SUBSCRIBE - Mainline") do |t|
+TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
   caller = t.add_endpoint
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+
+  # Set iFCs.
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "SUBSCRIBE"}]
 
   t.add_quaff_setup do
     caller.register
@@ -627,13 +676,73 @@ GeminiTestDefinition.new("Gemini - SUBSCRIBE - Mainline") do |t|
     callee_mobile.unregister
   end
 
-  callee_voip.set_ifc [{server_name: "#{ENV['GEMINI']}:5054;transport=TCP;twin-prefix=123", session_case: "1", method: "SUBSCRIBE"}]
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee_voip.uri)
+
+    call.send_request("SUBSCRIBE")
+    call.recv_response("200")
+    call.recv_request("NOTIFY")
+    call.send_response("200", "OK")
+    call.end_call
+  end
+
+  t.add_quaff_scenario do
+    call_voip = callee_voip.incoming_call
+
+    subscribe = call_voip.recv_request("SUBSCRIBE")
+    fail "Subscribe for VoIP device has a Reject-Contact header" unless subscribe.headers["Reject-Contact"] == nil
+    fail "Subscribe for VoIP device has an Accept-Contact header" unless subscribe.headers["Accept-Contact"] == nil
+
+    call_voip.send_response("500", "Server Error")
+    call_voip.end_call
+  end
+
+  t.add_quaff_scenario do
+    call_mobile = callee_mobile.incoming_call
+
+    subscribe = call_mobile.recv_request("SUBSCRIBE")
+    fail "Subscribe for VoIP device has a Reject-Contact header" unless subscribe.headers["Reject-Contact"] == nil
+    fail "Subscribe for VoIP device has an Accept-Contact header" unless subscribe.headers["Accept-Contact"] == nil
+
+    call_mobile.send_response("200", "OK")
+    sleep 0.3
+
+    call_mobile.new_transaction
+    call_mobile.send_request("NOTIFY")
+    call_mobile.recv_response("200")
+    call_mobile.end_call
+  end
+end
+
+# Test SUBSCRIBE where both endpoints return 408
+TestDefinition.new("Gemini - SUBSCRIBE - Joint 408") do |t|
+  t.skip_unless_gemini
+  t.skip_unless_ellis_api_key
+
+  caller = t.add_endpoint
+  callee_voip = t.add_endpoint
+  callee_mobile_id = "123" + callee_voip.username
+  callee_mobile = t.add_specific_endpoint callee_mobile_id
+
+  # Set iFCs.
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "SUBSCRIBE"}]
+
+  t.add_quaff_setup do
+    caller.register
+    callee_voip.register
+    callee_mobile.register
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee_voip.unregister
+    callee_mobile.unregister
+  end
 
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
     call.send_request("SUBSCRIBE")
-    call.recv_response("100")
     call.recv_response("408")
     call.end_call
   end
@@ -641,7 +750,10 @@ GeminiTestDefinition.new("Gemini - SUBSCRIBE - Mainline") do |t|
   t.add_quaff_scenario do
     call_voip = callee_voip.incoming_call
 
-    call_voip.recv_request("SUBSCRIBE")
+    subscribe = call_voip.recv_request("SUBSCRIBE")
+    fail "Subscribe for VoIP device has a Reject-Contact header" unless subscribe.headers["Reject-Contact"] == nil
+    fail "Subscribe for VoIP device has an Accept-Contact header" unless subscribe.headers["Accept-Contact"] == nil
+
     call_voip.send_response("408", "Request Timeout")
     call_voip.end_call
   end
@@ -649,7 +761,10 @@ GeminiTestDefinition.new("Gemini - SUBSCRIBE - Mainline") do |t|
   t.add_quaff_scenario do
     call_mobile = callee_mobile.incoming_call
 
-    call_mobile.recv_request("SUBSCRIBE")
+    subscribe = call_mobile.recv_request("SUBSCRIBE")
+    fail "Subscribe for VoIP device has a Reject-Contact header" unless subscribe.headers["Reject-Contact"] == nil
+    fail "Subscribe for VoIP device has an Accept-Contact header" unless subscribe.headers["Accept-Contact"] == nil
+
     call_mobile.send_response("408", "Request Timeout")
     call_mobile.end_call
   end

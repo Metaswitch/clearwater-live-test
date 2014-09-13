@@ -11,6 +11,7 @@ gem 'facter'
 gem 'nokogiri'
 gem 'httpi'
 gem 'httpclient'
+gem 'forwarder'
 
 group :development do
   gem 'pry'
