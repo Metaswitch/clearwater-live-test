@@ -120,7 +120,7 @@ class TestDefinition
     clear_diags
     tests_to_run = @@tests.select { |t| t.name =~ glob }
     tests_to_exclude = if ENV['EXCLUDE_TESTS']
-                         ENV['EXCLUDE_TESTS'].split ";"
+                         ENV['EXCLUDE_TESTS'].split ","
                        else
                          []
                        end
