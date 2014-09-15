@@ -32,6 +32,8 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
+require 'barrier'
+
 TestDefinition.new("CANCEL - Mainline") do |t|
   caller = t.add_endpoint
   callee = t.add_endpoint

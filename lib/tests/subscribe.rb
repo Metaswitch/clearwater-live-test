@@ -32,18 +32,6 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-module Quaff
-  class Call
-    def recv_200_and_notify
-      resp1 = recv_any_of [200, "NOTIFY"]
-      resp2 = recv_any_of [200, "NOTIFY"]
-
-      notify = resp1.method ? resp1 : resp2
-      return notify
-    end
-  end
-end
-
 def validate_notify xml_s, schema_file="schemas/reginfo.xsd"
   xsd = Nokogiri::XML::Schema(File.read(schema_file))
   reginfo_xml = Nokogiri::XML.parse(xml_s)
@@ -67,7 +55,7 @@ TestDefinition.new("SUBSCRIBE - reg-event") do |t|
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
 
-    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342]})
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg"})
 
     # 200 and NOTIFY can come in any order, so expect either of them, twice
     notify1 = call.recv_200_and_notify
@@ -76,21 +64,23 @@ TestDefinition.new("SUBSCRIBE - reg-event") do |t|
 
     ep1.register # Re-registration
 
-    call.recv_request("NOTIFY")
+    notify2 = call.recv_request("NOTIFY")
     call.send_response("200", "OK")
 
     call.update_branch
-    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=1231231231], "From" => %Q[<#{ep1.uri}>;tag=2342342342], "Expires" => 0})
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "From" => notify1.headers['To'], "To" => notify1.headers['From'], "Expires" => 0})
 
-    notify2 = call.recv_200_and_notify
+    notify3 = call.recv_200_and_notify
 
     call.send_response("200", "OK")
 
     ep1.register # Re-registration
 
     call.end_call
+    fail "NOTIFY responses have the same CSeq!" if notify2.header('CSeq') == notify3.header('CSeq')
     validate_notify notify1.body
     validate_notify notify2.body
+    validate_notify notify3.body
   end
 
   t.add_quaff_cleanup do
@@ -109,7 +99,7 @@ TestDefinition.new("SUBSCRIBE - reg-event with a GRUU") do |t|
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
 
-    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "To" => %Q[<#{ep1.uri}>;tag=qwertyuiop], "From" => %Q[<#{ep1.uri}>;tag=asdfghjkl]})
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg"})
 
     # 200 and NOTIFY can come in any order, so expect either of them, twice
     notify = call.recv_200_and_notify

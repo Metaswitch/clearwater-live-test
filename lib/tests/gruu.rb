@@ -74,9 +74,9 @@ TestDefinition.new("GRUU - REGISTER - binding suggested GRUU") do |t|
   binding2 = t.add_new_binding binding1, false
 
   t.add_quaff_scenario do
-    binding1.contact_header += ";pub-gruu=ok"
+    binding1.add_contact_param "pub-gruu", "ok"
     binding1.register
-    binding2.contact_header += ";pub-gruu=hello"
+    binding2.add_contact_param "pub-gruu", "hello"
     ok = binding2.register
     contact_headers = ok.headers['Contact']
     fail "Binding 2 was allowed to suggest a pub-gruu" if (get_pub_gruu(contact_headers[1]) != "")
@@ -94,7 +94,7 @@ TestDefinition.new("GRUU - REGISTER - instance ID requires escaping") do |t|
   binding = t.add_endpoint(nil, false)
 
   t.add_quaff_scenario do
-    binding.contact_header += ";+sip.instance=\"geo:37.786971,-122.399677;crs=Moon-2011;u=35\""
+    binding.add_contact_param "+sip.instance", '"geo:37.786971,-122.399677;crs=Moon-2011;u=35"'
     ok = binding.register
     contact_headers = ok.headers['Contact']
     fail "pub-gruu was not correctly escaped" unless get_pub_gruu(contact_headers[0]) == "#{binding.sip_uri};gr=geo:37.786971%2c-122.399677%3bcrs%3dMoon-2011%3bu%3d35"
@@ -334,7 +334,7 @@ TestDefinition.new("GRUU - Call - Reject-Contact interop") do |t|
 
   t.add_quaff_setup do
     caller.register
-    binding1.contact_header += ";audio"
+    binding1.add_contact_param "audio", true
     binding1.register
     binding2.register
   end
@@ -364,8 +364,8 @@ TestDefinition.new("GRUU - Call - Accept-Contact interop") do |t|
 
   t.add_quaff_setup do
     caller.register
-    binding1.contact_header += ";audio"
-    binding2.contact_header += ";audio"
+    binding1.add_contact_param "audio", true
+    binding2.add_contact_param "audio", true
     binding1.register
     binding2.register
   end

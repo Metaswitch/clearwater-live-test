@@ -32,6 +32,8 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
+require 'barrier'
+
 TestDefinition.new("Call Diversion - Not registered") do |t|
   t.skip_unless_mmtel
 
@@ -52,12 +54,12 @@ TestDefinition.new("Call Diversion - Not registered") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee1.uri)
 
-    call.send_request("INVITE")
+    call.send_invite_with_sdp
     call.recv_response("100")
     call.recv_response("181")
 
     # Call is diverted to callee2
-    call.recv_response("180")
+    call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
     call.recv_response_and_create_dialog("200")
 
     call.new_transaction
@@ -76,7 +78,7 @@ TestDefinition.new("Call Diversion - Not registered") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
-    call2.send_response("200", "OK")
+    call2.send_200_with_sdp
     call2.recv_request("ACK")
 
     call2.recv_request("BYE")
@@ -111,12 +113,12 @@ TestDefinition.new("Call Diversion - Busy") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee1.uri)
 
-    call.send_request("INVITE")
+    call.send_invite_with_sdp
     call.recv_response("100")
     call.recv_response("181")
 
     # Call is diverted to callee2
-    call.recv_response("180")
+    call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
     call.recv_response_and_create_dialog("200")
 
     call.new_transaction
@@ -145,7 +147,7 @@ TestDefinition.new("Call Diversion - Busy") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
-    call2.send_response("200", "OK")
+    call2.send_200_with_sdp
     call2.recv_request("ACK")
 
     call2.recv_request("BYE")
@@ -155,7 +157,7 @@ TestDefinition.new("Call Diversion - Busy") do |t|
 
   t.add_quaff_cleanup do
     caller.unregister
-    callee1.register
+    callee1.unregister
     callee2.unregister
   end
 
@@ -167,6 +169,8 @@ TestDefinition.new("Call Diversion - No answer") do |t|
   caller = t.add_endpoint
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
+
+  ringing_barrier = Barrier.new(2)
 
   callee1.set_simservs cdiv: { active: true,
                                timeout: "20",
@@ -183,13 +187,17 @@ TestDefinition.new("Call Diversion - No answer") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee1.uri)
 
-    call.send_request("INVITE")
+    call.send_invite_with_sdp
     call.recv_response("100")
     call.recv_response("180")
-    call.recv_response("181")
+
+    # "No answer" requires ringing to have started, so enforce that
+    # with a barrier
+    ringing_barrier.wait
+    call.recv_response("181") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
 
     # Call is diverted to callee2
-    call.recv_response("180")
+    call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
     call.recv_response_and_create_dialog("200")
 
     call.new_transaction
@@ -208,6 +216,7 @@ TestDefinition.new("Call Diversion - No answer") do |t|
     call1.recv_request("INVITE")
     call1.send_response("100", "Trying")
     call1.send_response("180", "Ringing")
+    ringing_barrier.wait
     call1.send_response("408", "Request Timeout")
     call1.recv_request("ACK")
     call1.end_call
@@ -218,7 +227,7 @@ TestDefinition.new("Call Diversion - No answer") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
-    call2.send_response("200", "OK")
+    call2.send_200_with_sdp
     call2.recv_request("ACK")
 
     call2.recv_request("BYE")

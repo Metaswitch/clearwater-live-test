@@ -10,6 +10,7 @@ gem 'quaff'
 gem 'facter'
 gem 'forwarder'
 gem 'nokogiri'
+gem 'barrier'
 
 group :development do
   gem 'pry'
