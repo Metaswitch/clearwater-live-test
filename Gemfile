@@ -8,9 +8,11 @@ gem 'rake'
 gem 'snmp'
 gem 'quaff'
 gem 'facter'
-gem 'forwarder'
 gem 'nokogiri'
 gem 'barrier'
+gem 'httpi'
+gem 'httpclient'
+gem 'forwarder'
 
 group :development do
   gem 'pry'

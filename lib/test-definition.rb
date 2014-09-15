@@ -71,6 +71,7 @@ end
 
 class TestDefinition
   attr_accessor :name, :current_label_id
+  attr_reader :deployment
   attr_writer :timeout
 
   @@tests = []
@@ -300,6 +301,10 @@ class TestDefinition
     raise SkipThisTest.new "No gemini hostname provided", "Call with GEMINI=<hostname>" unless ENV['GEMINI']
   end
 
+  def skip_unless_memento
+    raise SkipThisTest.new "No memento hostnames provided", "Call with MEMENTO_SIP=<SIP hostname> and MEMENTO_HTTP=<HTTP hostname>" unless ENV['MEMENTO_SIP'] && ENV['MEMENTO_HTTP']
+  end
+
   private
 
   def before_run
@@ -434,4 +439,3 @@ class TestDefinition
   end
 
 end
-

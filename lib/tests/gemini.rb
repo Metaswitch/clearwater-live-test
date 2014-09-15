@@ -46,7 +46,7 @@ TestDefinition.new("Gemini - INVITE - Missing twin prefix") do |t|
   callee = t.add_endpoint
 
   # Set iFCs
-  callee.set_ifc server_name: GEMINI_MT_SIP_URI, session_case: TERM_REG
+  callee.set_ifc [{server_name: GEMINI_MT_SIP_URI, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -82,7 +82,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
   # Set iFCs.
-  callee_voip.set_ifc server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -165,7 +165,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
   # Set iFCs.
-  callee_voip.set_ifc server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -247,7 +247,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
   # Set iFCs.
-  callee_voip.set_ifc server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -327,7 +327,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
   # Set iFCs.
-  callee_voip.set_ifc server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -403,7 +403,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
   callee_voip_phone = t.add_new_binding callee_voip
 
   # Set iFCs.
-  callee_voip.set_ifc server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
@@ -504,7 +504,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
   # Set iFCs.
-  callee_voip.set_ifc server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -568,7 +568,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
   # Set iFCs.
-  callee_voip.set_ifc server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
   t.add_quaff_setup do
     caller.register
@@ -629,7 +629,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Missing twin prefix") do |t|
   callee = t.add_endpoint
 
   # Set iFCs.
-  callee.set_ifc server_name: GEMINI_MT_SIP_URI, session_case: TERM_REG, method: "SUBSCRIBE"
+  callee.set_ifc [{server_name: GEMINI_MT_SIP_URI, session_case: TERM_REG, method: "SUBSCRIBE"}]
 
   t.add_quaff_setup do
     caller.register
@@ -662,7 +662,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
   # Set iFCs.
-  callee_voip.set_ifc server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "SUBSCRIBE"
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "SUBSCRIBE"}]
 
   t.add_quaff_setup do
     caller.register
@@ -725,7 +725,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Joint 408") do |t|
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
   # Set iFCs.
-  callee_voip.set_ifc server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "SUBSCRIBE"
+  callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "SUBSCRIBE"}]
 
   t.add_quaff_setup do
     caller.register
