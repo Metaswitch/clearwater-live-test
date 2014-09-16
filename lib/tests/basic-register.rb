@@ -41,7 +41,7 @@ TestDefinition.new("Basic Registration") do |t|
     response_data = call.recv_response("401")
     auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), caller.private_id, caller.password, "REGISTER", caller.uri
     call.update_branch
-    call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3600", "CSeq" => "2 REGISTER"})
+    call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3600"})
     response_data = call.recv_response("200")
   end
 
@@ -72,10 +72,14 @@ TestDefinition.new("Multiple Identities") do |t|
     call2.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3600"})
     ok2 = call2.recv_response("200")
 
-    fail "200 OK for #{ep1.uri} does not include <#{ep1.uri}>" unless ok.all_headers("P-Associated-URI").include? "<#{ep1.uri}>"
-    fail "200 OK for #{ep1.uri} does not include <#{ep2.uri}>" unless ok.all_headers("P-Associated-URI").include? "<#{ep2.uri}>"
-    fail "200 OK for #{ep2.uri} does not include <#{ep1.uri}>" unless ok2.all_headers("P-Associated-URI").include? "<#{ep1.uri}>"
-    fail "200 OK for #{ep2.uri} does not include <#{ep2.uri}>" unless ok2.all_headers("P-Associated-URI").include? "<#{ep2.uri}>"
+    fail "200 OK for #{ep1.uri} does not include <#{ep1.uri}>" unless
+      ((ok.all_headers("P-Associated-URI").include? "#{ep1.uri}") or (ok.all_headers("P-Associated-URI").include? "<#{ep1.uri}>"))
+    fail "200 OK for #{ep1.uri} does not include <#{ep2.uri}>" unless
+      ((ok.all_headers("P-Associated-URI").include? "#{ep2.uri}") or (ok.all_headers("P-Associated-URI").include? "<#{ep2.uri}>"))
+    fail "200 OK for #{ep2.uri} does not include <#{ep1.uri}>" unless
+      ((ok2.all_headers("P-Associated-URI").include? "#{ep1.uri}") or (ok2.all_headers("P-Associated-URI").include? "<#{ep1.uri}>"))
+    fail "200 OK for #{ep2.uri} does not include <#{ep2.uri}>" unless
+      ((ok2.all_headers("P-Associated-URI").include? "#{ep2.uri}") or (ok2.all_headers("P-Associated-URI").include? "<#{ep2.uri}>"))
   end
 
   t.add_quaff_cleanup do

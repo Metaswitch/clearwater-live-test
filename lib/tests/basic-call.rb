@@ -41,21 +41,10 @@ TestDefinition.new("Basic Call - Mainline") do |t|
     callee.register
   end
 
-sdp = "v=0\r
-o=- 3547439529 3547439529 IN IP4 #{Facter.value(:ipaddress)}\r
-s=-\r
-c=IN IP4 #{Facter.value(:ipaddress)}\r
-t=0 0\r
-m=audio 6000 RTP/AVP 8 0\r
-a=rtpmap:8 PCMA/8000\r
-a=rtpmap:101 telephone-event/8000\r
-a=fmtp:101 0-11,16\r
-"
-
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
+    call.send_invite_with_sdp
     call.recv_response("100")
     call.recv_response("180")
 
@@ -78,7 +67,7 @@ a=fmtp:101 0-11,16\r
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
-    call2.send_response("200", "OK", sdp, nil, {"Content-Type" => "application/sdp"})
+    call2.send_200_with_sdp
     call2.recv_request("ACK")
 
     call2.recv_request("BYE")

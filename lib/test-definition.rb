@@ -119,11 +119,20 @@ class TestDefinition
     end
     clear_diags
     tests_to_run = @@tests.select { |t| t.name =~ glob }
+    tests_to_exclude = if ENV['EXCLUDE_TESTS']
+                         ENV['EXCLUDE_TESTS'].split ","
+                       else
+                         []
+                       end
     repeat.times do |r|
       puts "Test iteration #{r + 1}" if repeat != 1
       tests_to_run.product(transports).collect do |test, trans|
         begin
-          print "#{test.name} (#{trans.to_s.upcase}) - "
+          test_id = "#{test.name} (#{trans.to_s.upcase})"
+          print "#{test_id} - "
+          if tests_to_exclude.include? test_id
+            raise SkipThisTest.new("Test skipped by EXCLUDE_TESTS")
+          end
           success = test.run(deployment, trans)
           if success == true
             puts RedGreen::Color.green("Passed")

@@ -50,6 +50,8 @@ There are various modifiers you can use to determine which subset of tests you w
  - `GEMINI=<host>` - hostname of the the Gemini cluster. If the Gemini application server is integrated with Sprout rather than running as a standalone, this should be set to the Sprout cluster.
  - `MEMENTO_SIP=<host>` - hostname of the Memento (SIP) cluster. If the Memento application server is integrated with Sprout rather than running as a standalone, this should be set to the Sprout cluster.
  - `MEMENTO_HTTP=<host>` - hostname of the Memento (HTTP) cluster.
+ - `PROVISIONAL_RESPONSES_IGNORED=TRUE` - set this to interoperate with devices that absorb second and subsequent provisional responses (so that if a call is forked and both endpoints send a 180 Ringing, only one will reach the caller)
+ - `EXCLUDE_TESTS="test1 (TCP),test2 (UDP)" - a comma-separated list of tests to ignore. Useful for working around known bugs with tests in particular environments (e.g. skipping the B2BUA test in cases where the EC2 security group settings won't allow it)
  - `ELLIS_USER=<email>` - to override the default email used for Ellis (live.tests@example.com). Useful to allow multiple live test instances to run simultaneously without deleting each other's lines.
 
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
