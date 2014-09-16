@@ -37,6 +37,8 @@ require 'json'
 require 'erubis'
 require 'cgi'
 
+USERNAME = ENV['ELLIS_USER'] || "live.tests@example.com"
+
 class EllisProvisionedLine
   attr_reader :username,
               :password,
@@ -49,11 +51,11 @@ class EllisProvisionedLine
   def self.destroy_leaked_numbers(domain)
 
     r = RestClient.post(ellis_url(domain, "session"),
-                        username: "system.test@#{domain}",
+                        username: USERNAME,
                         password: "Please enter your details")
     cookie = r.cookies
     r = RestClient::Request.execute(method: :get,
-                                    url: ellis_url(domain, "accounts/system.test@#{domain}/numbers"),
+                                    url: ellis_url(domain, "accounts/#{USERNAME}/numbers"),
                                     cookies: cookie)
     j = JSON.parse(r)
 
@@ -64,7 +66,7 @@ class EllisProvisionedLine
       begin
         puts "Deleting leaked number: #{n["sip_uri"]}"
         RestClient::Request.execute(method: :delete,
-                                    url: ellis_url(domain, "accounts/system.test@#{domain}/numbers/#{CGI.escape(n["sip_uri"])}/"),
+                                    url: ellis_url(domain, "accounts/#{USERNAME}/numbers/#{CGI.escape(n["sip_uri"])}/"),
                                     cookies: cookie)
       rescue
         puts "Failed to delete leaked number, check Ellis logs"
@@ -174,11 +176,11 @@ private
                           password: account_password)
       r.cookies
     rescue StandardError
-      # This is most likely caused by the System Test user not existing.  Create it now and retry.
+      # This is most likely caused by the live test user not existing.  Create it now and retry.
       RestClient.post(ellis_url("accounts"),
-                      username: "System Test",
+                      username: "clearwater-live-test user",
                       password: account_password,
-                      full_name: "System Test",
+                      full_name: "clearwater-live-test user",
                       email: account_username,
                       signup_code: ENV['SIGNUP_CODE'] )
       get_security_cookie
@@ -247,7 +249,7 @@ private
   end
 
   def account_username
-    "system.test@#{@domain}"
+    USERNAME
   end
 
   def account_password
