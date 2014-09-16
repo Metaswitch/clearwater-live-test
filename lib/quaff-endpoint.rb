@@ -39,10 +39,11 @@ require 'cgi'
 require 'quaff'
 require 'forwarder'
 require_relative 'endpoint'
+require_relative 'quaff-monkey-patches'
 
 class QuaffEndpoint < Endpoint
   extend Forwarder
-  forward_all :incoming_call, :outgoing_call, :terminate, :register, :unregister, :msg_trace, :uri, :sdp_port, :sdp_socket, :msg_log, :local_port, :contact_header, :contact_header=, :no_new_calls?, to: :quaff
+  forward_all :incoming_call, :outgoing_call, :terminate, :register, :unregister, :msg_trace, :uri, :sdp_port, :sdp_socket, :msg_log, :local_port, :contact_header, :contact_header=, :no_new_calls?, :add_contact_param, to: :quaff
   attr_reader :quaff
 
   def initialize(line_info, transport, endpoint_idx, use_instance_id=true)

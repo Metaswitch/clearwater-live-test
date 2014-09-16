@@ -31,7 +31,7 @@
 # "OpenSSL Licenses" means the OpenSSL License and Original SSLeay License
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
-require 'quaff'
+require 'barrier'
 
 GEMINI_MT_SIP_URI="mobile-twinned@#{ENV['GEMINI']}:5054;transport=TCP"
 TWIN_PREFIX=";twin-prefix=123"
@@ -99,11 +99,11 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("INVITE")
+    call.send_invite_with_sdp
 
     call.recv_response("100")
     call.recv_response("180")
-    call.recv_response("180")
+    call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
 
     call.recv_response_and_create_dialog("200")
 
@@ -129,7 +129,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
     sleep 0.3
 
     call_voip.send_response("180", "Ringing")
-    call_voip.send_response("200", "OK")
+    call_voip.send_200_with_sdp
     call_voip.recv_request("ACK")
 
     call_voip.recv_request("BYE")
@@ -182,11 +182,11 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("INVITE")
+    call.send_invite_with_sdp
 
     call.recv_response("100")
     call.recv_response("180")
-    call.recv_response("180")
+    call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
 
     call.recv_response_and_create_dialog("200")
 
@@ -226,7 +226,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
     # Wait before the mobile device accepts the call
     sleep 0.3
 
-    call_mobile.send_response("200", "OK")
+    call_mobile.send_200_with_sdp
     call_mobile.recv_request("ACK")
 
     call_mobile.recv_request("BYE")
@@ -265,10 +265,10 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
     call = caller.outgoing_call(callee_voip.uri)
 
     # Make the INVITE, and receive 100/180 from each fork
-    call.send_request("INVITE")
+    call.send_invite_with_sdp
     call.recv_response("100")
     call.recv_response("180")
-    call.recv_response("180")
+    call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
 
     # Mobile device accepts call
     call.recv_response_and_create_dialog("200")
@@ -306,7 +306,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
-    call_mobile.send_response("200", "OK")
+    call_mobile.send_200_with_sdp
     call_mobile.recv_request("ACK")
 
     call_mobile.recv_request("BYE")
@@ -344,11 +344,11 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("INVITE")
+    call.send_invite_with_sdp
 
     call.recv_response("100")
     call.recv_response("180")
-    call.recv_response("180")
+    call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
 
     call.recv_response_and_create_dialog("200")
 
@@ -374,7 +374,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
-    call_voip.send_response("200", "OK")
+    call_voip.send_200_with_sdp
     call_voip.recv_request("ACK")
 
     call_voip.recv_request("BYE")
@@ -412,7 +412,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
     caller.register
     callee_voip.register
 
-    callee_voip_phone.contact_header += ";+sip.phone"
+    callee_voip_phone.add_contact_param "+sip.phone", true
     ok = callee_voip_phone.register
     fail "200 OK Contact header did not contain 2 bindings" unless ok.headers["Contact"].length == 2
 
@@ -429,12 +429,12 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("INVITE")
+    call.send_invite_with_sdp
 
     call.recv_response("100")
     call.recv_response("180")
-    call.recv_response("180")
-    call.recv_response("180")
+    call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
+    call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
 
     call.recv_response_and_create_dialog("200")
 
@@ -471,7 +471,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
     call_voip_phone.send_response("100", "Trying")
     call_voip_phone.send_response("180", "Ringing")
 
-    call_voip_phone.send_response("200", "OK")
+    call_voip_phone.send_200_with_sdp
 
     call_voip_phone.recv_request("ACK")
     call_voip_phone.recv_request("BYE")
@@ -503,6 +503,8 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
+  ringing_barrier = Barrier.new(3)
+
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
@@ -525,7 +527,8 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |
 
     call.recv_response("100")
     call.recv_response("180")
-    call.recv_response("180")
+    call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
+    ringing_barrier.wait
 
     call.recv_response("500")
     call.end_call
@@ -539,6 +542,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
+    ringing_barrier.wait
     call_voip.send_response("408", "Request Timeout")
     call_voip.recv_request("ACK")
     call_voip.end_call
@@ -550,6 +554,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |
     call_mobile.recv_request("INVITE")
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
+    ringing_barrier.wait
     call_mobile.send_response("500", "Server Error")
     call_mobile.recv_request("ACK")
     call_mobile.end_call
@@ -567,6 +572,8 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
+  ringing_barrier = Barrier.new(3)
+
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
@@ -589,7 +596,8 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
 
     call.recv_response("100")
     call.recv_response("180")
-    call.recv_response("180")
+    call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
+    ringing_barrier.wait
 
     call.recv_response("487")
     call.end_call
@@ -603,6 +611,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
+    ringing_barrier.wait
     call_voip.send_response("487", "")
     call_voip.recv_request("ACK")
     call_voip.end_call
@@ -614,6 +623,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
     call_mobile.recv_request("INVITE")
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
+    ringing_barrier.wait
     call_mobile.send_response("408", "Request Timeout")
     call_mobile.recv_request("ACK")
     call_mobile.end_call
@@ -644,7 +654,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Missing twin prefix") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("SUBSCRIBE")
+    call.send_request("SUBSCRIBE", "", {"Event" => "arbitrary"})
     call.recv_response("480")
     call.send_request("ACK")
     call.end_call
@@ -679,7 +689,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("SUBSCRIBE")
+    call.send_request("SUBSCRIBE", "", {"Event" => "arbitrary"})
     call.recv_response("200")
     call.recv_request("NOTIFY")
     call.send_response("200", "OK")
@@ -742,7 +752,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Joint 408") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("SUBSCRIBE")
+    call.send_request("SUBSCRIBE", "", {"Event" => "arbitrary"})
     call.recv_response("408")
     call.end_call
   end
