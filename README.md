@@ -50,6 +50,7 @@ There are various modifiers you can use to determine which subset of tests you w
  - `GEMINI=<host>` - hostname of the the Gemini cluster. If the Gemini application server is integrated with Sprout rather than running as a standalone, this should be set to the Sprout cluster.
  - `MEMENTO_SIP=<host>` - hostname of the Memento (SIP) cluster. If the Memento application server is integrated with Sprout rather than running as a standalone, this should be set to the Sprout cluster.
  - `MEMENTO_HTTP=<host>` - hostname of the Memento (HTTP) cluster.
+ - `ELLIS_USER=<email>` - to override the default email used for Ellis (live.tests@example.com). Useful to allow multiple live test instances to run simultaneously without deleting each other's lines.
 
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
 
