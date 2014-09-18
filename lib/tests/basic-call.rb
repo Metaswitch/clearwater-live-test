@@ -36,6 +36,8 @@ TestDefinition.new("Basic Call - Mainline") do |t|
   caller = t.add_endpoint
   callee = t.add_endpoint
 
+  ringing_barrier = Barrier.new(2)
+
   t.add_quaff_setup do
     caller.register
     callee.register
@@ -47,6 +49,7 @@ TestDefinition.new("Basic Call - Mainline") do |t|
     call.send_invite_with_sdp
     call.recv_response("100")
     call.recv_response("180")
+    ringing_barrier.wait
 
     # Save off Contact and routeset
     call.recv_response_and_create_dialog("200")
@@ -67,6 +70,8 @@ TestDefinition.new("Basic Call - Mainline") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call2.send_200_with_sdp
     call2.recv_request("ACK")
 
