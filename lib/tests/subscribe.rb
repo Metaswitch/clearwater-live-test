@@ -120,6 +120,43 @@ TestDefinition.new("SUBSCRIBE - reg-event with a GRUU") do |t|
     ep1.unregister
   end
 
+end
+
+TestDefinition.new("SUBSCRIBE - not reg-event") do |t|
+  ep1 = t.add_endpoint
+  ep2 = t.add_endpoint
+
+  method = "MESSAGE"
+
+  t.add_quaff_setup do
+    ep1.register
+    ep2.register
+  end
+
+  t.add_quaff_scenario do
+    call = ep1.outgoing_call(ep2.uri)
+
+    call.send_request(method, "", {"Event" => "something-else"})
+    #call.recv_response("100")
+    call.recv_response_and_create_dialog("200")
+    call.send_request("ACK", "", {"Event" => "something-else"})
+
+    call.end_call
+  end
+
+  t.add_quaff_scenario do
+    call = ep2.incoming_call
+
+    call.recv_request(method)
+    call.send_response("200", "OK")
+
+    call.end_call
+  end
+
+  t.add_quaff_cleanup do
+    ep1.unregister
+    ep2.unregister
+  end
 
 end
 
