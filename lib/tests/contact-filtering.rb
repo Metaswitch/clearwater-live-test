@@ -33,7 +33,6 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 TestDefinition.new("Filtering - Accept-Contact") do |t|
-  t.skip
 
   caller = t.add_endpoint
   callee = t.add_endpoint
@@ -67,7 +66,6 @@ TestDefinition.new("Filtering - Accept-Contact") do |t|
 end
 
 TestDefinition.new("Filtering - Accept-Contact no match") do |t|
-  t.skip
 
   caller = t.add_endpoint
   callee = t.add_endpoint
@@ -95,13 +93,12 @@ TestDefinition.new("Filtering - Accept-Contact no match") do |t|
 end
 
 TestDefinition.new("Filtering - Accept-Contact negated match") do |t|
-  t.skip
 
   caller = t.add_endpoint
   callee = t.add_endpoint
 
   t.add_quaff_setup do
-    callee.contact_header += ';+sip.test="hello,goodbye"'
+    callee.add_contact_param '+sip.test', '"hello,goodbye"'
     caller.register
     callee.register
   end
@@ -130,7 +127,6 @@ TestDefinition.new("Filtering - Accept-Contact negated match") do |t|
 end
 
 TestDefinition.new("Filtering - RFC3841 example") do |t|
-  t.skip
 
   caller = t.add_endpoint
   callee_binding1 = t.add_endpoint
@@ -140,11 +136,27 @@ TestDefinition.new("Filtering - RFC3841 example") do |t|
   callee_binding5 = t.add_new_binding callee_binding1
 
   t.add_quaff_setup do
-    callee_binding1.contact_header += ';audio;video;methods="INVITE,BYE";q=0.2'
-    callee_binding2.contact_header += ';audio="FALSE";methods="INVITE";actor="msg-taker";q=0.2'
-    callee_binding3.contact_header += ';audio;actor="msg-taker";methods="INVITE";video;q=0.3'
-    callee_binding4.contact_header += ';audio;methods="INVITE,OPTIONS";q=0.2'
-    callee_binding5.contact_header += ';q=0.5'
+    callee_binding1.add_contact_param 'audio', true
+    callee_binding1.add_contact_param 'video', true
+    callee_binding1.add_contact_param 'methods', '"INVITE,BYE"'
+    callee_binding1.add_contact_param 'q', '0.2'
+
+    callee_binding2.add_contact_param 'audio', '"FALSE"'
+    callee_binding2.add_contact_param 'methods', '"INVITE"'
+    callee_binding2.add_contact_param 'actor', '"msg-taker"'
+    callee_binding2.add_contact_param 'q', '0.2'
+
+    callee_binding3.add_contact_param 'audio', true
+    callee_binding3.add_contact_param 'actor', '"msg-taker"'
+    callee_binding3.add_contact_param 'methods', '"INVITE"'
+    callee_binding3.add_contact_param 'video', true
+    callee_binding3.add_contact_param 'q', '0.3'
+
+    callee_binding4.add_contact_param 'audio', true
+    callee_binding4.add_contact_param 'methods', '"INVITE,OPTIONS"'
+    callee_binding4.add_contact_param 'q', '0.2'
+
+    callee_binding5.add_contact_param 'q', '0.5'
 
     caller.register
     callee_binding1.register
@@ -199,7 +211,6 @@ TestDefinition.new("Filtering - RFC3841 example") do |t|
 end
 
 TestDefinition.new("Filtering - Reject-Contact no match") do |t|
-  t.skip
 
   caller = t.add_endpoint
   callee = t.add_endpoint
@@ -233,7 +244,6 @@ TestDefinition.new("Filtering - Reject-Contact no match") do |t|
 end
 
 TestDefinition.new("Filtering - Reject-Contact match") do |t|
-  t.skip
 
   caller = t.add_endpoint
   callee = t.add_endpoint
