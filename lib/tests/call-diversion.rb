@@ -41,6 +41,9 @@ TestDefinition.new("Call Diversion - Not registered") do |t|
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
 
+  ringing_barrier = Barrier.new(2)
+  ack_barrier = Barrier.new(2)
+
   callee1.set_simservs cdiv: { active: true,
                                rules: [ { conditions: ["not-registered"],
                                           target: callee2.uri } ]
@@ -60,11 +63,12 @@ TestDefinition.new("Call Diversion - Not registered") do |t|
 
     # Call is diverted to callee2
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
-    call.recv_response_and_create_dialog("200")
+    ringing_barrier.wait
 
+    call.recv_response_and_create_dialog("200")
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    ack_barrier.wait
 
     call.new_transaction
     call.send_request("BYE")
@@ -78,8 +82,11 @@ TestDefinition.new("Call Diversion - Not registered") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call2.send_200_with_sdp
     call2.recv_request("ACK")
+    ack_barrier.wait
 
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
@@ -98,6 +105,9 @@ TestDefinition.new("Call Diversion - Not reachable (not registered)") do |t|
   caller = t.add_endpoint
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
+
+  ringing_barrier = Barrier.new(2)
+  ack_barrier = Barrier.new(2)
 
   callee1.set_simservs cdiv: { active: true,
                                rules: [ { conditions: ["not-registered"],
@@ -120,11 +130,12 @@ TestDefinition.new("Call Diversion - Not reachable (not registered)") do |t|
 
     # Call is diverted to callee2
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
+    ringing_barrier.wait
     call.recv_response_and_create_dialog("200")
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    ack_barrier.wait
 
     call.new_transaction
     call.send_request("BYE")
@@ -138,9 +149,11 @@ TestDefinition.new("Call Diversion - Not reachable (not registered)") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier.wait
     call2.send_200_with_sdp
     call2.recv_request("ACK")
 
+    ack_barrier.wait
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
     call2.end_call
@@ -158,6 +171,9 @@ TestDefinition.new("Call Diversion - Not reachable (408)") do |t|
   caller = t.add_endpoint
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
+
+  ringing_barrier = Barrier.new(2)
+  ack_barrier = Barrier.new(2)
 
   callee1.set_simservs cdiv: { active: true,
                                rules: [ { conditions: ["not-registered"],
@@ -182,11 +198,12 @@ TestDefinition.new("Call Diversion - Not reachable (408)") do |t|
 
     # Call is diverted to callee2
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
-    call.recv_response_and_create_dialog("200")
+    ringing_barrier.wait
 
+    call.recv_response_and_create_dialog("200")
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    ack_barrier.wait
 
     call.new_transaction
     call.send_request("BYE")
@@ -210,8 +227,11 @@ TestDefinition.new("Call Diversion - Not reachable (408)") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call2.send_200_with_sdp
     call2.recv_request("ACK")
+    ack_barrier.wait
 
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
@@ -232,6 +252,9 @@ TestDefinition.new("Call Diversion - Not reachable (503)") do |t|
   caller = t.add_endpoint
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
+
+  ringing_barrier = Barrier.new(2)
+  ack_barrier = Barrier.new(2)
 
   callee1.set_simservs cdiv: { active: true,
                                rules: [ { conditions: ["not-registered"],
@@ -256,11 +279,12 @@ TestDefinition.new("Call Diversion - Not reachable (503)") do |t|
 
     # Call is diverted to callee2
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
-    call.recv_response_and_create_dialog("200")
+    ringing_barrier.wait
 
+    call.recv_response_and_create_dialog("200")
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    ack_barrier.wait
 
     call.new_transaction
     call.send_request("BYE")
@@ -284,8 +308,11 @@ TestDefinition.new("Call Diversion - Not reachable (503)") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call2.send_200_with_sdp
     call2.recv_request("ACK")
+    ack_barrier.wait
 
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
@@ -306,6 +333,9 @@ TestDefinition.new("Call Diversion - Not reachable (500)") do |t|
   caller = t.add_endpoint
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
+
+  ringing_barrier = Barrier.new(2)
+  ack_barrier = Barrier.new(2)
 
   callee1.set_simservs cdiv: { active: true,
                                rules: [ { conditions: ["not-registered"],
@@ -330,11 +360,13 @@ TestDefinition.new("Call Diversion - Not reachable (500)") do |t|
 
     # Call is diverted to callee2
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
-    call.recv_response_and_create_dialog("200")
+    ringing_barrier.wait
 
+    call.recv_response_and_create_dialog("200")
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    ack_barrier.wait
+
 
     call.new_transaction
     call.send_request("BYE")
@@ -358,8 +390,11 @@ TestDefinition.new("Call Diversion - Not reachable (500)") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call2.send_200_with_sdp
     call2.recv_request("ACK")
+    ack_barrier.wait
 
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
@@ -382,6 +417,9 @@ TestDefinition.new("Call Diversion - Busy") do |t|
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
 
+  ringing_barrier = Barrier.new(2)
+  ack_barrier = Barrier.new(2)
+
   callee1.set_simservs cdiv: { active: true,
                                rules: [ { conditions: ["busy"],
                                           target: callee2.uri } ]
@@ -402,11 +440,12 @@ TestDefinition.new("Call Diversion - Busy") do |t|
 
     # Call is diverted to callee2
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
-    call.recv_response_and_create_dialog("200")
+    ringing_barrier.wait
 
+    call.recv_response_and_create_dialog("200")
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    ack_barrier.wait
 
     call.new_transaction
     call.send_request("BYE")
@@ -430,8 +469,11 @@ TestDefinition.new("Call Diversion - Busy") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call2.send_200_with_sdp
     call2.recv_request("ACK")
+    ack_barrier.wait
 
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
@@ -453,6 +495,9 @@ TestDefinition.new("Call Diversion - Unconditional") do |t|
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
 
+  ringing_barrier = Barrier.new(2)
+  ack_barrier = Barrier.new(2)
+
   callee1.set_simservs cdiv: { active: true,
                                rules: [ { conditions: [],
                                           target: callee2.uri } ]
@@ -473,11 +518,12 @@ TestDefinition.new("Call Diversion - Unconditional") do |t|
 
     # Call is diverted to callee2
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
-    call.recv_response_and_create_dialog("200")
+    ringing_barrier.wait
 
+    call.recv_response_and_create_dialog("200")
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    ack_barrier.wait
 
     call.new_transaction
     call.send_request("BYE")
@@ -491,8 +537,11 @@ TestDefinition.new("Call Diversion - Unconditional") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call2.send_200_with_sdp
     call2.recv_request("ACK")
+    ack_barrier.wait
 
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
@@ -517,6 +566,8 @@ TestDefinition.new("Call Diversion - No answer") do |t|
   callee2 = t.add_endpoint
 
   ringing_barrier = Barrier.new(2)
+  ringing_barrier_2 = Barrier.new(2)
+  ack_barrier = Barrier.new(2)
 
   callee1.set_simservs cdiv: { active: true,
                                timeout: "20",
@@ -544,11 +595,12 @@ TestDefinition.new("Call Diversion - No answer") do |t|
 
     # Call is diverted to callee2
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
+    ringing_barrier_2.wait
     call.recv_response_and_create_dialog("200")
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    ack_barrier.wait
 
     call.new_transaction
     call.send_request("BYE")
@@ -563,8 +615,10 @@ TestDefinition.new("Call Diversion - No answer") do |t|
     call1.send_response("100", "Trying")
     call1.send_response("180", "Ringing")
     ringing_barrier.wait
+
     call1.send_response("408", "Request Timeout")
     call1.recv_request("ACK")
+
     call1.end_call
   end
 
@@ -573,8 +627,11 @@ TestDefinition.new("Call Diversion - No answer") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier_2.wait
+
     call2.send_200_with_sdp
     call2.recv_request("ACK")
+    ack_barrier.wait
 
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
@@ -626,6 +683,9 @@ TestDefinition.new("Call Diversion - Audio-only call") do |t|
   callee2 = t.add_endpoint
   callee3 = t.add_endpoint
 
+  ringing_barrier = Barrier.new(2)
+  ack_barrier = Barrier.new(2)
+
   callee1.set_simservs cdiv: { active: true,
                                rules: [ { media_conditions: ["audio", "video"],
                                           target: callee2.uri },
@@ -652,11 +712,12 @@ TestDefinition.new("Call Diversion - Audio-only call") do |t|
     fail "Callee 2 received a call despite only being a forwarding target for audio-video calls" unless callee2.no_new_calls?
 
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
-    call.recv_response_and_create_dialog("200")
+    ringing_barrier.wait
 
+    call.recv_response_and_create_dialog("200")
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    ack_barrier.wait
 
     call.new_transaction
     call.send_request("BYE")
@@ -670,8 +731,11 @@ TestDefinition.new("Call Diversion - Audio-only call") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call2.send_200_with_sdp
     call2.recv_request("ACK")
+    ack_barrier.wait
 
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
@@ -694,6 +758,9 @@ TestDefinition.new("Call Diversion - Audio-video call") do |t|
   callee1 = t.add_endpoint
   callee2 = t.add_endpoint
   callee3 = t.add_endpoint
+
+  ringing_barrier = Barrier.new(2)
+  ack_barrier = Barrier.new(2)
 
   callee1.set_simservs cdiv: { active: true,
                                rules: [ { media_conditions: ["audio", "video"],
@@ -721,11 +788,12 @@ TestDefinition.new("Call Diversion - Audio-video call") do |t|
     fail "Callee 3 received a call despite callee 2 being a higher-priority target target for audio-video calls" unless callee3.no_new_calls?
 
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
-    call.recv_response_and_create_dialog("200")
+    ringing_barrier.wait
 
+    call.recv_response_and_create_dialog("200")
     call.new_transaction
     call.send_request("ACK")
-    sleep 1
+    ack_barrier.wait
 
     call.new_transaction
     call.send_request("BYE")
@@ -739,8 +807,11 @@ TestDefinition.new("Call Diversion - Audio-video call") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call2.send_200_with_sdp
     call2.recv_request("ACK")
+    ack_barrier.wait
 
     call2.recv_request("BYE")
     call2.send_response("200", "OK")
