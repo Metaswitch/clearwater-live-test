@@ -114,6 +114,8 @@ CDivTD.new("Call Diversion - Not registered") do |t|
   endpoints_to_register = [caller, callee2]
   t.generic_setup endpoints_to_register
 
+  # A calls B. Because B is unregistered, the call is immediately
+  # forwarded to C with no involvement from B.
   t.add_caller_scenario caller, callee1.uri, ringing_barrier, ack_barrier
   t.add_redirectee_scenario callee2, ringing_barrier, ack_barrier
 end
@@ -135,6 +137,8 @@ CDivTD.new("Call Diversion - Not reachable (not registered)") do |t|
   endpoints_to_register = [caller, callee2]
   t.generic_setup endpoints_to_register
 
+  # A calls B. Because B is unregistered, the call is immediately
+  # forwarded to C with no involvement from B.
   t.add_caller_scenario caller, callee1.uri, ringing_barrier, ack_barrier
   t.add_redirectee_scenario callee2, ringing_barrier, ack_barrier
 end
@@ -156,8 +160,9 @@ CDivTD.new("Call Diversion - Not reachable (408)") do |t|
   endpoints_to_register = [caller, callee1, callee2]
   t.generic_setup endpoints_to_register
 
+  # A calls B. B doesn't ring and just responds with an error, so the
+  # call is forwarded to C.
   t.add_caller_scenario caller, callee1.uri, ringing_barrier, ack_barrier
-  t.add_redirectee_scenario callee2, ringing_barrier, ack_barrier
 
   t.add_quaff_scenario do
     call1 = callee1.incoming_call
@@ -168,6 +173,9 @@ CDivTD.new("Call Diversion - Not reachable (408)") do |t|
 
     call1.end_call
   end
+
+  t.add_redirectee_scenario callee2, ringing_barrier, ack_barrier
+
 end
 
 CDivTD.new("Call Diversion - Not reachable (503)") do |t|
@@ -187,8 +195,9 @@ CDivTD.new("Call Diversion - Not reachable (503)") do |t|
   endpoints_to_register = [caller, callee1, callee2]
   t.generic_setup endpoints_to_register
 
+  # A calls B. B doesn't ring and just responds with an error, so the
+  # call is forwarded to C.
   t.add_caller_scenario caller, callee1.uri, ringing_barrier, ack_barrier
-  t.add_redirectee_scenario callee2, ringing_barrier, ack_barrier
 
   t.add_quaff_scenario do
     call1 = callee1.incoming_call
@@ -199,6 +208,8 @@ CDivTD.new("Call Diversion - Not reachable (503)") do |t|
 
     call1.end_call
   end
+
+  t.add_redirectee_scenario callee2, ringing_barrier, ack_barrier
 end
 
 CDivTD.new("Call Diversion - Not reachable (500)") do |t|
@@ -218,8 +229,9 @@ CDivTD.new("Call Diversion - Not reachable (500)") do |t|
   endpoints_to_register = [caller, callee1, callee2]
   t.generic_setup endpoints_to_register
 
+  # A calls B. B doesn't ring and just responds with an error, so the
+  # call is forwarded to C.
   t.add_caller_scenario caller, callee1.uri, ringing_barrier, ack_barrier
-  t.add_redirectee_scenario callee2, ringing_barrier, ack_barrier
 
   t.add_quaff_scenario do
     call1 = callee1.incoming_call
@@ -230,6 +242,8 @@ CDivTD.new("Call Diversion - Not reachable (500)") do |t|
 
     call1.end_call
   end
+
+  t.add_redirectee_scenario callee2, ringing_barrier, ack_barrier
 end
 
 CDivTD.new("Call Diversion - Busy") do |t|
@@ -247,6 +261,8 @@ CDivTD.new("Call Diversion - Busy") do |t|
   endpoints_to_register = [caller, callee1, callee2]
   t.generic_setup endpoints_to_register
 
+  # A calls B. B doesn't ring and just responds with an error, so the
+  # call is forwarded to C.
   t.add_caller_scenario caller, callee1.uri, ringing_barrier, ack_barrier
   t.add_redirectee_scenario callee2, ringing_barrier, ack_barrier
 
@@ -267,6 +283,9 @@ CDivTD.new("Call Diversion - Unconditional") do |t|
   caller, callee1, callee2 = t.add_endpoint, t.add_endpoint, t.add_endpoint
 
   ringing_barrier = Barrier.new(2)
+
+  # Wait on three threads, so we can use a third thread to do some
+  # post-call checks.
   ack_barrier = Barrier.new(3)
 
   callee1.set_simservs cdiv: { active: true,
@@ -276,6 +295,8 @@ CDivTD.new("Call Diversion - Unconditional") do |t|
   endpoints_to_register = [caller, callee1, callee2]
   t.generic_setup endpoints_to_register
 
+  # A calls B. Because the forwarding rule is unconditional, the call is immediately
+  # forwarded to C with no involvement from B.
   t.add_caller_scenario caller, callee1.uri, ringing_barrier, ack_barrier
   t.add_redirectee_scenario callee2, ringing_barrier, ack_barrier
 
@@ -304,6 +325,9 @@ CDivTD.new("Call Diversion - No answer") do |t|
   endpoints_to_register = [caller, callee1, callee2]
   t.generic_setup endpoints_to_register
 
+  # A sends a call to B, which starts ringing, but is then unanswered
+  # - call is then redirected to C. Because B starts ringing before
+  # the redirect, we need a custom caller scenario.
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee1.uri)
 
@@ -332,6 +356,7 @@ CDivTD.new("Call Diversion - No answer") do |t|
 
   end
 
+  # First callee receives a call, but doesn't answer
   t.add_quaff_scenario do
     call1 = callee1.incoming_call
     call1.recv_request("INVITE")
@@ -362,6 +387,7 @@ TestDefinition.new("Call Diversion - Bad target URI") do |t|
     caller.register
   end
 
+  # Caller sends an INVITE, which fails because it can't be forwarded.
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
@@ -383,6 +409,9 @@ CDivTD.new("Call Diversion - Audio-only call") do |t|
   caller, callee1, callee2, callee3 = t.add_endpoint, t.add_endpoint, t.add_endpoint, t.add_endpoint
 
   ringing_barrier = Barrier.new(2)
+
+  # Barrier waits for 3 threads rather than 2, as we have an extra
+  # thread checking that callee1 and callee2 didn't receive the call
   ack_barrier = Barrier.new(3)
 
   callee1.set_simservs cdiv: { active: true,
@@ -414,6 +443,9 @@ CDivTD.new("Call Diversion - Audio-video call") do |t|
   caller, callee1, callee2, callee3 = t.add_endpoint, t.add_endpoint, t.add_endpoint, t.add_endpoint
 
   ringing_barrier = Barrier.new(2)
+
+  # Barrier waits for 3 threads rather than 2, as we have an extra
+  # thread checking that callee1 and callee3 didn't receive the call
   ack_barrier = Barrier.new(3)
 
   callee1.set_simservs cdiv: { active: true,
@@ -428,7 +460,7 @@ CDivTD.new("Call Diversion - Audio-video call") do |t|
   t.add_caller_scenario caller, callee1.uri, ringing_barrier, ack_barrier, :audio_video
 
   # Call should be redirected to callee2, as it's audio and video and
-  # calle2 is higher priority than callee3
+  # callee2 is higher priority than callee3
   t.add_redirectee_scenario callee2, ringing_barrier, ack_barrier
 
   t.add_quaff_scenario do
