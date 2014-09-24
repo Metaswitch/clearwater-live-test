@@ -9,8 +9,13 @@
       <% cdiv[:rules].each_with_index do |rule, i| %>
       <cp:rule id="rule<%= i %>">
         <cp:conditions>
+          <% rule[:conditions] ||= [] %>
+          <% rule[:media_conditions] ||= [] %>
           <% rule[:conditions].each do |cond| %>
           <<%= cond %> />
+          <% end %>
+          <% rule[:media_conditions].each do |cond| %>
+          <media><%= cond %></media>
           <% end %>
         </cp:conditions>
         <cp:actions>
