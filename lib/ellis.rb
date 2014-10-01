@@ -159,6 +159,10 @@ class EllisProvisionedLine
     end
   end
 
+  def uppercase_sip_uri!
+    userpart, hostpart = @sip_uri.split("@", 2)
+    @sip_uri = "#{userpart}@#{hostpart.upcase}"
+  end
 
 private
 

@@ -186,6 +186,12 @@ class TestDefinition
     include_endpoint QuaffEndpoint.new(line, @transport, @endpoints.length, use_instance_id)
   end
 
+  def add_uppercased_endpoint
+    line = provision_line
+    line.uppercase_sip_uri!
+    add_endpoint line
+  end
+
   def add_specific_endpoint user_part
     line = provision_specific_line user_part
     add_endpoint line

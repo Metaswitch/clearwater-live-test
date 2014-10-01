@@ -87,6 +87,61 @@ TestDefinition.new("Basic Call - Mainline") do |t|
 
 end
 
+TestDefinition.new("Basic Call - Case insensitivity") do |t|
+  caller = t.add_uppercased_endpoint
+  callee = t.add_endpoint
+
+  ringing_barrier = Barrier.new(2)
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+  end
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(callee.uri.upcase)
+
+    call.send_invite_with_sdp
+    call.recv_response("100")
+    call.recv_response("180")
+    ringing_barrier.wait
+
+    # Save off Contact and routeset
+    call.recv_response_and_create_dialog("200")
+
+    call.new_transaction
+    call.send_request("ACK")
+    sleep 1
+
+    call.new_transaction
+    call.send_request("BYE")
+    call.recv_response("200")
+    call.end_call
+  end
+
+  t.add_quaff_scenario do
+    call2 = callee.incoming_call
+
+    call2.recv_request("INVITE")
+    call2.send_response("100", "Trying")
+    call2.send_response("180", "Ringing")
+    ringing_barrier.wait
+
+    call2.send_200_with_sdp
+    call2.recv_request("ACK")
+
+    call2.recv_request("BYE")
+    call2.send_response("200", "OK")
+    call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee.unregister
+  end
+
+end
+
 TestDefinition.new("Basic Call - Unknown number") do |t|
   caller = t.add_endpoint
   callee = t.add_endpoint
