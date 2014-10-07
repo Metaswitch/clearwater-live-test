@@ -47,7 +47,8 @@ def run_tests(domain, glob="*")
   require_all 'lib/tests'
   TestDefinition.run_all(domain, Wildcard[glob, true])
 
-  EllisProvisionedLine.destroy_leaked_numbers(domain)
+  # Cleanup leaked numbers are ignore (but print) any exceptions
+  EllisProvisionedLine.destroy_leaked_numbers(domain) rescue puts $!, $@
 
   exit (TestDefinition.failures == 0) ? 0 : 1
 end
