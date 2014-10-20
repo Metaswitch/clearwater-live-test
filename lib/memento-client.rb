@@ -11,9 +11,9 @@ module Memento
     attr_reader :to_uri, :to_name, :from_uri, :from_name, :answered, :outgoing, :start_time, :answered_time, :end_time, :xml
 
     def initialize xmlnode
-      @to_uri = xmlnode.xpath('./to/uri').text
+      @to_uri = xmlnode.xpath('./to/URI').text
       @to_name = xmlnode.xpath('./to/name').text
-      @from_uri = xmlnode.xpath('./from/uri').text
+      @from_uri = xmlnode.xpath('./from/URI').text
       @from_name = xmlnode.xpath('./from/name').text
       @answered = (xmlnode.xpath('./answered').text == "1") or (xmlnode.xpath('./answered').text == "true")
       @outgoing = (xmlnode.xpath('./outgoing').text == "0") or (xmlnode.xpath('./outgoing').text == "true")

@@ -3,7 +3,7 @@
     <zeroOrMore>
       <element name="call" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
         <element name="to">
-          <element name="uri">
+          <element name="URI">
             <data type="anyURI"/>
           </element>
           <optional>
@@ -13,7 +13,7 @@
           </optional>
         </element>
         <element name="from">
-          <element name="uri">
+          <element name="URI">
             <data type="anyURI"/>
           </element>
           <optional>
