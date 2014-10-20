@@ -246,6 +246,8 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
+  ringing_barrier = Barrier.new(3)
+
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
@@ -269,6 +271,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
+    ringing_barrier.wait
 
     # Mobile device accepts call
     call.recv_response_and_create_dialog("200")
@@ -291,6 +294,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
+    ringing_barrier.wait
     call_voip.send_response("408", "Request Timeout")
     call_voip.end_call
   end
@@ -306,6 +310,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
+    ringing_barrier.wait
     call_mobile.send_200_with_sdp
     call_mobile.recv_request("ACK")
 
@@ -402,6 +407,8 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
   callee_voip = t.add_endpoint
   callee_voip_phone = t.add_new_binding callee_voip
 
+  ringing_barrier = Barrier.new(3)
+
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
@@ -434,6 +441,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
+    ringing_barrier.wait
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
 
     call.recv_response_and_create_dialog("200")
@@ -456,6 +464,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
+    ringing_barrier.wait
     call_voip.send_response("480", "Temporarily Unavailable")
     call_voip.recv_request("ACK")
 
@@ -487,6 +496,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
+    ringing_barrier.wait
     call_mobile.send_response("480", "Temporarily Unavailable")
     call_mobile.end_call
   end
