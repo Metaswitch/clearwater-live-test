@@ -305,6 +305,10 @@ class TestDefinition
     raise SkipThisTest.new "No memento hostnames provided", "Call with MEMENTO_SIP=<SIP hostname> and MEMENTO_HTTP=<HTTP hostname>" unless ENV['MEMENTO_SIP'] && ENV['MEMENTO_HTTP']
   end
 
+  def skip_unless_call_diversion_as
+    raise SkipThisTest.new "No Call Diversion AS hostname provided", "Call with CDIV_AS=<hostname>" unless ENV['CDIV_AS']
+  end
+
   private
 
   def before_run
