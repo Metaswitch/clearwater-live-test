@@ -34,9 +34,9 @@
 
 require 'barrier'
 
-CDIV_AS_SIP_URI="communication-diversion@#{ENV['CDIV_AS']}:5054;transport=TCP"
+class CDivASTestDestination < TestDefinition
 
-class CDivASTD < TestDefinition
+  CDIV_AS_SIP_URI="communication-diversion@#{ENV['CDIV_AS']}:5054;transport=TCP"
 
   def generic_setup endpoints_to_register
     add_quaff_setup do
@@ -97,7 +97,7 @@ class CDivASTD < TestDefinition
 
 end
 
-CDivASTD.new("Call Diversion AS - Unconditional") do |t|
+CDivASTestDestination.new("Call Diversion AS - Unconditional") do |t|
   t.skip_unless_call_diversion_as
   t.skip_unless_ellis_api_key
 
@@ -129,7 +129,7 @@ CDivASTD.new("Call Diversion AS - Unconditional") do |t|
   end
 end
 
-CDivASTD.new("Call Diversion AS - Busy") do |t|
+CDivASTestDestination.new("Call Diversion AS - Busy") do |t|
   t.skip_unless_call_diversion_as
   t.skip_unless_ellis_api_key
 
@@ -161,7 +161,7 @@ CDivASTD.new("Call Diversion AS - Busy") do |t|
   end
 end
 
-CDivASTD.new("Call Diversion AS - No answer") do |t|
+CDivASTestDestination.new("Call Diversion AS - No answer") do |t|
   t.skip_unless_call_diversion_as
   t.skip_unless_ellis_api_key
 
