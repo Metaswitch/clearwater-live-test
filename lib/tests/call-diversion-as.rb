@@ -34,9 +34,9 @@
 
 require 'barrier'
 
-class CDivASTestDestination < TestDefinition
+CDIV_AS_SIP_URI="communication-diversion@#{ENV['CDIV_AS']}:5054;transport=TCP"
 
-  CDIV_AS_SIP_URI="communication-diversion@#{ENV['CDIV_AS']}:5054;transport=TCP"
+class CDivASTestDestination < TestDefinition
 
   def generic_setup endpoints_to_register
     add_quaff_setup do
