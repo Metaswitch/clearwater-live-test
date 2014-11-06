@@ -26,6 +26,12 @@ a=fmtp:101 0-11,16\r
 
 module Quaff
   class Call
+    def send_request(method, body="", headers={})
+      headers["Supported"] = "gruu"
+      msg = build_message headers, body, :request, method
+      send_something(msg, nil)
+    end
+
     def send_invite_with_sdp
       send_request("INVITE", STANDARD_SDP, {"Content-Type" => "application/sdp"})
     end
