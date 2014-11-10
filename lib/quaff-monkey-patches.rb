@@ -27,7 +27,11 @@ a=fmtp:101 0-11,16\r
 module Quaff
   class Call
     def send_request(method, body="", headers={})
-      headers["Supported"] = "gruu"
+      if not headers.include?("Supported") || headers["Supported"] == ""
+        headers["Supported"] = "gruu"
+      else
+        headers["Supported"] += ", gruu"
+      end
       msg = build_message headers, body, :request, method
       send_something(msg, nil)
     end
