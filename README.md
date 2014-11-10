@@ -43,8 +43,8 @@ There are various modifiers you can use to determine which subset of tests you w
  - `LIVENUMBER=<number>` - to allow running of tests that dial out to real devices (your deployment must have an IBCF node and a working PSTN) the live number given may be dialled as part of running the test and the test will expect it to be answered (so make it a real one!).
  - `REPEAT=<number>` - to allow the suite of tests to be run multiple times.
  - `TRANSPORT=<transports>` - Comma-separated transports to test with.  Allowed tranports are `TCP` and `UDP`.  If not specified, all tests will be run twice, for each transport type.
- - `PROXY=<host>` - to force the tests to run against a particular Bono instance.
- - `ELLIS=<host>` - to override the default FQDN for Ellis.  Useful when running against an AIO node.
+ - `PROXY=<host>` - to force the tests to run against a particular Bono instance. Useful when running against an AIO node, or when the Bono domain isn't DNS resolvable.
+ - `ELLIS=<host>` - to override the default FQDN for Ellis.  Useful when running against an AIO node, or when the Ellis domain isn't DNS resolvable.
  - `HOSTNAME=<host>` - publicly accessible hostname of the machine running the tests, used for the dummy AS.
  - `EXPIRES=<number>` - maximum Expires header expected from Sprout, used for the dummy AS.
  - `GEMINI=<host>` - hostname of the the Gemini cluster. If the Gemini application server is integrated with Sprout rather than running as a standalone, this should be set to the Sprout cluster.
@@ -53,6 +53,7 @@ There are various modifiers you can use to determine which subset of tests you w
  - `PROVISIONAL_RESPONSES_IGNORED=TRUE` - set this to interoperate with devices that absorb second and subsequent provisional responses (so that if a call is forked and both endpoints send a 180 Ringing, only one will reach the caller)
  - `EXCLUDE_TESTS="test1 (TCP),test2 (UDP)"` - a comma-separated list of tests to ignore. Useful for working around known bugs with tests in particular environments (e.g. skipping the B2BUA test in cases where the EC2 security group settings won't allow it)
  - `ELLIS_USER=<email>` - to override the default email used for Ellis (live.tests@example.com). Useful to allow multiple live test instances to run simultaneously without deleting each other's lines.
+ - `SNMP=Y` - to verify the SNMP statistics produced in the test run.
 
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
 
@@ -106,19 +107,22 @@ end
 
 This example would create two numbers in ellis/homestead, register them, then send a MESSAGE transaction between them before deregistering and destroying the numbers. Because the deregistration takes place in a cleanup block, this happens even if the main scenario fails or hits an exception.
 
-There are different types of test that can be defined, based on the requirements on the system under test or on the command line options given at run time:
+There are different `skip` functions that can be included in a test, based on the command line options given at run time:
+ 
+ - `skip_unless_pstn`: PSTN test, requires that `PSTN=true` be passed to rake or the test will be skipped.
+ - `skip_unless_live`: Live call test, requires that a live number is given to rake as `LIVENUMBER=...`.
+ - `skip_unless_<application server>`: Application Server test, requires that a hostname for the particular server is passed to rake as, e.g. `GEMINI=...`.
+ - `skip_if_udp`: Used to mark a test that's only valid when using TCP
+ - `skip_unless_ellis_api_key`: Test that requires the Ellis API key, for example a test that creates specific endpoints
+ - `skip`: Used to mark out currently broken tests, tests should not be left in this state for longer than necessary.
 
- - `TestDefinition`: Generic test, only uses Clearwater-registered endpoints.
- - `PSTNTestDefinition`: PSTN test, requires that `PSTN=true` be passed to rake or the test will be skipped.
- - `LiveTestDefinition`: Live call test, requires that a live number is given to rake as `LIVENUMBER=...`.
- - `SkippedTestDefinition`: Used to mark out currently broken tests, tests should not be left in this state for longer than necessary.
 
 Creating Endpoints
 ------------------
 
 As you saw above, a test can create an endpoint in ellis with `test.add_endpoint`.  It may need an endpoint that is not a Clearwater number (for example for off-net calling), in which case `add_fake_endpoint(<DN>, <domain>)` may be used instead.
 
-To create a PSTN number use `test.add_pstn_endpoint`.  These numbers can make calls out to the PSTN and should be used for live calling/international number dialing tests.  When using these numbers, mark the test as a `PSTNTestDefinition` to ensure it is skipped if PSTN numbers are not available on the system under test.
+To create a PSTN number use `test.add_pstn_endpoint`.  These numbers can make calls out to the PSTN and should be used for live calling/international number dialing tests.  When using these numbers, include in the test `skip_unless_pstn` ensure it is skipped if PSTN numbers are not available on the system under test.
 
 By default, `test.add_endpoint` has a random SIP URI assigned from Ellis' pool of numbers. `test.add_specific_endpoint "2345"` will assign the specific number `sip:2345@DOMAIN`. This should only be used when absolutely necessary for a specific test - it requires the Ellis API key to be provided in order to have sufficient privileges to create arbitrary numbers.
 
