@@ -107,11 +107,11 @@ end
 
 This example would create two numbers in ellis/homestead, register them, then send a MESSAGE transaction between them before deregistering and destroying the numbers. Because the deregistration takes place in a cleanup block, this happens even if the main scenario fails or hits an exception.
 
-There are different `skip` functions that can be included in a test, based on the command line options given at run time:
+There are different `skip` functions that can be included in a test. These control whether a test case is run, based on the command line options given at run time:
  
  - `skip_unless_pstn`: PSTN test, requires that `PSTN=true` be passed to rake or the test will be skipped.
  - `skip_unless_live`: Live call test, requires that a live number is given to rake as `LIVENUMBER=...`.
- - `skip_unless_<application server>`: Application Server test, requires that a hostname for the particular server is passed to rake as, e.g. `GEMINI=...`.
+ - `skip_unless_<application server>`: Application Server test, requires that a hostname for the particular server is passed to rake as (for example) `GEMINI=...`.
  - `skip_if_udp`: Used to mark a test that's only valid when using TCP
  - `skip_unless_ellis_api_key`: Test that requires the Ellis API key, for example a test that creates specific endpoints
  - `skip`: Used to mark out currently broken tests, tests should not be left in this state for longer than necessary.
@@ -122,7 +122,7 @@ Creating Endpoints
 
 As you saw above, a test can create an endpoint in ellis with `test.add_endpoint`.  It may need an endpoint that is not a Clearwater number (for example for off-net calling), in which case `add_fake_endpoint(<DN>, <domain>)` may be used instead.
 
-To create a PSTN number use `test.add_pstn_endpoint`.  These numbers can make calls out to the PSTN and should be used for live calling/international number dialing tests.  When using these numbers, include in the test `skip_unless_pstn` ensure it is skipped if PSTN numbers are not available on the system under test.
+To create a PSTN number use `test.add_pstn_endpoint`.  These numbers can make calls out to the PSTN and should be used for live calling/international number dialing tests.  When using these numbers, include in the test `skip_unless_pstn` to ensure it is skipped if PSTN numbers are not available on the system under test.
 
 By default, `test.add_endpoint` has a random SIP URI assigned from Ellis' pool of numbers. `test.add_specific_endpoint "2345"` will assign the specific number `sip:2345@DOMAIN`. This should only be used when absolutely necessary for a specific test - it requires the Ellis API key to be provided in order to have sufficient privileges to create arbitrary numbers.
 
