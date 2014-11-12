@@ -261,7 +261,7 @@ class TestDefinition
       @quaff_setup_blk.call if @quaff_setup_blk
       @quaff_threads = @quaff_scenario_blocks.map { |blk| Thread.new &blk }
       retval = extra_validation
-      verify_snmp_stats if ENV['SNMP'] != "N"
+      verify_snmp_stats if ENV['SNMP'] == "Y"
     ensure
       retval &= cleanup
       TestDefinition.unset_current_test
