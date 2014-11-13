@@ -51,7 +51,8 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
-  ringing_barrier = Barrier.new(2)
+  ringing_barrier = Barrier.new(3)
+  end_call_barrier = Barrier.new(2)
 
   t.add_quaff_setup do
     caller.register
@@ -78,7 +79,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 0.3
+    end_call_barrier.wait
 
     call.new_transaction
     call.send_request("BYE")
@@ -100,6 +101,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
     call_voip.send_200_with_sdp
     call_voip.recv_request("ACK")
 
+    end_call_barrier.wait
     call_voip.recv_request("BYE")
     call_voip.send_response("200", "OK")
     call_voip.end_call
@@ -113,6 +115,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
+    ringing_barrier.wait
 
     call_mobile.recv_request("CANCEL")
     call_mobile.assoc_with_msg(invite)
@@ -136,7 +139,8 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
 
-  ringing_barrier = Barrier.new(2)
+  ringing_barrier = Barrier.new(3)
+  end_call_barrier = Barrier.new(2)
 
   t.add_quaff_setup do
     caller.register
@@ -164,7 +168,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 0.3
+    end_call_barrier.wait
 
     call.new_transaction
     call.send_request("BYE")
@@ -180,6 +184,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
+    ringing_barrier.wait
 
     call_voip.recv_request("CANCEL")
     call_voip.assoc_with_msg(invite)
@@ -202,6 +207,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
     call_mobile.send_200_with_sdp
     call_mobile.recv_request("ACK")
 
+    end_call_barrier.wait
     call_mobile.recv_request("BYE")
     call_mobile.send_response("200", "OK")
     call_mobile.end_call
@@ -220,6 +226,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
   ringing_barrier = Barrier.new(3)
+  end_call_barrier = Barrier.new(2)
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
@@ -251,8 +258,8 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 0.3
 
+    end_call_barrier.wait
     call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
@@ -267,8 +274,8 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
-    ringing_barrier.wait
     call_voip.send_response("408", "Request Timeout")
+    ringing_barrier.wait
     call_voip.end_call
   end
 
@@ -287,6 +294,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
     call_mobile.send_200_with_sdp
     call_mobile.recv_request("ACK")
 
+    end_call_barrier.wait
     call_mobile.recv_request("BYE")
     call_mobile.send_response("200", "OK")
     call_mobile.end_call
@@ -305,6 +313,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
   callee_mobile = t.add_specific_endpoint callee_mobile_id
 
   ringing_barrier = Barrier.new(3)
+  end_call_barrier = Barrier.new(2)
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
@@ -335,8 +344,8 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 0.3
 
+    end_call_barrier.wait
     call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
@@ -358,6 +367,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
     call_voip.send_200_with_sdp
     call_voip.recv_request("ACK")
 
+    end_call_barrier.wait
     call_voip.recv_request("BYE")
     call_voip.send_response("200", "OK")
     call_voip.end_call
@@ -371,8 +381,8 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
-    ringing_barrier.wait
     call_mobile.send_response("408", "Request Timeout")
+    ringing_barrier.wait
     call_mobile.recv_request("ACK")
     call_mobile.end_call
   end
@@ -388,6 +398,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
   callee_voip_phone = t.add_new_binding callee_voip
 
   ringing_barrier = Barrier.new(3)
+  end_call_barrier = Barrier.new(2)
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
@@ -428,8 +439,8 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 0.3
 
+    end_call_barrier.wait
     call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
@@ -444,8 +455,8 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
-    ringing_barrier.wait
     call_voip.send_response("480", "Temporarily Unavailable")
+    ringing_barrier.wait
     call_voip.recv_request("ACK")
 
     call_voip.end_call
@@ -462,6 +473,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
     call_voip_phone.send_200_with_sdp
     call_voip_phone.recv_request("ACK")
 
+    end_call_barrier.wait
     call_voip_phone.recv_request("BYE")
     call_voip_phone.send_response("200", "OK")
 
@@ -641,6 +653,8 @@ TestDefinition.new("Gemini - INVITE - Successful call with GR") do |t|
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "INVITE"}]
 
+  end_call_barrier = Barrier.new(2)
+
   t.add_quaff_setup do
     caller.register
     callee_voip.register
@@ -664,8 +678,8 @@ TestDefinition.new("Gemini - INVITE - Successful call with GR") do |t|
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 0.3
 
+    end_call_barrier.wait
     call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
@@ -684,9 +698,12 @@ TestDefinition.new("Gemini - INVITE - Successful call with GR") do |t|
     call_voip.send_200_with_sdp
     call_voip.recv_request("ACK")
 
+    end_call_barrier.wait
     call_voip.recv_request("BYE")
     call_voip.send_response("200", "OK")
     call_voip.end_call
+
+    fail "Call was incorrectly forked to both endpoints" unless callee_mobile.no_new_calls?
   end
 end
 
@@ -737,6 +754,8 @@ TestDefinition.new("Gemini - INVITE - Failed call with GR") do |t|
     call_voip.send_response("180", "Ringing")
     call_voip.send_response("486", "Busy Here")
     call_voip.end_call
+
+    fail "Call was incorrectly forked to both endpoints" unless callee_mobile.no_new_calls?
   end
 end
 
@@ -752,6 +771,8 @@ TestDefinition.new("Gemini - INVITE - Successful call with Accept-Contact") do |
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "INVITE"}]
+
+  end_call_barrier = Barrier.new(2)
 
   t.add_quaff_setup do
     caller.register
@@ -776,8 +797,8 @@ TestDefinition.new("Gemini - INVITE - Successful call with Accept-Contact") do |
 
     call.new_transaction
     call.send_request("ACK")
-    sleep 0.3
 
+    end_call_barrier.wait
     call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
@@ -795,9 +816,12 @@ TestDefinition.new("Gemini - INVITE - Successful call with Accept-Contact") do |
     call_mobile.send_200_with_sdp
     call_mobile.recv_request("ACK")
 
+    end_call_barrier.wait
     call_mobile.recv_request("BYE")
     call_mobile.send_response("200", "OK")
     call_mobile.end_call
+
+    fail "Call was incorrectly forked to both endpoints" unless callee_voip.no_new_calls?
   end
 end
 
@@ -846,6 +870,8 @@ TestDefinition.new("Gemini - INVITE - Failed call with Accept-Contact") do |t|
     call_mobile.send_response("180", "Ringing")
     call_mobile.send_response("486", "Busy Here")
     call_mobile.end_call
+
+    fail "Call was incorrectly forked to both endpoints" unless callee_voip.no_new_calls?
   end
 end
 
@@ -861,8 +887,6 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "SUBSCRIBE"}]
-
-  subscribe_barrier = Barrier.new(2)
 
   t.add_quaff_setup do
     caller.register
@@ -881,7 +905,6 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
 
     call.send_request("SUBSCRIBE", "", {"Event" => "arbitrary"})
 
-    subscribe_barrier.wait
     call.recv_200_and_notify
     call.send_response("200", "OK")
     call.end_call
@@ -891,6 +914,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
     call_voip = callee_voip.incoming_call
 
     subscribe = call_voip.recv_request("SUBSCRIBE")
+    fail "Subscribe for VoIP device has an Accept-Contact header" unless subscribe.headers["Accept-Contact"] == nil
     fail "Subscribe for VoIP device does not include the Reject-Contact header" unless subscribe.all_headers("Reject-Contact").include? "*;+sip.phone"
 
     call_voip.send_response("500", "Server Error")
@@ -902,8 +926,8 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
 
     subscribe = call_mobile.recv_request("SUBSCRIBE")
     fail "Subscribe for native device does not include the Accept-Contact header" unless subscribe.all_headers("Accept-Contact").include? "*;g.3gpp.ics"
+    fail "Subscribe for VoIP device has a Reject-Contact header" unless subscribe.headers["Reject-Contact"] == nil
 
-    subscribe_barrier.wait
     call_mobile.send_response("200", "OK")
 
     call_mobile.new_transaction
@@ -950,6 +974,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Joint 408") do |t|
     call_voip = callee_voip.incoming_call
 
     subscribe = call_voip.recv_request("SUBSCRIBE")
+    fail "Subscribe for VoIP device has an Accept-Contact header" unless subscribe.headers["Accept-Contact"] == nil
     fail "Subscribe for VoIP device does not include the Reject-Contact header" unless subscribe.all_headers("Reject-Contact").include? "*;+sip.phone"
 
     call_voip.send_response("408", "Request Timeout")
@@ -961,6 +986,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Joint 408") do |t|
 
     subscribe = call_mobile.recv_request("SUBSCRIBE")
     fail "Subscribe for native device does not include the Accept-Contact header" unless subscribe.all_headers("Accept-Contact").include? "*;g.3gpp.ics"
+    fail "Subscribe for VoIP device has a Reject-Contact header" unless subscribe.headers["Reject-Contact"] == nil
 
     call_mobile.send_response("408", "Request Timeout")
     call_mobile.end_call
