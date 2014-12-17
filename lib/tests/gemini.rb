@@ -118,8 +118,11 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
     ringing_barrier.wait
 
     call_mobile.recv_request("CANCEL")
+    call_mobile.send_response("200", "OK")
+
     call_mobile.assoc_with_msg(invite)
     call_mobile.send_response("487", "Request Terminated")
+    call_mobile.recv_request("ACK")
 
     call_mobile.end_call
   end
@@ -187,8 +190,11 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
     ringing_barrier.wait
 
     call_voip.recv_request("CANCEL")
+    call_voip.send_response("200", "OK")
+
     call_voip.assoc_with_msg(invite)
     call_voip.send_response("487", "Request Terminated")
+    call_voip.recv_request("ACK")
 
     call_voip.end_call
   end
@@ -275,6 +281,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
     call_voip.send_response("408", "Request Timeout")
+    call_void.recv_request("ACK")
     ringing_barrier.wait
     call_voip.end_call
   end
@@ -382,8 +389,8 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
     call_mobile.send_response("408", "Request Timeout")
-    ringing_barrier.wait
     call_mobile.recv_request("ACK")
+    ringing_barrier.wait
     call_mobile.end_call
   end
 end
@@ -456,8 +463,8 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
     call_voip.send_response("480", "Temporarily Unavailable")
-    ringing_barrier.wait
     call_voip.recv_request("ACK")
+    ringing_barrier.wait
 
     call_voip.end_call
   end
@@ -490,6 +497,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
     call_mobile.send_response("180", "Ringing")
     ringing_barrier.wait
     call_mobile.send_response("480", "Temporarily Unavailable")
+    call_mobile.recv_request("ACK")
     call_mobile.end_call
   end
 end
@@ -533,6 +541,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |
     ringing_barrier.wait
 
     call.recv_response("500")
+    call.send_request("ACK")
     call.end_call
   end
 
@@ -606,6 +615,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
     ringing_barrier.wait
 
     call.recv_response("487")
+    call.send_request("ACK")
     call.end_call
   end
 
@@ -619,7 +629,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
     call_voip.send_response("180", "Ringing")
     ringing_barrier.wait
 
-    call_voip.send_response("487", "")
+    call_voip.send_response("487", "A better response than a 408")
     call_voip.recv_request("ACK")
     call_voip.end_call
   end
@@ -740,6 +750,7 @@ TestDefinition.new("Gemini - INVITE - Failed call with GR") do |t|
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("486")
+    call.send_request("ACK")
     call.end_call
   end
 
@@ -753,6 +764,7 @@ TestDefinition.new("Gemini - INVITE - Failed call with GR") do |t|
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
     call_voip.send_response("486", "Busy Here")
+    call_voip.recv_request("ACK")
     call_voip.end_call
 
     fail "Call was incorrectly forked to both endpoints" unless callee_mobile.no_new_calls?
@@ -857,6 +869,7 @@ TestDefinition.new("Gemini - INVITE - Failed call with Accept-Contact") do |t|
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("486")
+    call.send("ACK")
     call.end_call
   end
 
@@ -869,6 +882,7 @@ TestDefinition.new("Gemini - INVITE - Failed call with Accept-Contact") do |t|
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
     call_mobile.send_response("486", "Busy Here")
+    call_mobile.recv_request("ACK")
     call_mobile.end_call
 
     fail "Call was incorrectly forked to both endpoints" unless callee_voip.no_new_calls?
