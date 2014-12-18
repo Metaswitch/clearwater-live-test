@@ -281,7 +281,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
     call_voip.send_response("408", "Request Timeout")
-    call_void.recv_request("ACK")
+    call_voip.recv_request("ACK")
     ringing_barrier.wait
     call_voip.end_call
   end
@@ -869,7 +869,7 @@ TestDefinition.new("Gemini - INVITE - Failed call with Accept-Contact") do |t|
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("486")
-    call.send("ACK")
+    call.send_request("ACK")
     call.end_call
   end
 
