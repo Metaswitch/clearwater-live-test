@@ -34,7 +34,6 @@
 
 require 'timeout'
 require "snmp"
-require 'resolv'
 require_relative "ellis"
 require_relative "quaff-endpoint"
 require_relative "fake-endpoint"
@@ -410,8 +409,7 @@ class TestDefinition
     average_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.2"
     hwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.4"
     lwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.5"
-
-    snmp_host = Resolv::DNS.new.getaddress(@deployment).to_s
+    snmp_host = ENV['PROXY'] ? IPSocket.getaddress(ENV['PROXY']) : IPSocket.getaddress(@deployment)
     snmp_map = {}
     SNMP::Manager.open(:host => snmp_host, :community => "clearwater") do |manager|
       manager.walk("1.2.826.0.1.1578918.9.2") do |row|
