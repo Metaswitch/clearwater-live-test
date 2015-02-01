@@ -62,13 +62,11 @@ TestDefinition.new("Call Waiting - Accepted") do |t|
     first_call_ringing_barrier.wait
 
     # Save off Contact and routeset
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     first_call_set_up_barrier.wait
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -92,7 +90,7 @@ TestDefinition.new("Call Waiting - Accepted") do |t|
     call3 = callee.incoming_call
     call3.recv_request("INVITE")
     call3.send_response("100", "Trying")
-    call3.send_response("180", "Ringing", "", false, {"Alert-Info" => "<urn:alert:service:call-waiting>"})
+    call3.send_response("180", "Ringing", headers: {"Alert-Info" => "<urn:alert:service:call-waiting>"})
     second_call_ringing_barrier.wait
 
     # A hangs up
@@ -125,13 +123,11 @@ TestDefinition.new("Call Waiting - Accepted") do |t|
     # check for call waiting on 180
     fail "Alert-Info was not passed through properly" unless ringing_resp.first_header('Alert-Info') == "<urn:alert:service:call-waiting>"
 
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     second_call_set_up_barrier.wait
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -169,13 +165,11 @@ TestDefinition.new("Call Waiting - Cancelled") do |t|
     first_call_ringing_barrier.wait
 
     # Save off Contact and routeset
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     first_call_set_up_barrier.wait
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -199,14 +193,13 @@ TestDefinition.new("Call Waiting - Cancelled") do |t|
     call3 = callee.incoming_call
     original_invite = call3.recv_request("INVITE")
     call3.send_response("100", "Trying")
-    call3.send_response("180", "Ringing", "", false, {"Alert-Info" => "<urn:alert:service:call-waiting>"})
+    call3.send_response("180", "Ringing", headers: {"Alert-Info" => "<urn:alert:service:call-waiting>"})
 
     # C cancels its invite
     call3.recv_request("CANCEL")
     call3.send_response("200", "OK")
 
-    call3.assoc_with_msg(original_invite)
-    call3.send_response("487", "Cancelled")
+    call3.send_response("487", "Cancelled", response_to: original_invite)
     call3.recv_request("ACK")
     call3.end_call
 
@@ -230,11 +223,11 @@ TestDefinition.new("Call Waiting - Cancelled") do |t|
     fail "Alert-Info was not passed through properly" unless ringing_resp.first_header('Alert-Info') == "<urn:alert:service:call-waiting>"
 
     # C cancels the call
-    call.send_request("CANCEL")
+    call.send_request("CANCEL", same_tsx_as: ringing_resp, new_tsx: false)
     call.recv_response("200")
 
     call.recv_response("487")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
