@@ -46,8 +46,8 @@ TestDefinition.new("Filtering - Accept-Contact") do |t|
     call = caller.outgoing_call(callee.uri)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain", "Accept-Contact" => "*;+sip.instance=\"<urn:uuid:#{callee.instance_id}>\";explicit;require"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain", "Accept-Contact" => "*;+sip.instance=\"<urn:uuid:#{callee.instance_id}>\";explicit;require"})
     call.recv_response("200")
     call.end_call
   end
@@ -79,8 +79,8 @@ TestDefinition.new("Filtering - Accept-Contact no match") do |t|
     call = caller.outgoing_call(callee.uri)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain", "Accept-Contact" => "*;+sip.instance=\"<wrong>\";explicit;require"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain", "Accept-Contact" => "*;+sip.instance=\"<wrong>\";explicit;require"})
     call.recv_response("480")
     call.end_call
     fail unless callee.no_new_calls?
@@ -107,8 +107,8 @@ TestDefinition.new("Filtering - Accept-Contact negated match") do |t|
     call = caller.outgoing_call(callee.uri)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain", "Accept-Contact" => "*;+sip.test=\"!hello\";explicit;require"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain", "Accept-Contact" => "*;+sip.test=\"!hello\";explicit;require"})
     call.recv_response("200")
     call.end_call
   end
@@ -171,10 +171,10 @@ TestDefinition.new("Filtering - RFC3841 example") do |t|
     call = caller.outgoing_call(callee_binding1.uri)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain",
-                        "Accept-Contact" => ["*;audio;require", "*;video;explicit", '*;methods="BYE";class="business";q=1.0'],
-                      "Reject-Contact" => '*;actor="msg-taker";video'})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain",
+                                "Accept-Contact" => ["*;audio;require", "*;video;explicit", '*;methods="BYE";class="business";q=1.0'],
+                                "Reject-Contact" => '*;actor="msg-taker";video'})
     call.recv_response("200")
     call.end_call
 
@@ -224,8 +224,8 @@ TestDefinition.new("Filtering - Reject-Contact no match") do |t|
     call = caller.outgoing_call(callee.uri)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain", "Reject-Contact" => "*;+sip.instance=\"<wrong>\""})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain", "Reject-Contact" => "*;+sip.instance=\"<wrong>\""})
     call.recv_response("200")
     call.end_call
   end
@@ -257,9 +257,9 @@ TestDefinition.new("Filtering - Reject-Contact match") do |t|
     call = caller.outgoing_call(callee.uri)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain",
-                        "Reject-Contact" => "*;+sip.instance=\"<urn:uuid:#{callee.instance_id}>\""})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain",
+                                "Reject-Contact" => "*;+sip.instance=\"<urn:uuid:#{callee.instance_id}>\""})
     call.recv_response("480")
     call.end_call
     fail unless callee.no_new_calls?
