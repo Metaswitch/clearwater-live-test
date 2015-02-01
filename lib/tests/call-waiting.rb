@@ -223,7 +223,7 @@ TestDefinition.new("Call Waiting - Cancelled") do |t|
     fail "Alert-Info was not passed through properly" unless ringing_resp.first_header('Alert-Info') == "<urn:alert:service:call-waiting>"
 
     # C cancels the call
-    call.send_request("CANCEL", same_tsx_as: ringing_resp, new_tsx: false)
+    call.send_request("CANCEL", new_tsx: false)
     call.recv_response("200")
 
     call.recv_response("487")
