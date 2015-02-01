@@ -67,12 +67,10 @@ class CDivTD < TestDefinition
       call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
       ringing_barrier.wait
 
-      call.recv_response_and_create_dialog("200")
-      call.new_transaction
+      call.recv_response("200", dialog_creating: true)
       call.send_request("ACK")
       ack_barrier.wait
 
-      call.new_transaction
       call.send_request("BYE")
       call.recv_response("200")
       call.end_call
@@ -343,13 +341,11 @@ CDivTD.new("Call Diversion - No answer") do |t|
     # Call is diverted to callee2
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
     ringing_barrier_2.wait
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     ack_barrier.wait
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -394,7 +390,7 @@ TestDefinition.new("Call Diversion - Bad target URI") do |t|
     call.send_request("INVITE")
     call.recv_response("100")
     call.recv_response("480")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
