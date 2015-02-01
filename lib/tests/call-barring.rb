@@ -53,7 +53,7 @@ TestDefinition.new("Call Barring - Outbound Rejection") do |t|
     call.send_request("INVITE")
     call.recv_response("100")
     call.recv_response("603")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
@@ -87,13 +87,11 @@ TestDefinition.new("Call Barring - Allow non-international call") do |t|
     call.recv_response("180")
 
     # Save off Contact and routeset
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     sleep 1
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -139,7 +137,7 @@ TestDefinition.new("Call Barring - Reject international call") do |t|
     call.send_request("INVITE")
     call.recv_response("100")
     call.recv_response("603")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
@@ -170,7 +168,7 @@ TestDefinition.new("Call Barring - Inbound Rejection") do |t|
     call.send_request("INVITE")
     call.recv_response("100")
     call.recv_response("603")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
