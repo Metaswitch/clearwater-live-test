@@ -65,9 +65,8 @@ end
 
 TestDefinition.new("Call Barring - Allow non-international call") do |t|
   t.skip_unless_mmtel
-  t.skip_unless_pstn
 
-  caller = t.add_pstn_endpoint
+  caller = t.add_endpoint
   callee = t.add_endpoint
   caller.set_simservs ocb: { active: true,
                                  rules: [ { conditions: ["international"],
@@ -119,9 +118,8 @@ end
 
 TestDefinition.new("Call Barring - Reject international call") do |t|
   t.skip_unless_mmtel
-  t.skip_unless_pstn
-
-  caller = t.add_pstn_endpoint
+  
+  caller = t.add_endpoint
   callee = t.add_fake_endpoint("011447854481549")
   caller.set_simservs ocb: { active: true,
                              rules: [ { conditions: ["international"],
