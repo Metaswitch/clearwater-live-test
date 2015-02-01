@@ -140,17 +140,15 @@ TestDefinition.new("Memento - Basic Call") do |t|
     # the name of the caller. This will only show up in the callee's
     # call record, but will help us to identify the correct call
     # records.
-    call.send_request("INVITE", "", {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
+    call.send_request("INVITE", headers: {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
     call.recv_response("100")
     call.recv_response("180")
 
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     sleep 1
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -202,10 +200,10 @@ TestDefinition.new("Memento - Unknown Number") do |t|
     # the name of the caller. This will only show up in the callee's
     # call record, but will help us to identify the correct call
     # records.
-    call.send_request("INVITE", "", {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
+    call.send_request("INVITE", headers: {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
     call.recv_response("100")
     call.recv_response("480")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
 
     check_users_call_list(user=caller, from=caller, to=callee, answered=false)
@@ -243,11 +241,11 @@ TestDefinition.new("Memento - Rejected Call") do |t|
     # the name of the caller. This will only show up in the callee's
     # call record, but will help us to identify the correct call
     # records.
-    call.send_request("INVITE", "", {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
+    call.send_request("INVITE", headers: {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
     call.recv_response("100")
 
     call.recv_response("486")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
 
     check_users_call_list(user=caller, from=caller, to=callee, answered=false)
@@ -295,16 +293,16 @@ TestDefinition.new("Memento - Cancelled Call") do |t|
     # the name of the caller. This will only show up in the callee's
     # call record, but will help us to identify the correct call
     # records.
-    call.send_request("INVITE", "", {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
+    call.send_request("INVITE", headers: {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
     call.recv_response("100")
     call.recv_response("180")
 
-    # New transaction, but CANCELs share the original branch parameter
-    call.send_request("CANCEL")
+    # CANCELs share the original branch parameter
+    call.send_request("CANCEL", new_tsx: false)
     call.recv_response("200")
 
     call.recv_response("487")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
 
     check_users_call_list(user=caller, from=caller, to=callee, answered=false)
@@ -319,10 +317,7 @@ TestDefinition.new("Memento - Cancelled Call") do |t|
     call2.recv_request("CANCEL")
     call2.send_response("200", "OK")
 
-    # Use assoc_with_msg to make the CSeq of the 487 follow the INVITE, not the CANCEL
-    call2.assoc_with_msg(original_invite)
-
-    call2.send_response("487", "Cancelled")
+    call2.send_response("487", "Cancelled", response_to: original_invite)
     call2.recv_request("ACK")
 
     call2.end_call
@@ -366,17 +361,15 @@ TestDefinition.new("Memento - Privacy Call") do |t|
     # the name of the caller. This will only show up in the callee's
     # call record, but will help us to identify the correct call
     # records.
-    call.send_request("INVITE", "", {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
+    call.send_request("INVITE", headers: {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
     call.recv_response("100")
     call.recv_response("180")
 
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: false)
 
-    call.new_transaction
     call.send_request("ACK")
     sleep 1
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -436,10 +429,10 @@ TestDefinition.new("Memento - Barred Call") do |t|
     # the name of the caller. This will only show up in the callee's
     # call record, but will help us to identify the correct call
     # records.
-    call.send_request("INVITE", "", {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
+    call.send_request("INVITE", headers: {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
     call.recv_response("100")
     call.recv_response("603")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
 
     check_users_call_list(user=caller, from=caller, to=callee, answered=false)
@@ -485,19 +478,17 @@ TestDefinition.new("Memento - Busy Call Forwarding") do |t|
     # the name of the caller. This will only show up in the callee's
     # call record, but will help us to identify the correct call
     # records.
-    call.send_request("INVITE", "", {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
+    call.send_request("INVITE", headers: {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
     call.recv_response("100")
     call.recv_response("181")
 
     # Call is diverted to callee2
     call.recv_response("180")
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     sleep 1
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
