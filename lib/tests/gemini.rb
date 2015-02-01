@@ -75,13 +75,11 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
     call.recv_response("180")
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
     ringing_barrier.wait
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     end_call_barrier.wait
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -167,13 +165,11 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
 
     ringing_barrier.wait
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     end_call_barrier.wait
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -192,8 +188,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
     call_voip.recv_request("CANCEL")
     call_voip.send_response("200", "OK")
 
-    call_voip.assoc_with_msg(invite)
-    call_voip.send_response("487", "Request Terminated")
+    call_voip.send_response("487", "Request Terminated", response_to: invite)
     call_voip.recv_request("ACK")
 
     call_voip.end_call
@@ -260,13 +255,11 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
     ringing_barrier.wait
 
     # Mobile device accepts call
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
 
     end_call_barrier.wait
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -347,13 +340,11 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
     ringing_barrier.wait
 
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
 
     end_call_barrier.wait
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -442,13 +433,11 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
     ringing_barrier.wait
     call.recv_response("180") unless ENV['PROVISIONAL_RESPONSES_ABSORBED']
 
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
 
     end_call_barrier.wait
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -541,7 +530,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |
     ringing_barrier.wait
 
     call.recv_response("500")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
@@ -615,7 +604,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
     ringing_barrier.wait
 
     call.recv_response("487")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
@@ -684,13 +673,11 @@ TestDefinition.new("Gemini - INVITE - Successful call with GR") do |t|
 
     call.recv_response("100")
     call.recv_response("180")
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
 
     end_call_barrier.wait
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -750,7 +737,7 @@ TestDefinition.new("Gemini - INVITE - Failed call with GR") do |t|
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("486")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
@@ -801,17 +788,15 @@ TestDefinition.new("Gemini - INVITE - Successful call with Accept-Contact") do |
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("INVITE", "", {"Accept-Contact" => "*;g.3gpp.ics"})
+    call.send_request("INVITE", headers: {"Accept-Contact" => "*;g.3gpp.ics"})
 
     call.recv_response("100")
     call.recv_response("180")
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
 
     end_call_barrier.wait
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -865,11 +850,11 @@ TestDefinition.new("Gemini - INVITE - Failed call with Accept-Contact") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("INVITE", "", {"Accept-Contact" => "*;g.3gpp.ics"})
+    call.send_request("INVITE", headers: {"Accept-Contact" => "*;g.3gpp.ics"})
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("486")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
@@ -917,7 +902,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("SUBSCRIBE", "", {"Event" => "arbitrary"})
+    call.send_request("SUBSCRIBE", headers: {"Event" => "arbitrary"})
 
     call.recv_200_and_notify
     call.send_response("200", "OK")
@@ -944,7 +929,6 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
 
     call_mobile.send_response("200", "OK")
 
-    call_mobile.new_transaction
     call_mobile.send_request("NOTIFY")
     call_mobile.recv_response("200")
     call_mobile.end_call
@@ -979,7 +963,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Joint 408") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("SUBSCRIBE", "", {"Event" => "arbitrary"})
+    call.send_request("SUBSCRIBE", headers: {"Event" => "arbitrary"})
     call.recv_response("408")
     call.end_call
   end
