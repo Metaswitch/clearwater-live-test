@@ -38,7 +38,7 @@ GEM
       coderay (~> 1.0.5)
       method_source (~> 0.8)
       slop (~> 3.4)
-    quaff (0.8.0pre2)
+    quaff (0.8.0pre3)
       abnf-parsing (>= 0.2.0)
       milenage (>= 0.1.0)
       system-getifaddrs (>= 0.2.1)
