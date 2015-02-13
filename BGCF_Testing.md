@@ -9,7 +9,7 @@ configuration needs to be done in advance.
 
 ## Overview ##
 
-The "Off-net" tests (in [off-net.rb](lib/tests/off-net.rb)) do the
+The "Off-net" tests (in [offnet.rb](lib/tests/offnet.rb)) do the
 following:
 
 * listen on port 5072
