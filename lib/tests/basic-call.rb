@@ -32,6 +32,9 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
+# Converts a URI like sip:1234@example.com to tel:1234. Doesn't
+# support parameters or non-numeric characters (e.g.
+# "sip:+1234;npdi@example.com" won't work).
 def sip_to_tel(uri)
   uri =~ /sip:(\d+)@.+/
   "tel:#{$1}"
@@ -104,6 +107,11 @@ TestDefinition.new("Basic Call - Tel URIs") do |t|
   end
 
   t.add_quaff_scenario do
+
+    # This tests that for a subscriber like sip:1234@example.com, a
+    # call to tel:1234 also reaches them. If this assumption is not
+    # true (e.g. due to unusual ENUM rewriting), this test will fail.
+    
     tel = sip_to_tel(callee.uri)
     call = caller.outgoing_call(tel)
 
