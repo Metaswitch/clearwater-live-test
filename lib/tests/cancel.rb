@@ -46,16 +46,16 @@ TestDefinition.new("CANCEL - Mainline") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
+    call.send_request("INVITE", body: "hello world\r\n", headers: {"Content-Type" => "text/plain"})
     call.recv_response("100")
     call.recv_response("180")
 
     # New transaction, but CANCELs share the original branch parameter
-    call.send_request("CANCEL")
+    call.send_request("CANCEL", new_tsx: false)
     call.recv_response("200")
 
     call.recv_response("487")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
@@ -68,10 +68,8 @@ TestDefinition.new("CANCEL - Mainline") do |t|
     call2.recv_request("CANCEL")
     call2.send_response("200", "OK")
 
-    # Use assoc_with_msg to make the CSeq of the 487 follow the INVITE, not the CANCEL
-    call2.assoc_with_msg(original_invite)
-
-    call2.send_response("487", "Cancelled")
+    # Make the CSeq of the 487 follow the INVITE, not the CANCEL
+    call2.send_response("487", "Cancelled", response_to: original_invite)
     call2.recv_request("ACK")
 
     call2.end_call

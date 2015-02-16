@@ -59,17 +59,15 @@ TestDefinition.new("ISC Interface - Terminating") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
+    call.send_request("INVITE", body: sdp, headers: {"Content-Type" => "application/sdp"})
     call.recv_response("100")
 
     # Save off Contact and routeset
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     sleep 0.1
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -122,17 +120,15 @@ TestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
+    call.send_request("INVITE", body: sdp, headers: {"Content-Type" => "application/sdp"})
     call.recv_response("100")
 
     # Save off Contact and routeset
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     sleep 0.1
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -142,7 +138,7 @@ TestDefinition.new("ISC Interface - Terminating (UDP AS)") do |t|
   t.add_quaff_scenario do
       incoming_call = as.incoming_call
 
-      invite_data = incoming_call.recv_request("INVITE")
+      incoming_call.recv_request("INVITE")
       incoming_call.send_response("100", "Trying")
 
       incoming_call.send_response("200", "OK")
@@ -178,28 +174,26 @@ TestDefinition.new("ISC Interface - Terminating Failed") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
+    call.send_request("INVITE", body: sdp, headers: {"Content-Type" => "application/sdp"})
     call.recv_response("100")
 
-    # Save off Contact and routeset
     call.recv_response("404")
 
-    call.new_transaction
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
 
   t.add_quaff_scenario do
-      incoming_call = as.incoming_call
+    incoming_call = as.incoming_call
 
-      invite_data = incoming_call.recv_request("INVITE")
-      incoming_call.send_response("100", "Trying")
+    invite_data = incoming_call.recv_request("INVITE")
+    incoming_call.send_response("100", "Trying")
 
-      incoming_call.send_response("404", "Not Found")
-      incoming_call.recv_request("ACK")
+    incoming_call.send_response("404", "Not Found")
+    incoming_call.recv_request("ACK")
 
-      incoming_call.end_call
+    incoming_call.end_call
   end
 end
 
@@ -289,26 +283,24 @@ TestDefinition.new("ISC Interface - Redirect") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
+    call.send_request("INVITE", body: sdp, headers: {"Content-Type" => "application/sdp"})
     call.recv_response("100")
 
     redirect = call.recv_response("302")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
 
     call2 = caller.outgoing_call(redirect.header("Contact").gsub(/[<>]/, ""))
-    call2.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
+    call2.send_request("INVITE", body: sdp, headers: {"Content-Type" => "application/sdp"})
     call2.recv_response("100")
     call2.recv_response("180")
 
     # Save off Contact and routeset
-    call2.recv_response_and_create_dialog("200")
+    call2.recv_response("200", dialog_creating: true)
 
-    call2.new_transaction
     call2.send_request("ACK")
     sleep 0.1
 
-    call2.new_transaction
     call2.send_request("BYE")
     call2.recv_response("200")
     call2.end_call
@@ -319,7 +311,7 @@ TestDefinition.new("ISC Interface - Redirect") do |t|
     incoming_call = as.incoming_call
 
     incoming_call.recv_request("INVITE")
-    incoming_call.send_response("302", "Moved Temporarily", "", nil, {"Contact" => callee2.uri})
+    incoming_call.send_response("302", "Moved Temporarily", headers: {"Contact" => callee2.uri})
     incoming_call.recv_request("ACK")
 
     incoming_call.end_call
@@ -383,7 +375,7 @@ TestDefinition.new("ISC Interface - B2BUA") do |t|
     outgoing_call = as.outgoing_call(callee2.uri)
     outgoing_call.setdest(sprout_outbound, recv_from_this: true)
 
-    outgoing_call.send_request("INVITE", "", {"From" => invite_data['message'].header("From")})
+    outgoing_call.send_request("INVITE", headers: {"From" => invite_data['message'].header("From")})
     outgoing_call.recv_response("100")
 
     # Get the 180 and pass it back
@@ -391,8 +383,7 @@ TestDefinition.new("ISC Interface - B2BUA") do |t|
     incoming_call.send_response("180", "Ringing")
 
     # Get the 200 OK, ACK it, and pass it back
-    outgoing_call.recv_response_and_create_dialog("200")
-    outgoing_call.new_transaction
+    outgoing_call.recv_response("200", dialog_creating: true)
     outgoing_call.send_request("ACK")
 
     incoming_call.send_response("200", "OK")
@@ -410,7 +401,6 @@ TestDefinition.new("ISC Interface - B2BUA") do |t|
     # Get the BYE, OK it, and pass it back
     incoming_call.send_response("200", "OK")
 
-    outgoing_call.new_transaction
     outgoing_call.send_request("BYE")
     outgoing_call.recv_response("200")
 
@@ -422,19 +412,17 @@ TestDefinition.new("ISC Interface - B2BUA") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("INVITE", sdp, {"Content-Type" => "application/sdp"})
+    call.send_request("INVITE", body: sdp, headers: {"Content-Type" => "application/sdp"})
     call.recv_response("100")
 
     call.recv_response("180")
 
     # Save off Contact and routeset
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     sleep 0.1
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -442,17 +430,17 @@ TestDefinition.new("ISC Interface - B2BUA") do |t|
 
   # Callee scenario - receive INVITE from B2BUA, answer it
   t.add_quaff_scenario do
-      incoming_call = callee2.incoming_call
+    incoming_call = callee2.incoming_call
 
-      invite_data = incoming_call.recv_request("INVITE")
+    invite_data = incoming_call.recv_request("INVITE")
 
-      incoming_call.send_response("180", "Ringing")
-      incoming_call.send_response("200", "OK")
-      incoming_call.recv_request("ACK")
+    incoming_call.send_response("180", "Ringing")
+    incoming_call.send_response("200", "OK")
+    incoming_call.recv_request("ACK")
 
-      incoming_call.recv_request("BYE")
-      incoming_call.send_response("200", "OK")
+    incoming_call.recv_request("BYE")
+    incoming_call.send_response("200", "OK")
 
-      incoming_call.end_call
+    incoming_call.end_call
   end
 end

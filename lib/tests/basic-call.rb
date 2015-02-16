@@ -52,13 +52,11 @@ TestDefinition.new("Basic Call - Mainline") do |t|
     ringing_barrier.wait
 
     # Save off Contact and routeset
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
     sleep 1
 
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -98,10 +96,10 @@ TestDefinition.new("Basic Call - Unknown number") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
+    call.send_request("INVITE", body: "hello world\r\n", headers: {"Content-Type" => "text/plain"})
     call.recv_response("100")
     call.recv_response("480")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
@@ -123,11 +121,11 @@ TestDefinition.new("Basic Call - Rejected by remote endpoint") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
+    call.send_request("INVITE", body: "hello world\r\n", headers: {"Content-Type" => "text/plain"})
     call.recv_response("100")
 
     call.recv_response("486")
-    call.send_request("ACK")
+    call.send_request("ACK", new_tsx: false)
     call.end_call
   end
 
@@ -158,7 +156,7 @@ TestDefinition.new("Basic Call - Messages - Pager model") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("MESSAGE", "hello world\r\n", {"Content-Type" => "text/plain"})
+    call.send_request("MESSAGE", body: "hello world\r\n", headers: {"Content-Type" => "text/plain"})
     call.recv_response("200")
     call.end_call
   end
@@ -188,23 +186,20 @@ TestDefinition.new("Basic Call - Pracks") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain", "Supported" => "100rel"})
+    call.send_request("INVITE", body: "hello world\r\n", headers: {"Content-Type" => "text/plain", "Supported" => "100rel"})
     call.recv_response("100")
 
     # For a PRACK, we create the dialog early, on the 180 response
-    ringing_msg = call.recv_response_and_create_dialog("180")
+    ringing_msg = call.recv_response("180", dialog_creating: true)
 
-    call.new_transaction
-    call.send_request("PRACK", "", {"RAck" => "#{ringing_msg.header("RSeq")} #{ringing_msg.header("CSeq")}"})
+    call.send_request("PRACK", headers: {"RAck" => "#{ringing_msg.header("RSeq")} #{ringing_msg.header("CSeq")}"})
     call.recv_response("200")
 
-    call.recv_response_and_create_dialog("200")
+    call.recv_response("200", dialog_creating: true)
 
-    call.new_transaction
     call.send_request("ACK")
 
     sleep 1
-    call.new_transaction
     call.send_request("BYE")
     call.recv_response("200")
     call.end_call
@@ -214,14 +209,13 @@ TestDefinition.new("Basic Call - Pracks") do |t|
     call2 = callee.incoming_call
     original_invite = call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
-    call2.send_response("180", "Ringing", "", nil, {"Require" => "100rel", "RSeq" => "1"})
+    call2.send_response("180", "Ringing", headers: {"Require" => "100rel", "RSeq" => "1"})
 
     call2.recv_request("PRACK")
     call2.send_response("200", "OK")
 
     # Send this 200 in the original transaction, not the PRACK transaction
-    call2.assoc_with_msg(original_invite)
-    call2.send_response("200", "OK", "hello world\r\n", nil, {"Content-Type" => "text/plain"})
+    call2.send_response("200", "OK", response_to: original_invite, body: "hello world\r\n", headers: {"Content-Type" => "text/plain"})
     call2.recv_request("ACK")
 
     call2.recv_request("BYE")

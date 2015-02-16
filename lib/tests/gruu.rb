@@ -142,8 +142,8 @@ TestDefinition.new("GRUU - Call - first endpoint GRUU as target") do |t|
     call = caller.outgoing_call(binding1.expected_pub_gruu)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain"})
     call.recv_response("200")
     call.end_call
     fail "Call was incorrectly forked to both endpoints" unless binding2.no_new_calls?
@@ -178,8 +178,8 @@ TestDefinition.new("GRUU - Call - second endpoint GRUU as target") do |t|
     call = caller.outgoing_call(binding2.expected_pub_gruu)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain"})
     call.recv_response("200")
     call.end_call
     fail "Call was incorrectly forked to both endpoints" unless binding1.no_new_calls?
@@ -214,8 +214,8 @@ TestDefinition.new("GRUU - Call - only GRUU as target") do |t|
     call = caller.outgoing_call(binding1.expected_pub_gruu)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain"})
     call.recv_response("200")
     call.end_call
     fail "Call was incorrectly forked to both endpoints" unless binding2.no_new_calls?
@@ -250,8 +250,8 @@ TestDefinition.new("GRUU - Call - AoR as target") do |t|
     call = caller.outgoing_call(binding2.sip_uri)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain"})
     call.recv_response("200")
     call.end_call
     fail "Call was not forked to both endpoints" if binding1.no_new_calls?
@@ -286,8 +286,8 @@ TestDefinition.new("GRUU - Call - unknown GRUU as target") do |t|
     call = caller.outgoing_call(binding2.sip_uri + ";gr=nonsense")
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain"})
     call.recv_response("480")
     call.end_call
   end
@@ -314,8 +314,8 @@ TestDefinition.new("GRUU - Call - unknown GRUU as target - no GRUUs assigned") d
     call = caller.outgoing_call(binding2.sip_uri + ";gr=nonsense")
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain"})
     call.recv_response("480")
     call.end_call
   end
@@ -343,9 +343,9 @@ TestDefinition.new("GRUU - Call - Reject-Contact interop") do |t|
     call = caller.outgoing_call(binding1.expected_pub_gruu)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain",
-                      "Reject-Contact" => "*;audio"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain",
+                                "Reject-Contact" => "*;audio"})
     call.recv_response("480")
     call.end_call
   end
@@ -374,9 +374,9 @@ TestDefinition.new("GRUU - Call - Accept-Contact interop") do |t|
     call = caller.outgoing_call(binding1.expected_pub_gruu)
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain",
-                        "Accept-Contact" => "*;audio"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain",
+                                "Accept-Contact" => "*;audio"})
     call.recv_response("200")
     call.end_call
     fail "Call was incorrectly forked to both endpoints" unless binding2.no_new_calls?
@@ -411,8 +411,8 @@ TestDefinition.new("GRUU - Call - AoR with other param as target") do |t|
     call = caller.outgoing_call(binding2.sip_uri + ";arbitrary-param=\"an;gr=y\"")
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain"})
     call.recv_response("200")
     call.end_call
     fail "Call was not forked to both endpoints" if binding1.no_new_calls?
@@ -447,8 +447,8 @@ TestDefinition.new("GRUU - Call - GRUU with other param as target") do |t|
     call = caller.outgoing_call(binding2.expected_pub_gruu + ";meaningless-param")
 
     call.send_request("MESSAGE",
-                      "hello world\r\n",
-                      {"Content-Type" => "text/plain"})
+                      body: "hello world\r\n",
+                      headers: {"Content-Type" => "text/plain"})
     call.recv_response("200")
     call.end_call
     fail "Call was incorrectly forked to both endpoints" unless binding1.no_new_calls?

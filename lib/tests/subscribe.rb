@@ -55,7 +55,7 @@ TestDefinition.new("SUBSCRIBE - reg-event") do |t|
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
 
-    call.send_request("SUBSCRIBE", "", {"Event" => "reg"})
+    call.send_request("SUBSCRIBE", headers: {"Event" => "reg"})
 
     # 200 and NOTIFY can come in any order, so expect either of them, twice
     notify1 = call.recv_200_and_notify
@@ -67,8 +67,7 @@ TestDefinition.new("SUBSCRIBE - reg-event") do |t|
     notify2 = call.recv_request("NOTIFY")
     call.send_response("200", "OK")
 
-    call.update_branch
-    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "From" => notify1.headers['To'], "To" => notify1.headers['From'], "Expires" => 0})
+    call.send_request("SUBSCRIBE", headers: {"Event" => "reg", "Expires" => 0})
 
     notify3 = call.recv_200_and_notify
 
@@ -99,7 +98,7 @@ TestDefinition.new("SUBSCRIBE - reg-event with a GRUU") do |t|
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
 
-    call.send_request("SUBSCRIBE", "", {"Event" => "reg"})
+    call.send_request("SUBSCRIBE", headers: {"Event" => "reg"})
 
     # 200 and NOTIFY can come in any order, so expect either of them, twice
     notify = call.recv_200_and_notify
