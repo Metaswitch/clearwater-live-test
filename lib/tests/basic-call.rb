@@ -32,6 +32,14 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
+# Converts a URI like sip:1234@example.com to tel:1234. Doesn't
+# support parameters or non-numeric characters (e.g.
+# "sip:+1234;npdi@example.com" won't work).
+def sip_to_tel(uri)
+  uri =~ /sip:(\d+)@.+/
+  "tel:#{$1}"
+end
+
 TestDefinition.new("Basic Call - Mainline") do |t|
   caller = t.add_endpoint
   callee = t.add_endpoint
@@ -76,6 +84,47 @@ TestDefinition.new("Basic Call - Mainline") do |t|
     call2.recv_request("ACK")
 
     call2.recv_request("BYE")
+    call2.send_response("200", "OK")
+    call2.end_call
+  end
+
+  t.add_quaff_cleanup do
+    caller.unregister
+    callee.unregister
+  end
+
+end
+
+TestDefinition.new("Basic Call - Tel URIs") do |t|
+  caller = t.add_endpoint
+  callee = t.add_endpoint
+
+  ringing_barrier = Barrier.new(2)
+
+  t.add_quaff_setup do
+    caller.register
+    callee.register
+  end
+
+  t.add_quaff_scenario do
+
+    # This tests that for a subscriber like sip:1234@example.com, a
+    # call to tel:1234 also reaches them. If this assumption is not
+    # true (e.g. due to unusual ENUM rewriting), this test will fail.
+    
+    tel = sip_to_tel(callee.uri)
+    call = caller.outgoing_call(tel)
+
+    call.send_request("MESSAGE", "hello world\r\n",
+                      {"Content-Type" => "text/plain"})
+    call.recv_response("200")
+    call.end_call
+  end
+
+  t.add_quaff_scenario do
+    call2 = callee.incoming_call
+
+    call2.recv_request("MESSAGE")
     call2.send_response("200", "OK")
     call2.end_call
   end

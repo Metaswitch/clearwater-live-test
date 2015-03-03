@@ -284,6 +284,11 @@ class TestDefinition
     raise SkipThisTest.new "No hostname given", "Call with HOSTNAME=<publicly accessible hostname/IP of this machine>" unless ENV['HOSTNAME']
   end
 
+  def skip_unless_offnet_tel
+    raise SkipThisTest.new "No off-net number given",
+                           "Call with OFF_NET_TEL=<a number set up in ENUM/BGCF to route to port 5072 on this machine>" unless ENV['OFF_NET_TEL']
+  end
+
   def skip_unless_ellis_api_key
     raise SkipThisTest.new "No Ellis API key given", "Call with ELLIS_API_KEY=<key>" unless ENV['ELLIS_API_KEY']
   end
