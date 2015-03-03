@@ -54,6 +54,7 @@ There are various modifiers you can use to determine which subset of tests you w
  - `EXCLUDE_TESTS="test1 (TCP),test2 (UDP)"` - a comma-separated list of tests to ignore. Useful for working around known bugs with tests in particular environments (e.g. skipping the B2BUA test in cases where the EC2 security group settings won't allow it)
  - `ELLIS_USER=<email>` - to override the default email used for Ellis (live.tests@example.com). Useful to allow multiple live test instances to run simultaneously without deleting each other's lines.
  - `SNMP=Y` - to verify the SNMP statistics produced in the test run.
+ - `OFF_NET_TEL=<number>` - an off-net number that should be routed back to this machine, for testing BGCF functionality. See [the BGCF Testing doc](BGCF_Testing.md) for more detail.
 
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
 
@@ -114,6 +115,7 @@ There are different `skip` functions that can be included in a test. These contr
  - `skip_unless_<application server>`: Application Server test, requires that a hostname for the particular server is passed to rake as (for example) `GEMINI=...`.
  - `skip_if_udp`: Used to mark a test that's only valid when using TCP
  - `skip_unless_ellis_api_key`: Test that requires the Ellis API key, for example a test that creates specific endpoints
+ - `skip_unless_offnet_tel`: Test that requires an off-net number (specified by `OFF_NET_TEL`) to be routed back to this machine.
  - `skip`: Used to mark out currently broken tests, tests should not be left in this state for longer than necessary.
 
 
