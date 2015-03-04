@@ -37,6 +37,8 @@ GEMINI_MT_SIP_URI="mobile-twinned@#{ENV['GEMINI']}:5054;transport=TCP"
 TWIN_PREFIX=";twin-prefix=123"
 TERM_REG = 1
 
+EXPECTED_MOBILE_ACCEPT_CONTACT = "*;g.3gpp.ics;explicit;require"
+
 # Test INVITE where the VoIP device answers so the mobile device
 # receives a CANCEL
 TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
@@ -47,6 +49,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
@@ -91,7 +94,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
     call_voip = callee_voip.incoming_call
 
     invite = call_voip.recv_request("INVITE")
-    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.phone"
+    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
@@ -111,7 +114,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
     call_mobile = callee_mobile.incoming_call
 
     invite = call_mobile.recv_request("INVITE")
-    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? "*;g.3gpp.ics"
+    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? EXPECTED_MOBILE_ACCEPT_CONTACT
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
@@ -138,6 +141,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
@@ -183,7 +187,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
     call_voip = callee_voip.incoming_call
 
     invite = call_voip.recv_request("INVITE")
-    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.phone"
+    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
@@ -203,7 +207,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
     call_mobile = callee_mobile.incoming_call
 
     invite = call_mobile.recv_request("INVITE")
-    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? "*;g.3gpp.ics"
+    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? EXPECTED_MOBILE_ACCEPT_CONTACT
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
@@ -230,6 +234,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   ringing_barrier = Barrier.new(3)
   end_call_barrier = Barrier.new(2)
@@ -276,7 +281,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
     call_voip = callee_voip.incoming_call
 
     invite = call_voip.recv_request("INVITE")
-    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.phone"
+    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
@@ -290,7 +295,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
     call_mobile = callee_mobile.incoming_call
 
     invite = call_mobile.recv_request("INVITE")
-    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? "*;g.3gpp.ics"
+    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? EXPECTED_MOBILE_ACCEPT_CONTACT
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
@@ -318,6 +323,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   ringing_barrier = Barrier.new(3)
   end_call_barrier = Barrier.new(2)
@@ -363,7 +369,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
     call_voip = callee_voip.incoming_call
 
     invite = call_voip.recv_request("INVITE")
-    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.phone"
+    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
@@ -384,7 +390,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
     call_mobile = callee_mobile.incoming_call
 
     invite = call_mobile.recv_request("INVITE")
-    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? "*;g.3gpp.ics"
+    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? EXPECTED_MOBILE_ACCEPT_CONTACT
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
@@ -412,12 +418,13 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
 
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   t.add_quaff_setup do
     caller.register
     callee_voip.register
 
-    callee_voip_phone.add_contact_param "+sip.phone", true
+    callee_voip_phone.add_contact_param "+sip.with-twin", true
     ok = callee_voip_phone.register
     fail "200 OK Contact header did not contain 2 bindings" unless ok.headers["Contact"].length == 2
 
@@ -458,7 +465,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
     call_voip = callee_voip.incoming_call
 
     invite = call_voip.recv_request("INVITE")
-    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.phone"
+    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
@@ -473,7 +480,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
     call_voip_phone = callee_voip_phone.incoming_call
 
     invite_phone = call_voip_phone.recv_request("INVITE")
-    fail "Call for VoIP device does not include the Accept-Contact header" unless invite_phone.all_headers("Accept-Contact").include? "*;+sip.phone;explicit;require"
+    fail "Call for VoIP device does not include the Accept-Contact header" unless invite_phone.all_headers("Accept-Contact").include? "*;+sip.with-twin;explicit;require"
 
     call_voip_phone.send_response("100", "Trying")
     call_voip_phone.send_response("180", "Ringing")
@@ -491,7 +498,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
     call_mobile = callee_mobile.incoming_call
 
     invite = call_mobile.recv_request("INVITE")
-    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? "*;g.3gpp.ics"
+    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? EXPECTED_MOBILE_ACCEPT_CONTACT
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
@@ -512,6 +519,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   ringing_barrier = Barrier.new(3)
 
@@ -549,7 +557,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |
     call_voip = callee_voip.incoming_call
 
     invite = call_voip.recv_request("INVITE")
-    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.phone"
+    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
@@ -564,7 +572,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |
     call_mobile = callee_mobile.incoming_call
 
     invite = call_mobile.recv_request("INVITE")
-    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? "*;g.3gpp.ics"
+    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? EXPECTED_MOBILE_ACCEPT_CONTACT
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
@@ -586,6 +594,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   ringing_barrier = Barrier.new(3)
 
@@ -623,7 +632,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
     call_voip = callee_voip.incoming_call
 
     invite = call_voip.recv_request("INVITE")
-    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.phone"
+    fail "Call for VoIP device does not include the Reject-Contact header" unless invite.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
@@ -638,7 +647,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
     call_mobile = callee_mobile.incoming_call
 
     invite = call_mobile.recv_request("INVITE")
-    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? "*;g.3gpp.ics"
+    fail "Call for native device does not include the Accept-Contact header" unless invite.all_headers("Accept-Contact").include? EXPECTED_MOBILE_ACCEPT_CONTACT
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
@@ -659,6 +668,7 @@ TestDefinition.new("Gemini - INVITE - Successful call with GR") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "INVITE"}]
@@ -726,6 +736,7 @@ TestDefinition.new("Gemini - INVITE - Failed call with GR") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "INVITE"}]
@@ -780,6 +791,7 @@ TestDefinition.new("Gemini - INVITE - Successful call with Accept-Contact") do |
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "INVITE"}]
@@ -898,6 +910,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "SUBSCRIBE"}]
@@ -929,7 +942,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
 
     subscribe = call_voip.recv_request("SUBSCRIBE")
     fail "Subscribe for VoIP device has an Accept-Contact header" unless subscribe.headers["Accept-Contact"] == nil
-    fail "Subscribe for VoIP device does not include the Reject-Contact header" unless subscribe.all_headers("Reject-Contact").include? "*;+sip.phone"
+    fail "Subscribe for VoIP device does not include the Reject-Contact header" unless subscribe.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_voip.send_response("500", "Server Error")
     call_voip.end_call
@@ -939,8 +952,8 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
     call_mobile = callee_mobile.incoming_call
 
     subscribe = call_mobile.recv_request("SUBSCRIBE")
-    fail "Subscribe for native device does not include the Accept-Contact header" unless subscribe.all_headers("Accept-Contact").include? "*;g.3gpp.ics"
-    fail "Subscribe for VoIP device has a Reject-Contact header" unless subscribe.headers["Reject-Contact"] == nil
+    fail "Subscribe for native device does not include the Accept-Contact header" unless subscribe.all_headers("Accept-Contact").include? EXPECTED_MOBILE_ACCEPT_CONTACT
+    fail "Subscribe for native device does not include the Reject-Contact header" unless subscribe.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_mobile.send_response("200", "OK")
 
@@ -960,6 +973,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Joint 408") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
+  callee_mobile.add_contact_param 'g.3gpp.ics', true
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "SUBSCRIBE"}]
@@ -989,7 +1003,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Joint 408") do |t|
 
     subscribe = call_voip.recv_request("SUBSCRIBE")
     fail "Subscribe for VoIP device has an Accept-Contact header" unless subscribe.headers["Accept-Contact"] == nil
-    fail "Subscribe for VoIP device does not include the Reject-Contact header" unless subscribe.all_headers("Reject-Contact").include? "*;+sip.phone"
+    fail "Subscribe for VoIP device does not include the Reject-Contact header" unless subscribe.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_voip.send_response("408", "Request Timeout")
     call_voip.end_call
@@ -999,8 +1013,8 @@ TestDefinition.new("Gemini - SUBSCRIBE - Joint 408") do |t|
     call_mobile = callee_mobile.incoming_call
 
     subscribe = call_mobile.recv_request("SUBSCRIBE")
-    fail "Subscribe for native device does not include the Accept-Contact header" unless subscribe.all_headers("Accept-Contact").include? "*;g.3gpp.ics"
-    fail "Subscribe for VoIP device has a Reject-Contact header" unless subscribe.headers["Reject-Contact"] == nil
+    fail "Subscribe for native device does not include the Accept-Contact header" unless subscribe.all_headers("Accept-Contact").include? EXPECTED_MOBILE_ACCEPT_CONTACT
+    fail "Subscribe for native device does not include the Reject-Contact header" unless subscribe.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_mobile.send_response("408", "Request Timeout")
     call_mobile.end_call
