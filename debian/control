@@ -1,0 +1,15 @@
+Source: clearwater-live-verification
+Section: network
+Priority: optional
+# This field must stay as 'Project Clearwater Maintainers', as
+# clearwater-infrastructure explicitly checks for packages of this name when
+# updating
+Maintainer: Project Clearwater Maintainers <maintainers@projectclearwater.org>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.2
+Homepage: http://projectclearwater.org/
+
+Package: clearwater-live-verification
+Architecture: any
+Depends: ruby1.9.1, ruby1.9.1-dev, git, build-essential, clearwater-infrastructure, clearwater-snmpd, clearwater-snmp-handler-alarm
+Description: A live verification process for testing deployments of Project Clearwater.
