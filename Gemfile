@@ -14,6 +14,7 @@ gem 'barrier'
 gem 'httpi'
 gem 'httpclient'
 gem 'forwarder'
+gem 'daemons'
 
 group :development do
   gem 'pry'
