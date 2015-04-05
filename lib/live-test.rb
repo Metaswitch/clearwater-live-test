@@ -35,7 +35,6 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 require 'rubygems'
-require 'require_all'
 require 'rest-client'
 require 'joker'
 require_relative 'test-definition'
@@ -44,7 +43,7 @@ require_relative 'ellis'
 
 def run_tests(domain, glob="*")
   # Load and run all the tests
-  require_all 'lib/tests'
+  Dir[File.join(File.dirname(__FILE__), "tests", "*.rb")].each { |f| require f }
   TestDefinition.run_all(domain, Wildcard[glob, true])
 
   # Cleanup leaked numbers.  Ignore (but print, using the magic exception
