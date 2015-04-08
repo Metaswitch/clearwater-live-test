@@ -178,7 +178,7 @@ private
     rescue StandardError
       # This is most likely caused by the live test user not existing.  Create it now and retry.
       RestClient.post(ellis_url("accounts"),
-                      username: "clearwater-live-test user",
+                      username: account_username,
                       password: account_password,
                       full_name: "clearwater-live-test user",
                       email: account_username,
