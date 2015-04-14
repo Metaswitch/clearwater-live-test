@@ -14,6 +14,7 @@ gem 'httpi'
 gem 'httpclient'
 gem 'forwarder'
 gem 'daemons'
+gem 'ffi-rzmq'
 
 group :development do
   gem 'pry'

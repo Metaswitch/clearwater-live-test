@@ -22,6 +22,11 @@ GEM
     erubis (2.7.0)
     facter (2.4.3)
       CFPropertyList (~> 2.2.6)
+    ffi (1.9.8)
+    ffi-rzmq (2.0.4)
+      ffi-rzmq-core (>= 1.0.1)
+    ffi-rzmq-core (1.0.3)
+      ffi (~> 1.9)
     forwarder (0.1.1)
     http-cookie (1.0.2)
       domain_name (~> 0.5)
@@ -67,6 +72,7 @@ DEPENDENCIES
   daemons
   erubis
   facter
+  ffi-rzmq
   forwarder
   httpclient
   httpi
