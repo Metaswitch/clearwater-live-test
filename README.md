@@ -1,12 +1,27 @@
-Clearwater Live Test Framework
-==============================
+# Clearwater Live Test Framework
 
 This framework allows scripted testing of a Clearwater deployment to be used as a system-wide test of a fix/feature.
 
 Project Clearwater is an open-source IMS core, developed by [Metaswitch Networks](http://www.metaswitch.com) and released under the [GNU GPLv3](http://www.projectclearwater.org/download/license/). You can find more information about it on [our website](http://www.projectclearwater.org/) or [our wiki](https://github.com/Metaswitch/clearwater-docs/wiki).
 
-Pre-Requisites
---------------
+## Usage Options
+
+The `clearwater-live-test` framework can be run in two modes:
+
+ * as a scriptable manual regression suite, useful for checking that a deployment is working correctly and used by the Project Clearwater team to validate that newly added function works end-to-end
+ * as a continuous verification VNF which can be installed alongside a Clearwater deployment to provide continuous, service-level verification of the deployment's basic functionality
+
+We recommend you use the manual testing regression suite when ever creating a new deployment to confirm that the deployment is correctly installed and configured.  We recommend that the verification suite is installed alongside production deployments to help with early detection of any service issues that arise.
+
+## Framework Structure
+
+Tests in the framework are essentially short Ruby programs. These programs use the Quaff library to talk over SIP to Clearwater nodes for calls, and the rest-client library to communicate with Ellis for provisioning.
+
+Any Quaff error logs are saved off in the event of a failure and are very useful for tracking down issues/bugs in the scripts.
+
+The test framework is very punctilious about cleaning up after itself, so there should be no issue with running the tests in any order or running the framework multiple times on one deployment (even at the same time!).
+
+## Pre-Requisites
 
 The test framework requires Ruby 1.9.3 and bundler to be installed.
 
@@ -17,17 +32,13 @@ The test framework requires Ruby 1.9.3 and bundler to be installed.
     rvm install 1.9.3
     rvm use 1.9.3
 
-Installation
-------------
-
-To install the framework, clone the repository:
+To prepare a machine to run the tests manually, clone the repository:
 
     git clone git@github.com:Metaswitch/clearwater-live-test.git
 
 Then type `bundle install` inside the newly-created `clearwater-live-test` folder to install the required gems.
 
-Running The Tests
------------------
+### Running the Tests Manually
 
 To run the tests against a deployment, use:
 
@@ -60,17 +71,23 @@ For example, to run all the call barring tests (including the international numb
 
     rake test[test.cw-ngv.com] TESTS="Call Barring*" PSTN=true
 
-Framework Structure
----------------
+### Building the Continuous Verification Package
 
-Tests in the framework are essentially short Ruby programs. These programs use the Quaff library to talk over SIP to Clearwater nodes for calls, and the rest-client library to communicate with Ellis for provisioning.
+The continuous verification tool is packaged as a debian package (build from the same codebase as the manual test suite) ready to be installed alongside your live deployment.
 
-Any Quaff error logs are saved off in the event of a failure and are very useful for tracking down issues/bugs in the scripts.
+    ./build_deb.sh
 
-The test framework is very punctilious about cleaning up after itself, so there should be no issue with running the tests in any order or running the framework multiple times on one deployment (even at the same time!).
+Which will build a `*.deb` package in the current folder.  See `build-infra/cw-deb.mk` for more options to this script (e.g. automatically publish the package to a repository server).
 
-Writing A New Test
-------------------
+### Using the Continuous Verification Tool
+
+The continuous verification tool uses the same configuration file as the other Clearwater nodes, `/etc/clearwater/config`.  To install the verification VNF, prepare an Ubuntu 12.04 or 14.04 machine as if to install a Clearwater node in the deployment but, at the point you would install sprout/homer/etc. instead install the package you build in the previous step (`clearwater-live-verification`).  This will install and start the verification service.
+
+The verification service produces SNMP alarms to indicate the status of the deployment.  See [our public docs](https://clearwater.readthedocs.org/en/latest/SNMP_Alarms/index.html) for how to configure Clearwater to report these alarms.
+
+The verification service runs a very cut-down collection of tests, focussing on basic functionality tests, this means that, if the verification service reports that the deployment is ok, then subscribers are capable of registering and making calls.
+
+## Writing A New Test
 
 The test definitions are found in `lib/tests/*.rb` and should be pretty self-explanatory.  A basic test structure is as follows:
 
@@ -118,9 +135,7 @@ There are different `skip` functions that can be included in a test. These contr
  - `skip_unless_offnet_tel`: Test that requires an off-net number (specified by `OFF_NET_TEL`) to be routed back to this machine.
  - `skip`: Used to mark out currently broken tests, tests should not be left in this state for longer than necessary.
 
-
-Creating Endpoints
-------------------
+### Creating Endpoints
 
 As you saw above, a test can create an endpoint in ellis with `test.add_endpoint`.  It may need an endpoint that is not a Clearwater number (for example for off-net calling), in which case `add_fake_endpoint(<DN>, <domain>)` may be used instead.
 
@@ -132,33 +147,28 @@ To create a new public identity for a line, use the `test.add_quaff_public_ident
 
 When using Clearwater endpoints, a common thing to need to do is to (un)register the endpoint and so `ep.register` and `ep.unregister` have been supplied that return the scenario entries needed to do this (see _Basic Call - Mainline_ for an example of how this is used).
 
-Modifying Simservs
-------------------
+### Modifying Simservs
 
 To change a simservs document for a Clearwater endpoint, use `ep.set_simservs` which takes a hash of options for the document.  See `templates/simservs.xml.erb` for how the options are used and see `EllisEndpoint::default_simservs` for the options that will be used if not specified in your call to `set_simservs`.
 
-Modifying iFCs
-------------------
+### Modifying iFCs
 
 To change the iFC document for a Clearwater endpoint, use `ep.set_ifcs` which takes a hash of options for the document.  See `templates/ifcs.xml.erb` for how the options are used and see `EllisEndpoint::default_ifcs` for the options that will be used if not specified in your call to `set_ifcs`.
 
-Sending Messages
-----------------
+### Sending Messages
 
 To send a SIP message, use the `ep.send_request(<method>)` or `ep.send_response(<status code>, <reason phrase>)` commands. These are commands from the Quaff Ruby library for SIP, documented at https://github.com/rkday/quaff.
 
-Receiving Messages
-------------------
+### Receiving Messages
 
 To receive a SIP message, simple add `ep.recv_response(<status code>)` or `ep.recv_request(<method>)` to the scenario.
 
-Pausing
--------
+### Pausing
 
 Pauses are expressed using standard Ruby syntax - `sleep 5`. In general, the live tests are simply blocks of Ruby code using a SIP library, so anything that is possible in Ruby is possible within a testcase.
 
-Acknowledgements
-----------------
+## Acknowledgements
+
 The Clearwater Live Test Framework depends on the following files from the [sipp project](http://sipp.sourceforge.net/).  These are distributed under the [GPL](http://sipp.sourceforge.net/doc/license.html).
 
 *   g711a.cap - pcap file for test announcement
