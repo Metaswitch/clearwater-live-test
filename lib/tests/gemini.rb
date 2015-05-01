@@ -37,7 +37,7 @@ GEMINI_MT_SIP_URI="mobile-twinned@#{ENV['GEMINI']}:5054;transport=TCP"
 TWIN_PREFIX=";twin-prefix=123"
 TERM_REG = 1
 
-EXPECTED_MOBILE_ACCEPT_CONTACT = "*;g.3gpp.ics;explicit;require"
+EXPECTED_MOBILE_ACCEPT_CONTACT = "*;+g.3gpp.ics=\"server,principal\";explicit;require"
 
 # Test INVITE where the VoIP device answers so the mobile device
 # receives a CANCEL
@@ -49,7 +49,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device answers") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
@@ -141,7 +141,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device answers") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG}]
@@ -234,7 +234,7 @@ TestDefinition.new("Gemini - INVITE - VoIP device rejects") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   ringing_barrier = Barrier.new(3)
   end_call_barrier = Barrier.new(2)
@@ -323,7 +323,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   ringing_barrier = Barrier.new(3)
   end_call_barrier = Barrier.new(2)
@@ -418,7 +418,7 @@ TestDefinition.new("Gemini - INVITE - Mobile device rejects with a 480") do |t|
 
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   t.add_quaff_setup do
     caller.register
@@ -519,7 +519,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose mobile response") do |
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   ringing_barrier = Barrier.new(3)
 
@@ -594,7 +594,7 @@ TestDefinition.new("Gemini - INVITE - Both reject, choose VoIP response") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   ringing_barrier = Barrier.new(3)
 
@@ -668,7 +668,7 @@ TestDefinition.new("Gemini - INVITE - Successful call with GR") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "INVITE"}]
@@ -736,7 +736,7 @@ TestDefinition.new("Gemini - INVITE - Failed call with GR") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "INVITE"}]
@@ -791,7 +791,7 @@ TestDefinition.new("Gemini - INVITE - Successful call with Accept-Contact") do |
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "INVITE"}]
@@ -813,7 +813,7 @@ TestDefinition.new("Gemini - INVITE - Successful call with Accept-Contact") do |
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("INVITE", "", {"Accept-Contact" => "*;g.3gpp.ics"})
+    call.send_request("INVITE", "", {"Accept-Contact" => "*;+g.3gpp.ics=\"server,principal\""})
 
     call.recv_response("100")
     call.recv_response("180")
@@ -877,7 +877,7 @@ TestDefinition.new("Gemini - INVITE - Failed call with Accept-Contact") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
-    call.send_request("INVITE", "", {"Accept-Contact" => "*;g.3gpp.ics"})
+    call.send_request("INVITE", "", {"Accept-Contact" => "*;+g.3gpp.ics=\"server,principal\""})
     call.recv_response("100")
     call.recv_response("180")
     call.recv_response("486")
@@ -910,7 +910,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "SUBSCRIBE"}]
@@ -973,7 +973,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Joint 408") do |t|
   callee_voip = t.add_endpoint
   callee_mobile_id = "123" + callee_voip.username
   callee_mobile = t.add_specific_endpoint callee_mobile_id
-  callee_mobile.add_contact_param 'g.3gpp.ics', true
+  callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "SUBSCRIBE"}]
