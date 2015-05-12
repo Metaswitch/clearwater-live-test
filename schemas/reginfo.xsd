@@ -6,7 +6,7 @@ xmlns:xs="http://www.w3.org/2001/XMLSchema"
 elementFormDefault="qualified" attributeFormDefault="unqualified">
   <!-- This import brings in the XML language attribute xml:lang-->
   <xs:import namespace="http://www.w3.org/XML/1998/namespace"
-schemaLocation="http://www.w3.org/2001/03/xml.xsd"/>
+schemaLocation="schemas/xml.xsd"/>
   <xs:element name="reginfo">
    <xs:complexType>
     <xs:sequence>
