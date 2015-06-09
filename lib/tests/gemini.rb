@@ -927,12 +927,18 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
     callee_mobile.unregister
   end
 
+  # Quaff doesn't cope well with messages crossing so we use a barrier to make sure the SUBSCRIBE-200 and NOTIFY
+  # do not get re-ordered.
+  subscribe_complete_barrier = Barrier.new(2)
+
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_voip.uri)
 
     call.send_request("SUBSCRIBE", "", {"Event" => "arbitrary"})
+    call.recv_response("200", "OK")
+    subscribe_complete_barrier.wait
 
-    call.recv_200_and_notify
+    call.recv_request("NOTIFY")
     call.send_response("200", "OK")
     call.end_call
   end
@@ -956,6 +962,7 @@ TestDefinition.new("Gemini - SUBSCRIBE - Mobile Notifies") do |t|
     fail "Subscribe for native device does not include the Reject-Contact header" unless subscribe.all_headers("Reject-Contact").include? "*;+sip.with-twin"
 
     call_mobile.send_response("200", "OK")
+    subscribe_complete_barrier.wait
 
     call_mobile.new_transaction
     call_mobile.send_request("NOTIFY")
