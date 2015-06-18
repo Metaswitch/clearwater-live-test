@@ -77,7 +77,10 @@ case "$1" in
     configure)
         setup_logging
 
+        # The standard Ubuntu ruby package includes out-dated gems, and we need
+        # the latest.  Update them.
         REALLY_GEM_UPDATE_SYSTEM=true gem update --system
+
         pushd /usr/share/clearwater/$NAME
         pushd vendor/cache
         gem install bundler*.gem
