@@ -11,7 +11,7 @@ The `clearwater-live-test` framework can be run in two modes:
  * as a scriptable manual regression suite, useful for checking that a deployment is working correctly and used by the Project Clearwater team to validate that newly added function works end-to-end
  * as a continuous verification VNF which can be installed alongside a Clearwater deployment to provide continuous, service-level verification of the deployment's basic functionality
 
-We recommend you use the manual testing regression suite when ever creating a new deployment to confirm that the deployment is correctly installed and configured.  We recommend that the verification suite is installed alongside production deployments to help with early detection of any service issues that arise.
+We recommend using the manual testing regression suite when creating a new deployment to confirm that the deployment is correctly installed and configured. It may also be useful on an ongoing basis to help with early detection of any service issues that arise.
 
 ## Framework Structure
 
@@ -73,19 +73,19 @@ For example, to run all the call barring tests (including the international numb
 
 ### Building the Continuous Verification Package
 
-The continuous verification tool is packaged as a debian package (build from the same codebase as the manual test suite) ready to be installed alongside your live deployment.
+The continuous verification tool is packaged as a Debian package (built from the same codebase as the manual test suite) ready to be installed alongside your live deployment.
 
-    ./build_deb.sh
+    make deb
 
 Which will build a `*.deb` package in the current folder.  See `build-infra/cw-deb.mk` for more options to this script (e.g. automatically publish the package to a repository server).
 
 ### Using the Continuous Verification Tool
 
-The continuous verification tool uses the same configuration file as the other Clearwater nodes, `/etc/clearwater/config`.  To install the verification VNF, prepare an Ubuntu 12.04 or 14.04 machine as if to install a Clearwater node in the deployment but, at the point you would install sprout/homer/etc. instead install the package you build in the previous step (`clearwater-live-verification`).  This will install and start the verification service.
+The continuous verification tool uses the same configuration file as the other Clearwater nodes, `/etc/clearwater/config`.  To install the verification VNF, prepare an Ubuntu 12.04 or 14.04 machine as if to install a Clearwater node in the deployment but, at the point you would install sprout/homer/etc. instead install the `clearwater-live-verification` package, either from the public Project Clearwater repository server or from a private build as shown above.  This will install and start the verification service.  Note that the installation process requires Internet access.
 
 The verification service produces SNMP alarms to indicate the status of the deployment.  See [our public docs](https://clearwater.readthedocs.org/en/latest/SNMP_Alarms/index.html) for how to configure Clearwater to report these alarms.
 
-The verification service runs a very cut-down collection of tests, focussing on basic functionality tests, this means that, if the verification service reports that the deployment is ok, then subscribers are capable of registering and making calls.
+The verification service runs a very cut-down collection of tests, focussing on basic functionality tests. This means that, if the verification service reports that the deployment is OK, then subscribers are capable of registering and making calls.
 
 ## Writing A New Test
 

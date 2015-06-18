@@ -7,6 +7,10 @@ require 'syslog'
 require_relative './live-test'
 
 def source(file, vars)
+  # Replace the specified variables in our environment with those read from file.
+  # Do this by sourcing the file in bash, exporting the variables and then printing the
+  # environment back out.  Then read the printed-out environment back in to this Ruby
+  # process.
   ENV.replace(eval(`/bin/bash -c 'source #{file} && export #{vars.join " "} && ruby -e "p ENV"'`))
 end
 
@@ -41,7 +45,7 @@ Daemons.run_proc("clearwater-live-verification",
 
   loop do
 
-    # Sort out the appropriate ENV variables from clearwater config.
+    # Refresh the important environment variables from /etc/clearwater/config.
     source("/etc/clearwater/config", ["home_domain", "ellis_address", "pcscf_address", "signup_key"])
     if ENV['ellis_hostname'] then
       ENV['ELLIS'] = ENV['ellis_hostname']
