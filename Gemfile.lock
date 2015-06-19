@@ -1,68 +1,78 @@
 GIT
-  remote: https://github.com/karottenreibe/joker
-  revision: a7d44e571e67d62cb097689d5a687804e2ddaae4
+  remote: https://github.com/bossmc/joker.git
+  revision: 97ac2b5738b4964a446eec7939859b051d73d839
+  branch: use-extension-task
   specs:
-    joker (1.0.0)
-      jeweler
-      rake-compiler
-      rake-tester
+    joker (1.1.0)
+      bacon (~> 1)
+      rake (~> 10)
+      rake-compiler (~> 0)
 
 GEM
   remote: https://rubygems.org/
   specs:
     CFPropertyList (2.2.8)
     abnf-parsing (0.2.2)
-    barrier (1.0.0)
-    coderay (1.0.9)
+    bacon (1.2.0)
+    barrier (1.0.2)
+    coderay (1.1.0)
+    daemons (1.2.2)
+    domain_name (0.5.23)
+      unf (>= 0.0.5, < 1.0.0)
     erubis (2.7.0)
-    facter (2.2.0)
+    facter (2.4.3)
       CFPropertyList (~> 2.2.6)
+    ffi (1.9.8)
+    ffi-rzmq (2.0.4)
+      ffi-rzmq-core (>= 1.0.1)
+    ffi-rzmq-core (1.0.3)
+      ffi (~> 1.9)
     forwarder (0.1.1)
-    git (1.2.5)
-    httpclient (2.4.0)
-    httpi (2.2.5)
+    http-cookie (1.0.2)
+      domain_name (~> 0.5)
+    httpclient (2.6.0.1)
+    httpi (2.4.0)
       rack
-    jeweler (1.8.4)
-      bundler (~> 1.0)
-      git (>= 1.2.5)
-      rake
-      rdoc
-    json (1.7.7)
-    method_source (0.8.1)
+    method_source (0.8.2)
     milenage (1.1.1)
-    mime-types (1.21)
-    mini_portile (0.6.0)
-    nokogiri (1.6.3.1)
-      mini_portile (= 0.6.0)
-    pry (0.9.12)
-      coderay (~> 1.0.5)
-      method_source (~> 0.8)
+    mime-types (2.4.3)
+    mini_portile (0.6.2)
+    netrc (0.10.3)
+    nokogiri (1.6.6.2)
+      mini_portile (~> 0.6.0)
+    pry (0.10.1)
+      coderay (~> 1.1.0)
+      method_source (~> 0.8.1)
       slop (~> 3.4)
     quaff (0.7.2)
       abnf-parsing (>= 0.2.0)
       milenage (>= 0.1.0)
       system-getifaddrs (>= 0.2.1)
-    rack (1.5.2)
-    rake (10.0.3)
-    rake-compiler (0.8.3)
+    rack (1.6.0)
+    rake (10.4.2)
+    rake-compiler (0.9.5)
       rake
-    rake-tester (0.0.1)
-    rdoc (4.0.0)
-      json (~> 1.4)
-    require_all (1.2.1)
-    rest-client (1.6.7)
-      mime-types (>= 1.16)
-    slop (3.4.3)
-    snmp (1.1.1)
+    rest-client (1.8.0)
+      http-cookie (>= 1.0.2, < 2.0)
+      mime-types (>= 1.16, < 3.0)
+      netrc (~> 0.7)
+    slop (3.6.0)
+    snmp (1.2.0)
     system-getifaddrs (0.2.1)
+    unf (0.1.4)
+      unf_ext
+    unf_ext (0.0.6)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
   barrier
+  bundler
+  daemons
   erubis
   facter
+  ffi-rzmq
   forwarder
   httpclient
   httpi
@@ -71,6 +81,5 @@ DEPENDENCIES
   pry
   quaff
   rake
-  require_all
   rest-client
   snmp
