@@ -43,7 +43,7 @@ require_relative 'ellis'
 
 def run_tests(domain, glob="*")
   # Load and run all the tests
-  Dir[File.join(File.dirname(__FILE__), "tests", "*.rb")].each { |f| require f }
+  Dir[File.join(File.dirname(__FILE__), "tests", "*.rb")].sort.each { |f| require f }
   TestDefinition.run_all(domain, Wildcard[glob, true])
 
   # Cleanup leaked numbers.  Ignore (but print, using the magic exception
