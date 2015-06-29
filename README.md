@@ -25,12 +25,19 @@ The test framework is very punctilious about cleaning up after itself, so there 
 
 The test framework requires Ruby 1.9.3 and bundler to be installed.
 
-    sudo apt-get install build-essential git --yes
+    sudo apt-get install build-essential bundler git --yes
     curl -L https://get.rvm.io | bash -s stable
+    
+This step may fail due to missing GPG signatures. If this happens it will suggest a command to run to resolve the problem (e.g. `gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3`). Run the command suggested, then run the above command again, which should now succeed).
+
+Next install the required ruby version.
+    
     source ~/.rvm/scripts/rvm
     rvm autolibs enable
     rvm install 1.9.3
     rvm use 1.9.3
+    
+At this point, `ruby --version` should indicate that 1.9.3 is in use.
 
 To prepare a machine to run the tests manually, clone the repository:
 
