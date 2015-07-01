@@ -49,18 +49,21 @@ class QuaffEndpoint < Endpoint
   def initialize(line_info, transport, endpoint_idx, use_instance_id=true)
     super line_info, transport, endpoint_idx
     registrar = ENV['PROXY'] || domain
+    registrar_port = (ENV['PROXY_PORT'] || "5060").to_i
     if transport == :tcp then
       @quaff = Quaff::TCPSIPEndpoint.new(sip_uri,
                                          private_id,
                                          password,
                                          :anyport,
-                                         registrar)
+                                         registrar,
+                                         registrar_port)
     else
       @quaff = Quaff::UDPSIPEndpoint.new(sip_uri,
                                          private_id,
                                          password,
                                          :anyport,
-                                         registrar)
+                                         registrar,
+                                         registrar_port)
     end
 
     @quaff.instance_id = instance_id if use_instance_id
