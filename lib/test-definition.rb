@@ -131,7 +131,7 @@ class TestDefinition
           print "#{test_id} - "
           tests_to_exclude.each do |exclusion|
             if test_id.start_with? exclusion
-              raise SkipThisTest.new("Test skipped by EXCLUDE_TESTS")
+              raise SkipThisTest.new("Test skipped by EXCLUDE_TESTS (matched #{exclusion})")
             end
           end
           success = test.run(deployment, trans)
