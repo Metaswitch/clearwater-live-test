@@ -88,7 +88,7 @@ Which will build a `*.deb` package in the current folder.  See `build-infra/cw-d
 
 ### Using the Continuous Verification Tool
 
-The continuous verification tool uses the same configuration file as the other Clearwater nodes, `/etc/clearwater/config`.  To install the verification VNF, prepare an Ubuntu 12.04 or 14.04 machine as if to install a Clearwater node in the deployment but, at the point you would install sprout/homer/etc. instead install the `clearwater-live-verification` package, either from the public Project Clearwater repository server or from a private build as shown above.  This will install and start the verification service.  Note that the installation process requires Internet access.
+The continuous verification tool uses the same configuration file as the other Clearwater nodes, `/etc/clearwater/config`.  To install the verification VNF, prepare an Ubuntu 14.04 machine as if to install a Clearwater node in the deployment but, at the point you would install sprout/homer/etc. instead install the `clearwater-live-verification` package, either from the public Project Clearwater repository server or from a private build as shown above.  This will install and start the verification service.  Note that the installation process requires Internet access.
 
 The verification service produces SNMP alarms to indicate the status of the deployment.  See [our public docs](https://clearwater.readthedocs.org/en/latest/SNMP_Alarms/index.html) for how to configure Clearwater to report these alarms.
 
