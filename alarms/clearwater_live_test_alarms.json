@@ -1,0 +1,26 @@
+{
+    "alarms": [
+        {
+            "index": 6000,
+            "cause": "SOFTWARE_ERROR",
+            "name": "CLEARWATER_LIVE_TEST_SERVICE_FAILED",
+            "levels": [
+                {
+                    "severity": "CLEARED",
+                    "details": "The deployment under test has passed live verification, the deployment is healthy.",
+                    "description": "Service Status: OK"
+                },
+                {
+                    "severity": "INDETERMINATE",
+                    "details": "The deployment has not completed verification yet, the health of the deployment is unknown.",
+                    "description": "Service Status: Unknown"
+                },
+                {
+                    "severity": "CRITICAL",
+                    "details": "The deployment under test has failed live verification, the deployment is not providing service.",
+                    "description": "Service Status: Failed"
+                }
+            ]
+        }
+    ]
+}
