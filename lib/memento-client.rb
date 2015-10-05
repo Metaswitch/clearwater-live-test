@@ -16,7 +16,7 @@ module Memento
       @from_uri = xmlnode.xpath('./from/URI').text
       @from_name = xmlnode.xpath('./from/name').text
       @answered = (xmlnode.xpath('./answered').text == "1") or (xmlnode.xpath('./answered').text == "true")
-      @outgoing = (xmlnode.xpath('./outgoing').text == "0") or (xmlnode.xpath('./outgoing').text == "true")
+      @outgoing = (xmlnode.xpath('./outgoing').text == "1") or (xmlnode.xpath('./outgoing').text == "true")
       @start_time = DateTime.parse(xmlnode.xpath('./start-time').text).to_time
       @answered_time = DateTime.parse(xmlnode.xpath('./answer-time').text).to_time if @answered
       @end_time = DateTime.parse(xmlnode.xpath('./end-time').text).to_time if @answered
