@@ -37,10 +37,10 @@ require 'json'
 require 'erubis'
 require 'cgi'
 
-USERNAME = ENV['ELLIS_USER'] || "live.tests@example.com"
+EMAIL = ENV['ELLIS_USER'] || "live.tests@example.com"
 
 class EllisProvisionedLine
-  attr_reader :username,
+  attr_reader :email,
               :password,
               :sip_uri,
               :domain,
@@ -51,11 +51,11 @@ class EllisProvisionedLine
   def self.destroy_leaked_numbers(domain)
 
     r = RestClient.post(ellis_url(domain, "session"),
-                        username: USERNAME,
+                        email: EMAIL,
                         password: "Please enter your details")
     cookie = r.cookies
     r = RestClient::Request.execute(method: :get,
-                                    url: ellis_url(domain, "accounts/#{USERNAME}/numbers"),
+                                    url: ellis_url(domain, "accounts/#{EMAIL}/numbers"),
                                     cookies: cookie)
     j = JSON.parse(r)
 
@@ -66,7 +66,7 @@ class EllisProvisionedLine
       begin
         puts "Deleting leaked number: #{n["sip_uri"]}"
         RestClient::Request.execute(method: :delete,
-                                    url: ellis_url(domain, "accounts/#{USERNAME}/numbers/#{CGI.escape(n["sip_uri"])}/"),
+                                    url: ellis_url(domain, "accounts/#{EMAIL}/numbers/#{CGI.escape(n["sip_uri"])}/"),
                                     cookies: cookie)
       rescue
         puts "Failed to delete leaked number, check Ellis logs"
@@ -118,7 +118,7 @@ class EllisProvisionedLine
 
     RestClient::Request.execute(
       method: :put,
-      url: ellis_url("accounts/#{account_username}/numbers/#{CGI.escape(@sip_uri)}/simservs"),
+      url: ellis_url("accounts/#{account_email}/numbers/#{CGI.escape(@sip_uri)}/simservs"),
       cookies: @@security_cookie,
       payload: simservs
     )
@@ -135,7 +135,7 @@ class EllisProvisionedLine
 
     RestClient::Request.execute(
       method: :put,
-      url: ellis_url("accounts/#{account_username}/numbers/#{CGI.escape(@sip_uri)}/ifcs"),
+      url: ellis_url("accounts/#{account_email}/numbers/#{CGI.escape(@sip_uri)}/ifcs"),
       cookies: @@security_cookie,
       payload: ifcs
     )
@@ -172,16 +172,15 @@ private
   def get_security_cookie
     begin
       r = RestClient.post(ellis_url("session"),
-                          username: account_username,
+                          email: account_email,
                           password: account_password)
       r.cookies
     rescue StandardError
       # This is most likely caused by the live test user not existing.  Create it now and retry.
       RestClient.post(ellis_url("accounts"),
-                      username: "clearwater-live-test user",
                       password: account_password,
                       full_name: "clearwater-live-test user",
-                      email: account_username,
+                      email: account_email,
                       signup_code: ENV['SIGNUP_CODE'] )
       get_security_cookie
     end
@@ -200,7 +199,7 @@ private
     payload = { pstn: pstn }
     payload.merge!(private_id: private_id) unless private_id.nil?
     r = RestClient::Request.execute(method: :post,
-                                    url: ellis_url("accounts/#{account_username}/numbers/"),
+                                    url: ellis_url("accounts/#{account_email}/numbers/"),
                                     cookies: @@security_cookie,
                                     payload: payload)
     setup_vars_from_json JSON.parse(r.body)
@@ -210,7 +209,7 @@ private
     fail "Cannot create more than one number per SIP endpoint" if not @username.nil?
 
     r = RestClient::Request.execute(method: :post,
-                                    url: ellis_url("accounts/#{account_username}/numbers/sip:#{public_id}@#{@domain}"),
+                                    url: ellis_url("accounts/#{account_email}/numbers/sip:#{public_id}@#{@domain}"),
                                     cookies: @@security_cookie,
                                     payload: {},
                                     headers: {"NGV-API-Key" => ENV['ELLIS_API_KEY']})
@@ -221,7 +220,7 @@ private
     return if @sip_uri.nil?
     RestClient::Request.execute(
       method: :delete,
-      url: ellis_url("accounts/#{account_username}/numbers/#{CGI.escape(@sip_uri)}"),
+      url: ellis_url("accounts/#{account_email}/numbers/#{CGI.escape(@sip_uri)}"),
       cookies: @@security_cookie,
     ) do |rsp, req, result, &blk|
       puts "Leaked #{@sip_uri}, DELETE returned #{rsp.code}" if rsp.code != 200
@@ -248,8 +247,8 @@ private
     EllisProvisionedLine.ellis_url @domain, path
   end
 
-  def account_username
-    USERNAME
+  def account_email
+    EMAIL
   end
 
   def account_password
