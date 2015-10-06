@@ -40,7 +40,7 @@ require 'cgi'
 EMAIL = ENV['ELLIS_USER'] || "live.tests@example.com"
 
 class EllisProvisionedLine
-  attr_reader :email,
+  attr_reader :username,
               :password,
               :sip_uri,
               :domain,
