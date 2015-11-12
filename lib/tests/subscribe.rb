@@ -217,6 +217,7 @@ TestDefinition.new("SUBSCRIBE - REG timeout") do |t|
 
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
+
     call.send_request("REGISTER", "", { "Expires" => "3600", "Authorization" => %Q!Digest username="#{ep1.private_id}"! })
     response_data = call.recv_response("401")
     auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), ep1.private_id, ep1.password, "REGISTER", ep1.uri
@@ -256,6 +257,7 @@ TestDefinition.new("SUBSCRIBE - REG timeout") do |t|
     fail "NOTIFY does not indicate register has expired" unless (xmldoc.child.child.children[0]['event'] == "expired")
 
   end
+
   t.add_quaff_cleanup do
     ep1.unregister
   end
