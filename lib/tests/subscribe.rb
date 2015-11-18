@@ -127,7 +127,7 @@ TestDefinition.new("SUBSCRIBE - reg-event with a GRUU") do |t|
 end
 
 # Test that subscriptions are actively timed out on expiry
-TestDefinition.new("SUBSCRIBE - SUB timeout test") do |t|
+TestDefinition.new("SUBSCRIBE - Subscription timeout") do |t|
   ep1 = t.add_endpoint
 
   t.add_quaff_setup do
@@ -170,7 +170,7 @@ TestDefinition.new("SUBSCRIBE - SUB timeout test") do |t|
 end
 
 # Test that registrations are actively timed out on expiry
-TestDefinition.new("SUBSCRIBE - REG timeout") do |t|
+TestDefinition.new("SUBSCRIBE - Registration timeout") do |t|
   ep1 = t.add_endpoint
 
   t.add_quaff_scenario do
