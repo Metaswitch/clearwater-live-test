@@ -77,10 +77,13 @@ TestDefinition.new("SUBSCRIBE - reg-event") do |t|
     ep1.register # Re-registration
 
     call.end_call
-    fail "NOTIFY responses have the same CSeq!" if notify2.header('CSeq') == notify3.header('CSeq')
+    fail "NOTIFY responses have invalid CSeq! (same or non-incrementing)" if notify2.header('CSeq') >= notify3.header('CSeq')
     validate_notify notify1.body
     validate_notify notify2.body
     validate_notify notify3.body
+
+    fail "Final Subscription-State header not set to terminated" if notify3.header('Subscription-State') != "terminated;reason=timeout"
+
   end
 
   t.add_quaff_cleanup do
@@ -123,3 +126,105 @@ TestDefinition.new("SUBSCRIBE - reg-event with a GRUU") do |t|
 
 end
 
+# Test that subscriptions are actively timed out on expiry
+TestDefinition.new("SUBSCRIBE - Subscription timeout") do |t|
+  ep1 = t.add_endpoint
+
+  t.add_quaff_setup do
+    ep1.register
+  end
+
+  t.add_quaff_scenario do
+    call = ep1.outgoing_call(ep1.uri)
+
+    # Set the subscription to expire shortly, sleep until it is nearly expired, then expect a NOTIFY
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg", "Expires" => 3})
+
+    # 200 and NOTIFY can come in any order, so expect either of them, twice
+    notify1 = call.recv_200_and_notify
+    call.send_response("200", "OK")
+
+    sleep 2.5
+    notify2 = call.recv_request("NOTIFY")
+    call.send_response("200", "OK")
+
+    call.end_call
+
+    # Validate NOTIFYs are correctly formed
+    fail "NOTIFY responses have invalid CSeq! (same or non-incrementing)" if notify1.header('CSeq') >= notify2.header('CSeq')
+
+    validate_notify notify1.body
+    validate_notify notify2.body
+
+    # Validate that the first NOTIFY was sent as active with the correct expiry
+    fail "Subscription-State header not indicating active; expiry=x" if notify1.header('Subscription-State') != "active;expires=3"
+ 
+    # Validate that the final NOTIFY was sent due to subscription expiry
+    fail "Final Subscription-State header not set to terminated" if notify2.header('Subscription-State') != "terminated;reason=timeout"
+  end
+
+  t.add_quaff_cleanup do
+    ep1.unregister
+  end
+
+end
+
+# Test that registrations are actively timed out on expiry
+TestDefinition.new("SUBSCRIBE - Registration timeout") do |t|
+  ep1 = t.add_endpoint
+
+  t.add_quaff_scenario do
+    call = ep1.outgoing_call(ep1.uri)
+
+    call.send_request("REGISTER", "", { "Expires" => "3600", "Authorization" => %Q!Digest username="#{ep1.private_id}"! })
+    response_data = call.recv_response("401")
+    auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), ep1.private_id, ep1.password, "REGISTER", ep1.uri
+    call.update_branch
+
+    # If testing against something with a min-expires set for registers, alter the 'Expires'
+    # value below to be just above it, and the sleep value below this to be just less than it
+    # i.e. if min-expires is set to 300, set Expires => 301, and sleep 295
+    #
+    # If the min-expires value is longer than 60 seconds, also change t.join(60) in lib/test-definition
+    # to be longer than the expires header in the REGISTER sent here.
+    call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3"})
+    response_data = call.recv_response("200")
+
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg"})
+    # 200 and NOTIFY can come in any order, so expect either of them, twice
+    notify1 = call.recv_200_and_notify
+    call.send_response("200", "OK")
+
+    sleep 2.5
+
+    notify2 = call.recv_request("NOTIFY")
+    call.send_response("200", "OK")
+
+    call.end_call
+
+    # Validate NOTIFYs are correctly formed
+    fail "NOTIFY responses have invalid CSeq! (same or non-incrementing)" if notify1.header('CSeq') >= notify2.header('CSeq')
+
+    validate_notify notify1.body
+    validate_notify notify2.body
+
+    # Validate that the NOTIFY body indicates is was triggered by the registration expiring
+    xmldoc = Nokogiri::XML.parse(notify2.body) do |config|
+      config.noblanks
+    end
+
+    fail "NOTIFY does not indicate subscription has been deactivated" if notify2.header('Subscription-State') != "terminated;reason=deactivated"
+
+    fail "NOTIFY does not indicate register has expired" unless (xmldoc.child.child.children[0]['event'] == "expired")
+  end
+
+  t.add_quaff_cleanup do
+
+  # Keeping the unregister here as cleanup. If the register does not timeout correctly, 
+  # we want to remove it, rather than have it affect later tests. This may also fail, as
+  # without the register expiring, the subscription will remain active, and this will
+  # trigger an unexpected NOTIFY
+    ep1.unregister
+  end
+
+end
