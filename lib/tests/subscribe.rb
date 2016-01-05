@@ -172,6 +172,11 @@ end
 # Test that registrations are actively timed out on expiry
 TestDefinition.new("SUBSCRIBE - Registration timeout") do |t|
   ep1 = t.add_endpoint
+  ep2 = t.add_public_identity(ep1)
+
+  t.add_quaff_setup do
+    ep2.register
+  end
 
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
@@ -190,16 +195,18 @@ TestDefinition.new("SUBSCRIBE - Registration timeout") do |t|
     call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3"})
     response_data = call.recv_response("200")
 
-    call.send_request("SUBSCRIBE", "", {"Event" => "reg"})
+    sub = ep2.outgoing_call(ep1.uri)
+    sub.send_request("SUBSCRIBE", "", {"Event" => "reg"})
     # 200 and NOTIFY can come in any order, so expect either of them, twice
-    notify1 = call.recv_200_and_notify
-    call.send_response("200", "OK")
+    notify1 = sub.recv_200_and_notify
+    sub.send_response("200", "OK")
 
     sleep 2.5
 
-    notify2 = call.recv_request("NOTIFY")
-    call.send_response("200", "OK")
+    notify2 = sub.recv_request("NOTIFY")
+    sub.send_response("200", "OK")
 
+    sub.end_call
     call.end_call
 
     # Validate NOTIFYs are correctly formed
@@ -213,18 +220,16 @@ TestDefinition.new("SUBSCRIBE - Registration timeout") do |t|
       config.noblanks
     end
 
-    fail "NOTIFY does not indicate subscription has been deactivated" if notify2.header('Subscription-State') != "terminated;reason=deactivated"
-
     fail "NOTIFY does not indicate register has expired" unless (xmldoc.child.child.children[0]['event'] == "expired")
   end
 
   t.add_quaff_cleanup do
-
-  # Keeping the unregister here as cleanup. If the register does not timeout correctly, 
-  # we want to remove it, rather than have it affect later tests. This may also fail, as
-  # without the register expiring, the subscription will remain active, and this will
-  # trigger an unexpected NOTIFY
+    # Keeping the unregister here as cleanup. If the register does not timeout correctly, 
+    # we want to remove it, rather than have it affect later tests. This may also fail, as
+    # without the register expiring, the subscription will remain active, and this will
+    # trigger an unexpected NOTIFY
     ep1.unregister
+    ep2.unregister
   end
 
 end
