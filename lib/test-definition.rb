@@ -315,6 +315,10 @@ class TestDefinition
     raise SkipThisTest.new "No Call Diversion AS hostname provided", "Call with CDIV_AS=<hostname>" unless ENV['CDIV_AS']
   end
 
+  def skip_unless_nonce_count_supported
+    raise SkipThisTest.new "No nonce-count support", "Call with NONCE_COUNT=true to run test" unless ENV['NONCE_COUNT']
+  end
+
   private
 
   def before_run
