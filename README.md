@@ -56,7 +56,7 @@ where `<code>` is the signup code you supplied when configuring Ellis (see /etc/
 There are various modifiers you can use to determine which subset of tests you wish to run, to use these modifiers, add them to the end of the `rake` command:
 
  - `ELLIS_API_KEY=<key>` - this should match [the ellis_api_key configuration on Ellis](https://github.com/Metaswitch/clearwater-docs/wiki/Manual%20Install#configuring-the-inter-node-hostnamesip-addresses) and allows the test scripts to provision specific SIP URIs on the system instead of having them randomly assigned by Ellis.
- - `TESTS="<glob>"` - to only run tests whos name matches the given glob.
+ - `TESTS="<glob>"` - to only run tests whose name matches the given glob.
  - `PSTN=true` - to run the PSTN-specific tests (your deployment must have PSTN numbers allocated).
  - `LIVENUMBER=<number>` - to allow running of tests that dial out to real devices (your deployment must have an IBCF node and a working PSTN) the live number given may be dialled as part of running the test and the test will expect it to be answered (so make it a real one!).
  - `REPEAT=<number>` - to allow the suite of tests to be run multiple times.
