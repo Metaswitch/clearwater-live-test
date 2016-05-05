@@ -11,5 +11,5 @@ Homepage: http://projectclearwater.org/
 
 Package: clearwater-live-verification
 Architecture: any
-Depends: ruby1.9.1, ruby1.9.1-dev, git, build-essential, zlib1g-dev, libzmq3-dev, clearwater-infrastructure, clearwater-snmpd, clearwater-snmp-handler-alarm
+Depends: ruby1.9.1, ruby1.9.1-dev, git, build-essential, zlib1g-dev, libzmq3-dev, clearwater-infrastructure, clearwater-snmpd, clearwater-snmp-alarm-agent
 Description: A live verification process for testing deployments of Project Clearwater.
