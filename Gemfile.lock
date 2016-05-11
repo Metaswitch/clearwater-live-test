@@ -9,8 +9,8 @@ GIT
       rake-compiler (~> 0)
 
 GIT
-  remote: https://github.com/ffi/ffi.git
-  revision: e9d07620ae8ac090863998d22ab7ca0db9cd1e89
+  remote: https://github.com/Metaswitch/ffi.git
+  revision: dd2ffdf362621489d3f7ef27bb4dc3d59c78659c
   branch: libffi-3.2.1
   specs:
     ffi (1.9.8)

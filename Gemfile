@@ -14,7 +14,7 @@ gem 'httpi'
 gem 'httpclient'
 gem 'forwarder'
 gem 'daemons'
-gem 'ffi', git: "https://github.com/ffi/ffi.git", branch: "libffi-3.2.1"
+gem 'ffi', git: "https://github.com/Metaswitch/ffi.git", branch: "libffi-3.2.1"
 gem 'ffi-rzmq'
 
 group :development do
