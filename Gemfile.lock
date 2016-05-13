@@ -1,4 +1,11 @@
 GIT
+  remote: https://github.com/Metaswitch/ffi.git
+  revision: dd2ffdf362621489d3f7ef27bb4dc3d59c78659c
+  branch: libffi-3.2.1
+  specs:
+    ffi (1.9.8)
+
+GIT
   remote: https://github.com/bossmc/joker.git
   revision: 97ac2b5738b4964a446eec7939859b051d73d839
   branch: use-extension-task
@@ -7,13 +14,6 @@ GIT
       bacon (~> 1)
       rake (~> 10)
       rake-compiler (~> 0)
-
-GIT
-  remote: https://github.com/Metaswitch/ffi.git
-  revision: dd2ffdf362621489d3f7ef27bb4dc3d59c78659c
-  branch: libffi-3.2.1
-  specs:
-    ffi (1.9.8)
 
 GEM
   remote: https://rubygems.org/
