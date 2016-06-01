@@ -57,7 +57,9 @@ module Memento
   end
 
   class CallList < Array
+    attr_reader :original_xml
     def self.from_xml xmlnode
+      @original_xml = xmlnode
       CallList.new(xmlnode.xpath("//calls/call").map { |call_xml| Call.new(call_xml) })
     end
 
