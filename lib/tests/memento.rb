@@ -52,6 +52,9 @@ def check_users_call_list user, from, to, answered, caller_id = 0
   # Find the most recent call
   client = Memento::Client.new SCHEMA, MEMENTO_HTTP_URI, user.sip_uri, user.private_id, user.password
   call_list = client.get_call_list
+
+  fail "No calls in call record - original XML was:\n#{call_list.original_xml}" if call_list.empty?
+
   call = call_list[-1]
 
   # Determine whether the call was incoming or outgoing
@@ -60,8 +63,6 @@ def check_users_call_list user, from, to, answered, caller_id = 0
   # Check some fields are as expected. First the From URI.
   if caller_id == ANONYMOUS_URI
     fail "Call record doesn't contain anonmyised from\n#{call.xml}" unless call.from_uri == "sip:anonymous@anonymous.invalid"
-  elsif call.nil?
-    fail "No calls in call record - original XML was:\n#{call_list.original_xml}"
   else
     fail "Call record contains wrong from_uri; found: #{call.from_uri}, expected: #{from.sip_uri}\n#{call.xml}" unless call.from_uri == from.sip_uri
   end
