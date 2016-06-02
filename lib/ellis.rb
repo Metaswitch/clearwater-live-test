@@ -54,9 +54,20 @@ class EllisProvisionedLine
                         email: EMAIL,
                         password: "Please enter your details")
     cookie = r.cookies
-    r = RestClient::Request.execute(method: :get,
-                                    url: ellis_url(domain, "accounts/#{EMAIL}/numbers"),
-                                    cookies: cookie)
+    begin
+      r = RestClient::Request.execute(method: :get,
+                                      url: ellis_url(domain, "accounts/#{EMAIL}/numbers"),
+                                      cookies: cookie)
+    rescue RestClient::Exception => e
+      puts "Listing existing numbers failed with HTTP code #{e.http_code}"
+      begin
+        j = JSON.parse(e.http_body)
+        puts "Detailed error output: #{j['detail']}"
+      rescue
+        # Just ignore errors here
+      end
+      return
+    end
     j = JSON.parse(r)
 
     # Destroy default SIP URIs last
@@ -198,10 +209,14 @@ private
 
     payload = { pstn: pstn }
     payload.merge!(private_id: private_id) unless private_id.nil?
-    r = RestClient::Request.execute(method: :post,
-                                    url: ellis_url("accounts/#{account_email}/numbers/"),
-                                    cookies: @@security_cookie,
-                                    payload: payload)
+    begin
+      r = RestClient::Request.execute(method: :post,
+                                      url: ellis_url("accounts/#{account_email}/numbers/"),
+                                      cookies: @@security_cookie,
+                                      payload: payload)
+    rescue RestClient::Exception => e
+      fail "Account creation failed with HTTP code #{e.http_code}, body #{e.http_body}"
+    end
     setup_vars_from_json JSON.parse(r.body)
   end
 
@@ -218,12 +233,16 @@ private
 
   def delete_number
     return if @sip_uri.nil?
-    RestClient::Request.execute(
-      method: :delete,
-      url: ellis_url("accounts/#{account_email}/numbers/#{CGI.escape(@sip_uri)}"),
-      cookies: @@security_cookie,
-    ) do |rsp, req, result, &blk|
-      puts "Leaked #{@sip_uri}, DELETE returned #{rsp.code}" if rsp.code != 200
+    begin
+      RestClient::Request.execute(
+        method: :delete,
+        url: ellis_url("accounts/#{account_email}/numbers/#{CGI.escape(@sip_uri)}"),
+        cookies: @@security_cookie,
+      ) do |rsp, req, result, &blk|
+        puts "Leaked #{@sip_uri}, DELETE returned #{rsp.code}" if rsp.code != 200
+      end
+    rescue RestClient::Exception => e
+      fail "Account deletion of #{@sip_uri} failed with HTTP code #{e.http_code}, body #{e.http_body}"
     end
   end
 
