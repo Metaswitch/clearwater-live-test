@@ -59,7 +59,13 @@ class EllisProvisionedLine
                                       url: ellis_url(domain, "accounts/#{EMAIL}/numbers"),
                                       cookies: cookie)
     rescue RestClient::Exception => e
-      puts "Listing existing numbers failed with HTTP code #{e.http_code}, body #{e.http_body}"
+      puts "Listing existing numbers failed with HTTP code #{e.http_code}"
+      begin
+        j = JSON.parse(e.http_body)
+        puts "Detailed error output: #{j['detail']}"
+      rescue
+        # Just ignore errors here
+      end
       return
     end
     j = JSON.parse(r)
