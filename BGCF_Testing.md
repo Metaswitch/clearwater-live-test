@@ -28,7 +28,7 @@ should:
 * set up your Clearwater deployment's ENUM, BGCF and firewall settings
   so that a call to the 2011000001 will be routed back to
   `sip:10.0.0.1:5072;transport=tcp`
-* Run `rake test[<DEPLOYMENT>] TESTS="Off-net*" TRANSPORT=TCP OFF_NET_TEL=2011000001`
+* Run `rake test[<DEPLOYMENT>] TESTS="Off-net*" OFF_NET_TEL=2011000001`
   to run the off-net calling tests against this number
 
 ## Example: testing standard BGCF routing ##
@@ -42,7 +42,7 @@ should:
 ```
 * Set up the following ENUM entry:
         `1.0.0.0.0.0.0.0.0.1.e164.arpa.	3600	IN	NAPTR	1 1 "u" "E2U+sip" "!(^.*$)!sip:\\1@otherdomain!"`
-*  Run `rake test[<DEPLOYMENT>] TESTS="Off-net*" TRANSPORT=TCP OFF_NET_TEL=1000000001`
+*  Run `rake test[<DEPLOYMENT>] TESTS="Off-net*" OFF_NET_TEL=1000000001`
 
 ## Example: testing NP ##
 
@@ -55,4 +55,4 @@ should:
 ```
 * Set up the following ENUM entry:
         `1.0.0.0.0.0.0.0.0.2.e164.arpa.	3600	IN	NAPTR	1 1 "u" "E2U+pstn:tel" "!(^.*$)!tel:\\1;npdi;rn=1234567890!"`
-*  Run `rake test[<DEPLOYMENT>] TESTS="Off-net*" TRANSPORT=TCP OFF_NET_TEL=2000000001`
+*  Run `rake test[<DEPLOYMENT>] TESTS="Off-net*" OFF_NET_TEL=2000000001`
