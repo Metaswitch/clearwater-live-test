@@ -60,7 +60,7 @@ There are various modifiers you can use to determine which subset of tests you w
  - `PSTN=true` - to run the PSTN-specific tests (your deployment must have PSTN numbers allocated).
  - `LIVENUMBER=<number>` - to allow running of tests that dial out to real devices (your deployment must have an IBCF node and a working PSTN) the live number given may be dialled as part of running the test and the test will expect it to be answered (so make it a real one!).
  - `REPEAT=<number>` - to allow the suite of tests to be run multiple times.
- - `TRANSPORT=<transports>` - Comma-separated transports to test with.  Allowed tranports are `TCP` and `UDP`.  If not specified, all tests will be run twice, for each transport type.
+ - `TRANSPORT=<transports>` - Comma-separated transports to test with. Allowed tranports are `TCP` and `UDP`. If not specified, the tests will be run using `TCP` only.
  - `PROXY=<host>` - to force the tests to run against a particular Bono instance. Useful when running against an AIO node, or when the Bono domain isn't DNS resolvable.
  - `ELLIS=<host>` - to override the default FQDN for Ellis.  Useful when running against an AIO node, or when the Ellis domain isn't DNS resolvable.
  - `HOSTNAME=<host>` - publicly accessible hostname of the machine running the tests, used for the dummy AS.
