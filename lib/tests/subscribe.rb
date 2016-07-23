@@ -210,7 +210,10 @@ TestDefinition.new("SUBSCRIBE - Registration timeout") do |t|
     call.end_call
 
     # Validate NOTIFYs are correctly formed
-    fail "NOTIFY responses have invalid CSeq! (same or non-incrementing)" if notify1.header('CSeq') >= notify2.header('CSeq')
+    if notify1.header('CSeq') >= notify2.header('CSeq')
+      fail "NOTIFY responses have same or non-incrementing CSeq - \
+first one had '#{notify1.header('CSeq')}', second one had '#{notify2.header('CSeq')}'"
+    end
 
     validate_notify notify1.body
     validate_notify notify2.body
