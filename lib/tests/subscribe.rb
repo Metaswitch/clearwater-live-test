@@ -115,7 +115,7 @@ TestDefinition.new("SUBSCRIBE - reg-event with a GRUU") do |t|
     end
 
     fail "Binding 1 has no pub-gruu node" unless (xmldoc.child.child.children[0].children[1].name == "pub-gruu")
-    fail "Binding 1 has an incorrect pub-gruu node" unless (xmldoc.child.child.children[0].children[1]['uri'] == ep1.expected_pub_gruu)
+    fail "Binding 1 has an incorrect pub-gruu node (expected #{ep1.expected_pub_gruu}):\n#{notify.body}" unless (xmldoc.child.child.children[0].children[1]['uri'] == ep1.expected_pub_gruu)
     validate_notify xmldoc.child.child.children[0].children[1].dup.to_s, "schemas/gruuinfo.xsd"
   end
 
