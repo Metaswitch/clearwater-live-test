@@ -90,7 +90,7 @@ class TestDefinition
   end
 
   def self.record_failure test_id
-    @@failures << test_id
+    @@failures << "#{test_id} at #{Time.new.inspect}"
   end
 
   def self.failures
