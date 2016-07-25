@@ -115,7 +115,7 @@ TestDefinition.new("SUBSCRIBE - reg-event with a GRUU") do |t|
     end
 
     fail "Binding 1 has no pub-gruu node" unless (xmldoc.child.child.children[0].children[1].name == "pub-gruu")
-    fail "Binding 1 has an incorrect pub-gruu node" unless (xmldoc.child.child.children[0].children[1]['uri'] == ep1.expected_pub_gruu)
+    fail "Binding 1 has an incorrect pub-gruu node (expected #{ep1.expected_pub_gruu}):\n#{notify.body}" unless (xmldoc.child.child.children[0].children[1]['uri'] == ep1.expected_pub_gruu)
     validate_notify xmldoc.child.child.children[0].children[1].dup.to_s, "schemas/gruuinfo.xsd"
   end
 
@@ -210,7 +210,10 @@ TestDefinition.new("SUBSCRIBE - Registration timeout") do |t|
     call.end_call
 
     # Validate NOTIFYs are correctly formed
-    fail "NOTIFY responses have invalid CSeq! (same or non-incrementing)" if notify1.header('CSeq') >= notify2.header('CSeq')
+    if notify1.header('CSeq') >= notify2.header('CSeq')
+      fail "NOTIFY responses have same or non-incrementing CSeq - \
+first one had '#{notify1.header('CSeq')}', second one had '#{notify2.header('CSeq')}'"
+    end
 
     validate_notify notify1.body
     validate_notify notify2.body
