@@ -50,7 +50,12 @@ def run_tests(domain, glob="*")
   # variables) any exceptions.
   EllisProvisionedLine.destroy_leaked_numbers(domain) rescue puts $!, $@
 
-  exit (TestDefinition.failures == 0) ? 0 : 1
+  puts "#{TestDefinition.failures.length} failures out of #{TestDefinition.tests_run} tests run"
+  TestDefinition.failures.each do |f|
+    puts "    #{f}"
+  end
+  puts "#{TestDefinition.skipped} tests skipped"
+  exit (TestDefinition.failures.length == 0) ? 0 : 1
 end
 
 def is_default_public_id? number

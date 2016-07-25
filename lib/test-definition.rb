@@ -75,7 +75,9 @@ class TestDefinition
 
   @@tests = []
   @@current_test = nil
-  @@failures = 0
+  @@failures = []
+  @@tests_run = 0
+  @@skipped = 0
 
 # Class methods
 
@@ -87,12 +89,20 @@ class TestDefinition
     @@tests
   end
 
-  def self.record_failure
-    @@failures += 1
+  def self.record_failure test_id
+    @@failures << "#{test_id} at #{Time.new.inspect}"
   end
 
   def self.failures
     @@failures
+  end
+
+  def self.tests_run
+    @@tests_run
+  end
+
+  def self.skipped
+    @@skipped
   end
 
   def self.get_diags
@@ -127,6 +137,7 @@ class TestDefinition
       puts "Test iteration #{r + 1}" if repeat != 1
       tests_to_run.product(transports).collect do |test, trans|
         begin
+          @@tests_run += 1
           test_id = "#{test.name} (#{trans.to_s.upcase})"
           print "#{test_id} - "
           tests_to_exclude.each do |exclusion|
@@ -138,13 +149,17 @@ class TestDefinition
           if success == true
             puts RedGreen::Color.green("Passed")
           elsif success == false
-            record_failure
+            record_failure(test_id)
+          else
+            # Do nothing if success == nil - that means we skipped a test
+            @@skipped += 1
           end # Do nothing if success == nil - that means we skipped a test
         rescue SkipThisTest => e
           puts RedGreen::Color.yellow("Skipped") + " (#{e.why_skipped})"
           puts "   - #{e.how_to_enable}" if e.how_to_enable
+          @@skipped += 1
         rescue StandardError => e
-          record_failure
+          record_failure(test_id)
           puts RedGreen::Color.red("Failed")
           puts "  #{e.class} thrown:"
           puts "   - #{e}"
