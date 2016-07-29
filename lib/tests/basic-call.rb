@@ -54,7 +54,11 @@ TestDefinition.new("Basic Call - Mainline") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee.uri)
 
-    call.send_invite_with_sdp
+    # We only send a plain text body in this INVITE, not full SDP. This reduces
+    # the size of the SIP message (SDP is ~200 bytes) and increases the chance
+    # that UDP messages will be small enough to get through the network without
+    # fragmenting.
+    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
     call.recv_response("100")
     call.recv_response("180")
     ringing_barrier.wait
@@ -80,7 +84,7 @@ TestDefinition.new("Basic Call - Mainline") do |t|
     call2.send_response("180", "Ringing")
     ringing_barrier.wait
 
-    call2.send_200_with_sdp
+    call2.send_response("200", "OK", "hello world\r\n", nil, {"Content-Type" => "text/plain"})
     call2.recv_request("ACK")
 
     call2.recv_request("BYE")
