@@ -49,6 +49,12 @@ end
 
 # Retrieve the last call record from the call list
 def check_users_call_list user, from, to, answered, caller_id = 0
+
+  # Memento writes data to Cassandra asynchronously, so it may not be available
+  # immediately after the call ends. Sleep briefly to redice the risk of a race
+  # condition.
+  sleep(2)
+
   # Find the most recent call
   client = Memento::Client.new SCHEMA, MEMENTO_HTTP_URI, user.sip_uri, user.private_id, user.password
   call_list = client.get_call_list
