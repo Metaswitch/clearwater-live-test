@@ -473,7 +473,7 @@ TestDefinition.new("Memento - Busy Call Forwarding") do |t|
 
   t.add_quaff_cleanup do
     caller.unregister
-    callee1.register
+    callee1.unregister
     callee2.unregister
   end
 
