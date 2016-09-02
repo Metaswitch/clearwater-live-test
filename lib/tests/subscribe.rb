@@ -77,7 +77,7 @@ TestDefinition.new("SUBSCRIBE - reg-event") do |t|
     ep1.register # Re-registration
 
     call.end_call
-    fail "NOTIFY responses have invalid CSeq! (same or non-incrementing)" if notify2.header('CSeq') >= notify3.header('CSeq')
+    fail "NOTIFY responses have invalid CSeq! (same or non-incrementing)" if notify2.header('CSeq').to_i >= notify3.header('CSeq').to_i
     validate_notify notify1.body
     validate_notify notify2.body
     validate_notify notify3.body
@@ -151,7 +151,7 @@ TestDefinition.new("SUBSCRIBE - Subscription timeout") do |t|
     call.end_call
 
     # Validate NOTIFYs are correctly formed
-    fail "NOTIFY responses have invalid CSeq! (same or non-incrementing)" if notify1.header('CSeq') >= notify2.header('CSeq')
+    fail "NOTIFY responses have invalid CSeq! (same or non-incrementing)" if notify1.header('CSeq').to_i >= notify2.header('CSeq').to_i
 
     validate_notify notify1.body
     validate_notify notify2.body
@@ -210,7 +210,7 @@ TestDefinition.new("SUBSCRIBE - Registration timeout") do |t|
     call.end_call
 
     # Validate NOTIFYs are correctly formed
-    if notify1.header('CSeq') >= notify2.header('CSeq')
+    if notify1.header('CSeq').to_i >= notify2.header('CSeq').to_i
       fail "NOTIFY responses have same or non-incrementing CSeq - \
 first one had '#{notify1.header('CSeq')}', second one had '#{notify2.header('CSeq')}'"
     end
