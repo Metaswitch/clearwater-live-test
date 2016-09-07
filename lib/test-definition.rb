@@ -432,9 +432,9 @@ class TestDefinition
 
   def verify_snmp_stats
     latency_threshold = 250
-    average_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.2"
-    hwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.4"
-    lwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.5"
+    average_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.2.1"
+    hwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.4.1"
+    lwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.5.1"
     snmp_host = ENV['PROXY'] ? IPSocket.getaddress(ENV['PROXY']) : IPSocket.getaddress(@deployment)
     snmp_map = {}
     SNMP::Manager.open(:host => snmp_host, :community => "clearwater") do |manager|
