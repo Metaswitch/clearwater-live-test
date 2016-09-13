@@ -153,7 +153,7 @@ class TestDefinition
           else
             # Do nothing if success == nil - that means we skipped a test
             @@skipped += 1
-          end # Do nothing if success == nil - that means we skipped a test
+          end
         rescue SkipThisTest => e
           puts RedGreen::Color.yellow("Skipped") + " (#{e.why_skipped})"
           puts "   - #{e.how_to_enable}" if e.how_to_enable
@@ -277,7 +277,7 @@ class TestDefinition
       @quaff_setup_blk.call if @quaff_setup_blk
       @quaff_threads = @quaff_scenario_blocks.map { |blk| Thread.new &blk }
       retval = extra_validation
-      verify_snmp_stats if ENV['SNMP'] == "Y"
+      verify_snmp_bono_latency if ENV['BONO_SNMP'] == "Y"
     ensure
       retval &= cleanup
       TestDefinition.unset_current_test
@@ -429,8 +429,7 @@ class TestDefinition
     retval
   end
 
-
-  def verify_snmp_stats
+  def verify_snmp_bono_latency
     latency_threshold = 250
     average_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.2.1"
     hwm_oid = SNMP::ObjectId.new "1.2.826.0.1.1578918.9.2.2.1.4.1"
