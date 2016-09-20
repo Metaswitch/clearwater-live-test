@@ -181,18 +181,18 @@ TestDefinition.new("Filtering - RFC3841 example") do |t|
   end
 
   t.add_quaff_scenario do
-    # Wait long enough to ensure the call is forked
-    sleep 0.3
-
     # Call should be forked to bindings 1, 4 and 5 simultaneously -
-    # answer it from 5 and check that 1 and 4 have a call come in
-    call2 = callee_binding5.incoming_call
+    # check that 1 and 4 have a call come in and then answer it from 5.
+    call2 = callee_binding1.incoming_call
     call2.recv_request("MESSAGE")
-    call2.send_response("200", "OK")
-    call2.end_call
 
-    fail "Call was not forked to binding 1" if callee_binding1.no_new_calls?
-    fail "Call was not forked to binding 4" if callee_binding4.no_new_calls?
+    call3 = callee_binding4.incoming_call
+    call3.recv_request("MESSAGE")
+
+    call4 = callee_binding5.incoming_call
+    call4.recv_request("MESSAGE")
+    call4.send_response("200", "OK")
+    call4.end_call
 
     # Expect binding 3 to be rejected because it matches the Reject-Contact
     fail "Call was forked to binding 3" unless callee_binding3.no_new_calls?
