@@ -419,7 +419,8 @@ class TestDefinition
           # exited abnormally. We know the test has failed in this case, so
           # stop the other threads now.
           puts "Terminating other threads after failure"
-          alive_threads.each do |t|
+          other_threads = @quaff_threads.reject { |other_thread| other_thread == t }
+          other_threads.each do |t|
             t.kill
             cull_thread(t, 60, false)
           end
