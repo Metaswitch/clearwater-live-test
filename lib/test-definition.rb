@@ -379,32 +379,73 @@ class TestDefinition
       end
   end
 
+  def cull_thread t, timeout, print_failed
+    # Join the threads, this will do one of three things:
+    #  - If the thread has finished successfully, return the thread handle
+    #  - If the thread has finished abnormally, return the exception thrown,
+    #    and also print out the backtrace
+    #  - If the thread has not finished within the timeout, return nil
+    result_of_join = begin
+                       t.join(timeout)
+                     rescue StandardError => e
+                       e
+                     end
+
+    if result_of_join and (result_of_join != t)
+      puts RedGreen::Color.red("Failed") if print_failed
+
+      puts "Endpoint threw exception:"
+      puts " - #{e.message}"
+      e.backtrace.each { |b| puts "   - #{b}" }
+    end
+
+    return result_of_join
+  end
+
   def cleanup
     retval = true
-    @quaff_threads.each do |t|
-      # Join the threads, this will do one of three things:
-      #  - Return the thread handle, indicating complete success
-      #  - Return nil indicating that the 60 seconds passed
-      #  - Throw an exception caught in the thread
-      result_of_join = begin
-                         t.join(60)
-                       rescue StandardError => e
-                         e
-                       end
-      unless result_of_join == t
-        puts RedGreen::Color.red("Failed") if retval
 
-        if result_of_join.nil?
-          puts "Endpoint had outstanding work to do, current backtrace:"
-          t.backtrace.each { |b| puts "   - #{b}" }
-          t.kill
-        else
-          puts "Endpoint threw exception:"
-          puts " - #{e.message}"
-          e.backtrace.each { |b| puts "   - #{b}" }
+    # Poll the finished and non-finished threads one per second - this allows
+    # us to exit the first time a thread throws an exception.
+    (1..60).each do |second|
+      finished_threads = @quaff_threads.select { |t| t.stop? }
+      alive_threads = @quaff_threads.select { |t| t.alive? }
+
+      finished_threads.each do |t|
+        result_of_join = cull_thread(t, 0, retval)
+
+        if result_of_join and (result_of_join != t)
+          # If cull_thread doesn't return the thread handle, the thread has
+          # exited abnormally. We know the test has failed in this case, so
+          # stop the other threads now.
+          puts "Terminating other threads after failure"
+          other_threads = @quaff_threads.reject { |other_thread| other_thread == t }
+          other_threads.each do |t|
+            t.kill
+            cull_thread(t, 60, false)
+          end
+
+          retval = false
+          break
         end
+      end
 
-        retval = false
+      all_threads_finished = @quaff_threads.select { |t| t.alive? }.empty?
+
+      # End even though 60 seconds haven't passed
+      break if all_threads_finished
+      
+      sleep 1
+    end
+
+    all_threads_finished = @quaff_threads.select { |t| t.alive? }.empty?
+
+    unless all_threads_finished
+      puts RedGreen::Color.red("Failed") if retval
+      @quaff_threads.select { |t| t.alive? }.each do |t|
+        puts "Endpoint had outstanding work to do, current backtrace:"
+        t.backtrace.each { |b| puts "   - #{b}" }
+        t.kill
       end
     end
 
