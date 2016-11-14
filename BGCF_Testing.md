@@ -20,18 +20,19 @@ following:
 * checks that this request comes back in on port 5072
 
 This allows it to test any BGCF rule that routes back to port 5072 on
-your test machine. In other words, to use this test effectively, you
-should:
+your test machine.
 
-* choose a number (e.g. 2011000001)
-* learn the IP address of your test machine (e.g. 10.0.0.1)
-* set up your Clearwater deployment's ENUM, BGCF and firewall settings
-  so that a call to the 2011000001 will be routed back to
-  `sip:10.0.0.1:5072;transport=tcp`
-* Run `rake test[<DEPLOYMENT>] TESTS="Off-net*" OFF_NET_TEL=2011000001`
-  to run the off-net calling tests against this number
+To use these tests you need to:
+
+* Choose a number (`<number>`)
+* Get the IP address of your test machine (`<IP address>`)
+* Set up your Clearwater deployment's ENUM and BGCF settings so that a call to your `<number>` will be routed back to `sip:<IP address>:5072;transport=tcp`
+* Make sure that the box you're running the live tests on will accept calls to port 5072.
+* Run `rake test[<your home domain>] TESTS="Off-net*" OFF_NET_TEL=<number>` to run the off-net calling tests
 
 ## Example: testing standard BGCF routing ##
+
+This example uses 1000000001 as the Off-net number, and 10.0.0.1 as the IP address of the test machine.
 
 * Set the following route in bgcf.json:
 ```
@@ -45,6 +46,8 @@ should:
 *  Run `rake test[<DEPLOYMENT>] TESTS="Off-net*" OFF_NET_TEL=1000000001`
 
 ## Example: testing NP ##
+
+This example uses 2000000001 as the Off-net number, and 10.0.0.1 as the IP address of the test machine.
 
 * Set the following route in bgcf.json:
 ```
