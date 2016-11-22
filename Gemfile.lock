@@ -1,6 +1,6 @@
 GIT
   remote: git@github.com:metaswitch/quaff.git
-  revision: 47b8fce2f795c23d3f74c1e42b7443a181160a73
+  revision: f92372cac3e196085038d75e3ad35698ed3df503
   branch: master
   specs:
     quaff (0.7.3)
