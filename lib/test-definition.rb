@@ -106,7 +106,7 @@ class TestDefinition
   end
 
   def self.get_diags
-    Dir["scripts/*.log"]
+    Dir["logfiles/*.log"]
   end
 
   def self.clear_diags
@@ -377,7 +377,7 @@ class TestDefinition
     @endpoints.each do |e|
         log_file_name = File.join(File.dirname(__FILE__),
                                   "..",
-                                  "scripts",
+                                  "logfiles",
                                   "#{@name.tr(' /','_')}_#{@transport.to_s.upcase}_#{@iteration}_#{e.sip_uri}.log")
         File.write(log_file_name, e.msg_log.join("\n\n================\n\n"))
       end

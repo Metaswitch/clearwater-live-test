@@ -58,7 +58,7 @@ def run_tests(domain, glob="*")
   if TestDefinition.failures.empty?
     exit 0
   else
-    puts "Error logs, including Call-IDs of failed calls, are in the 'scripts' directory"
+    puts "Error logs, including Call-IDs of failed calls, are in the 'logfiles' directory"
     exit 1
   end
 end
