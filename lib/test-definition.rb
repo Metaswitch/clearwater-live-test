@@ -106,7 +106,7 @@ class TestDefinition
   end
 
   def self.get_diags
-    Dir["scripts/*.log"]
+    Dir["logfiles/*.log"]
   end
 
   def self.clear_diags
@@ -133,19 +133,22 @@ class TestDefinition
                        else
                          []
                        end
-    repeat.times do |r|
-      puts "Test iteration #{r + 1}" if repeat != 1
+    (1..repeat).each do |r|
       tests_to_run.product(transports).collect do |test, trans|
         begin
           @@tests_run += 1
-          test_id = "#{test.name} (#{trans.to_s.upcase})"
+          if repeat == 1
+              test_id = "#{test.name} (#{trans.to_s.upcase})"
+          else
+              test_id = "#{test.name} (#{trans.to_s.upcase}) (iter #{r})"
+          end
           print "#{test_id} - "
           tests_to_exclude.each do |exclusion|
             if test_id.start_with? exclusion
               raise SkipThisTest.new("Test skipped by EXCLUDE_TESTS (matched #{exclusion})")
             end
           end
-          success = test.run(deployment, trans)
+          success = test.run(deployment, trans, r)
           if success == true
             puts RedGreen::Color.green("Passed")
           elsif success == false
@@ -261,10 +264,11 @@ class TestDefinition
     include_endpoint FakeEndpoint.new(username, @deployment)
   end
 
-  def run(deployment, transport)
+  def run(deployment, transport, iteration)
     before_run
     @deployment = deployment
     @transport = transport
+    @iteration = iteration
     @quaff_scenario_blocks = []
     @quaff_threads = []
     @quaff_setup_blk = nil
@@ -373,8 +377,8 @@ class TestDefinition
     @endpoints.each do |e|
         log_file_name = File.join(File.dirname(__FILE__),
                                   "..",
-                                  "scripts",
-                                  "#{@name.tr(' /','_')}_#{@transport.to_s.upcase}_#{e.sip_uri}.log")
+                                  "logfiles",
+                                  "#{@name.tr(' /','_')}_#{@transport.to_s.upcase}_#{@iteration}_#{e.sip_uri}.log")
         File.write(log_file_name, e.msg_log.join("\n\n================\n\n"))
       end
   end
