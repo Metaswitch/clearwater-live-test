@@ -158,7 +158,7 @@ TestDefinition.new("SUBSCRIBE - Subscription timeout") do |t|
 
     # Validate that the first NOTIFY was sent as active with the correct expiry.
     # Allow "expires=2" or "expires=1" to cope with timing windows.
-    fail "Subscription-State header not indicating active; expiry=x" unless /active;expires=(1|2|3)/.match(notify1.header('Subscription-State'))
+    fail "Subscription-State header not indicating active; expiry=x" unless /active;expires=(2|3)/.match(notify1.header('Subscription-State'))
  
     # Validate that the final NOTIFY was sent due to subscription expiry
     fail "Final Subscription-State header not set to terminated" if notify2.header('Subscription-State') != "terminated;reason=timeout"
