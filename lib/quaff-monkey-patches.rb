@@ -49,6 +49,7 @@ module Quaff
     end
 
     def recv_200_and_notify
+      # Store the routeset from the 200 OK, not the NOTIFY
       resp1 = recv_any_of [[200, true], ["NOTIFY", false]]
       resp2 = recv_any_of [[200, true], ["NOTIFY", false]]
 
