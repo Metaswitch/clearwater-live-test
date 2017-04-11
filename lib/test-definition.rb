@@ -136,7 +136,6 @@ class TestDefinition
     (1..repeat).each do |r|
       tests_to_run.product(transports).collect do |test, trans|
         begin
-          @@tests_run += 1
           if repeat == 1
               test_id = "#{test.name} (#{trans.to_s.upcase})"
           else
@@ -148,6 +147,7 @@ class TestDefinition
               raise SkipThisTest.new("Test skipped by EXCLUDE_TESTS (matched #{exclusion})")
             end
           end
+          @@tests_run += 1
           success = test.run(deployment, trans, r)
           if success == true
             puts RedGreen::Color.green("Passed")
