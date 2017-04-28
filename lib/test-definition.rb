@@ -454,7 +454,11 @@ class TestDefinition
     end
 
     if @quaff_cleanup_blk
-      @quaff_cleanup_blk.call
+      begin
+        @quaff_cleanup_blk.call
+      rescue => exception
+        puts "WARNING: Exception in quaff_cleanup_blk:\n - #{exception}"
+      end
     end
 
     on_failure unless retval
