@@ -196,6 +196,7 @@ class TestDefinition
     @blk = blk
     @current_label_id = 0
     @timeout = 10
+    @repeat_on_failure = 0
   end
 
   # Methods for defining Quaff endpoints
@@ -284,9 +285,21 @@ class TestDefinition
       verify_snmp_bono_latency if ENV['BONO_SNMP'] == "Y"
     ensure
       retval &= cleanup
+
+      # If the test failed and we have retries set, recursively call run
+      if !retval and @repeat_on_failure > 0
+        @repeat_on_failure -= 1
+        puts "WARNING - Test failed iteration, retrying"
+        retval = self.run(deployment, transport, iteration)
+      end
+
       TestDefinition.unset_current_test
     end
     return retval
+  end
+
+  def set_repeat_on_failure(count)
+    @repeat_on_failure = count
   end
 
   def skip
