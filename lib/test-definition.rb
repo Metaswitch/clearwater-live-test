@@ -69,7 +69,7 @@ class SkipThisTest < StandardError
 end
 
 class TestDefinition
-  attr_accessor :name, :current_label_id
+  attr_accessor :name, :current_label_id, :num_lives
   attr_reader :deployment
   attr_writer :timeout
 
@@ -196,7 +196,7 @@ class TestDefinition
     @blk = blk
     @current_label_id = 0
     @timeout = 10
-    @repeat_on_failure = 0
+    @num_lives = 0
   end
 
   # Methods for defining Quaff endpoints
@@ -287,8 +287,8 @@ class TestDefinition
       retval &= cleanup
 
       # If the test failed and we have retries set, recursively call run
-      if !retval and @repeat_on_failure > 0
-        @repeat_on_failure -= 1
+      if !retval and @num_lives > 0
+        @num_lives -= 1
         puts "WARNING - Test failed iteration, retrying"
         retval = self.run(deployment, transport, iteration)
       end
@@ -296,10 +296,6 @@ class TestDefinition
       TestDefinition.unset_current_test
     end
     return retval
-  end
-
-  def set_repeat_on_failure(count)
-    @repeat_on_failure = count
   end
 
   def skip
