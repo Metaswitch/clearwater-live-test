@@ -69,7 +69,7 @@ class SkipThisTest < StandardError
 end
 
 class TestDefinition
-  attr_accessor :name, :current_label_id
+  attr_accessor :name, :current_label_id, :num_lives
   attr_reader :deployment
   attr_writer :timeout
 
@@ -196,6 +196,7 @@ class TestDefinition
     @blk = blk
     @current_label_id = 0
     @timeout = 10
+    @num_lives = 0
   end
 
   # Methods for defining Quaff endpoints
@@ -284,6 +285,14 @@ class TestDefinition
       verify_snmp_bono_latency if ENV['BONO_SNMP'] == "Y"
     ensure
       retval &= cleanup
+
+      # If the test failed and we have retries set, recursively call run
+      if !retval and @num_lives > 0
+        @num_lives -= 1
+        puts "WARNING - Test failed iteration, retrying"
+        retval = self.run(deployment, transport, iteration)
+      end
+
       TestDefinition.unset_current_test
     end
     return retval
