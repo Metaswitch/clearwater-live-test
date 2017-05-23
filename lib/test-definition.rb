@@ -172,6 +172,7 @@ class TestDefinition
     @current_label_id = 0
     @timeout = 10
     @num_lives = 0
+    @lives_used = 0
   end
 
   # Methods for defining Quaff endpoints
@@ -262,9 +263,9 @@ class TestDefinition
       retval &= cleanup
 
       # If the test failed and we have retries set, recursively call run
-      if !retval and @num_lives > 0
-        @num_lives -= 1
-        puts "WARNING - Test failed iteration, retrying"
+      if !retval and @num_lives > @lives_used
+        @lives_used += 1
+        print "WARNING - Test failed iteration #{@lives_used}, retrying "
         retval = self.run(deployment, transport, iteration)
       end
 
