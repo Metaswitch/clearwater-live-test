@@ -265,7 +265,7 @@ class TestDefinition
       # If the test failed and we have retries set, recursively call run
       if !retval and @num_lives > @lives_used
         @lives_used += 1
-        puts "WARNING - Test failed iteration #{@lives_used}, retrying"
+        print "WARNING - Test failed iteration #{@lives_used}, retrying "
         retval = self.run(deployment, transport, iteration)
       end
 
