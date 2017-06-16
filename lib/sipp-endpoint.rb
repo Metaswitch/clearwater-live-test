@@ -66,10 +66,17 @@ class SIPpEndpoint < Endpoint
   end
 
   def unregister
-    [
-      send("REGISTER", expires: 0),
-      recv("200")
-    ]
+    unregister_flow = []
+    label_id = TestDefinition.get_next_label_id
+
+    unregister_flow << send("REGISTER", expires: 0, nat_contact_header: true)
+    unregister_flow << recv("200", optional: true, next_label: label_id)
+    unregister_flow << recv("401", save_auth: true)
+    unregister_flow << send("REGISTER", expires: 0, nat_contact_header: true, auth_header: true)
+    unregister_flow << recv("200")
+    unregister_flow << SIPpPhase.new("__label", self, label_value: label_id)
+
+    unregister_flow
   end
 
 end
