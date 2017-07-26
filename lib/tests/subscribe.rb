@@ -89,9 +89,11 @@ TestDefinition.new("SUBSCRIBE - reg-event with a GRUU") do |t|
       config.noblanks
     end
 
-    fail "Binding 1 has no pub-gruu node" unless (xmldoc.child.child.children[0].children[1].name == "pub-gruu")
-    fail "Binding 1 has an incorrect pub-gruu node (expected #{ep1.expected_pub_gruu}):\n#{notify.body}" unless (xmldoc.child.child.children[0].children[1]['uri'] == ep1.expected_pub_gruu)
-    validate_notify xmldoc.child.child.children[0].children[1].dup.to_s, "schemas/gruuinfo.xsd"
+    gruu = xmldoc.xpath("//xmlns:registration/xmlns:contact/gr:pub-gruu")
+
+    fail "Binding 1 does not have exactly 1 pub-gruu node in body:\nbody:#{notify.body}" unless (gruu.length == 1)
+    fail "Binding 1 has an incorrect pub-gruu node (expected #{ep1.expected_pub_gruu}):\n#{notify.body}" unless (gruu[0]['uri'] == ep1.expected_pub_gruu)
+    validate_notify gruu[0].dup.to_s, "schemas/gruuinfo.xsd"
   end
 
   t.add_quaff_cleanup do
