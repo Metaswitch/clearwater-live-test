@@ -214,3 +214,76 @@ first one had '#{notify1.header('CSeq')}', second one had '#{notify2.header('CSe
   end
 
 end
+
+TestDefinition.new("Multiple SUBSCRIBErs to one UE's reg-event") do |t|
+  ep1 = t.add_endpoint
+  ep2 = t.add_public_identity(ep1)
+
+  t.add_quaff_setup do
+    ep1.register
+    ep2.register
+  end
+
+  t.add_quaff_scenario do
+    call = ep1.outgoing_call(ep1.uri)
+
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg"})
+
+    # 200 and NOTIFY can come in any order, so expect either of them, twice
+    notify1 = call.recv_200_and_notify
+
+    call.send_response("200", "OK")
+
+    # Second endpoint subscribes to first endpoint's registration state
+    call2 = ep2.outgoing_call(ep1.uri)
+    call2.send_request("SUBSCRIBE", "", {"Event" => "reg"})
+
+    notify2 = call2.recv_200_and_notify
+    call2.send_response("200", "OK")
+
+    ep1.register # Re-registration
+    notify3 = call.recv_request("NOTIFY")
+    call.send_response("200", "OK")
+    notify4 = call2.recv_request("NOTIFY")
+    call2.send_response("200", "OK")
+
+    call2.update_branch
+
+    # Second endpoint resubscribes
+    call2.send_request("SUBSCRIBE", "", {"Event" => "reg",
+                                         "From" => notify2.headers['To'],
+                                         "To" => notify2.headers['From'],
+                                         "Expires" => "0"}
+
+    notify5 = call2.recv_200_and_notify
+    call2.send_response("200", "OK")
+    fail "Final Subscription-State header (from ep2) not set to terminated" if notify5.header('Subscription-State') != "terminated;reason=timeout"
+
+    # Terminate first endpoint subscription
+    call.update_branch
+    call.send_request("SUBSCRIBE", "", {"Event" => "reg",
+                                        "From" => notify1.headers['To'],
+                                        "To" => notify1.headers['From'],
+                                        "Expires" => "0"})
+
+    notify6 = call.recv_200_and_notify
+    call.send_response("200", "OK")
+    fail "Final Subscription-State header (from ep1) not set to terminated" if notify6.header('Subscription-State') != "terminated;reason=timeout"
+
+    call.end_call
+    call2.end_call
+
+    validate_notify notify1.body
+    validate_notify notify2.body
+    validate_notify notify3.body
+    validate_notify notify4.body
+    validate_notify notify5.body
+    validate_notify notify6.body
+  end
+
+  t.add_quaff_cleanup do
+    ep1.unregister
+    ep2.unregister
+  end
+
+end
