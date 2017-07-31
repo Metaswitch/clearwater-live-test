@@ -253,7 +253,7 @@ TestDefinition.new("Multiple SUBSCRIBErs to one UE's reg-event") do |t|
     call2.send_request("SUBSCRIBE", "", {"Event" => "reg",
                                          "From" => notify2.headers['To'],
                                          "To" => notify2.headers['From'],
-                                         "Expires" => "0"}
+                                         "Expires" => "0"})
 
     notify5 = call2.recv_200_and_notify
     call2.send_response("200", "OK")
