@@ -15,7 +15,7 @@ TestDefinition.new("Message - URN URIs") do |t|
 
   # iFC that matches originating MESSAGEs where the Request URI includes
   # cat
-  caller.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5072;transport=TCP",
+  caller.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP",
                    priority: 0,
                    session_case: 0,
                    method: "MESSAGE",
@@ -49,11 +49,11 @@ TestDefinition.new("Message - URN URIs to AS") do |t|
 
   caller = t.add_endpoint
   callee = t.add_endpoint
-  as = t.add_as 5072
+  as = t.add_as 5070
 
   # iFC that matches originating MESSAGEs where the Request URI includes
   # sos
-  caller.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5072;transport=TCP",
+  caller.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP",
                    priority: 0,
                    session_case: 0,
                    method: "MESSAGE",
@@ -78,7 +78,6 @@ TestDefinition.new("Message - URN URIs to AS") do |t|
   t.add_quaff_scenario do
     incoming_call = as.incoming_call
     message_data = incoming_call.recv_request("MESSAGE")
-    contact_headers = message_data.headers['Contact']
     fail unless message_data.requri == "urn:services:sos"
     incoming_call.send_response("200", "OK")
     incoming_call.end_call
