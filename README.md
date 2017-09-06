@@ -69,7 +69,7 @@ There are various modifiers you can use to determine which subset of tests you w
  - `MEMENTO_SIP=<host>` - hostname of the Memento (SIP) cluster. If the Memento application server is integrated with Sprout rather than running as a standalone, this should be set to the Sprout cluster.
  - `MEMENTO_HTTP=<host>` - hostname of the Memento (HTTP) cluster.
  - `PROVISIONAL_RESPONSES_IGNORED=TRUE` - set this to interoperate with devices that absorb second and subsequent provisional responses (so that if a call is forked and both endpoints send a 180 Ringing, only one will reach the caller)
- - `EXCLUDE_TESTS="test1 (TCP),test2 (UDP)"` - a comma-separated list of tests to ignore. Useful for working around known bugs with tests in particular environments (e.g. skipping the B2BUA test in cases where the EC2 security group settings won't allow it)
+ - `EXCLUDE_TESTS="test1 (TCP),test2 (UDP)"` - a comma-separated list of prefix matches for tests to ignore. Useful for working around known bugs with tests in particular environments (e.g. skipping the B2BUA test in cases where the EC2 security group settings won't allow it).
  - `ELLIS_USER=<email>` - to override the default email used for Ellis (live.tests@example.com). Useful to allow multiple live test instances to run simultaneously without deleting each other's lines.
  - `BONO_SNMP=Y` - to verify the consistency of Bono SNMP statistics produced in the test run.
  - `OFF_NET_TEL=<number>` - an off-net number that should be routed back to this machine, for testing BGCF functionality. See [the BGCF Testing doc](BGCF_Testing.md) for more detail.
