@@ -323,6 +323,14 @@ class TestDefinition
     raise SkipThisTest.new "No nonce-count support", "Call with NONCE_COUNT=true to run test" unless ENV['NONCE_COUNT']
   end
 
+  def skip_unless_ibcf
+    raise SkipThisTest.new "No IBCF in deployment", "Call with IBCF=<hostname>" unless ENV['IBCF']
+  end
+
+  def skip_unless_icscf
+    raise SkipThisTest.new "No I-CSCF in deployment", "Call with ICSCF_HOSTNAME=<hostname>" unless ENV['ICSCF_HOSTNAME']
+  end
+
   private
 
   def before_run
