@@ -74,6 +74,8 @@ There are various modifiers you can use to determine which subset of tests you w
  - `BONO_SNMP=Y` - to verify the consistency of Bono SNMP statistics produced in the test run.
  - `OFF_NET_TEL=<number>` - an off-net number that should be routed back to this machine, for testing BGCF functionality. See [the BGCF Testing doc](BGCF_Testing.md) for more detail.
  - `NONCE_COUNT=Y` - to enable nonce-count tests - only possible if `nonce_count_supported=Y` is set on the Clearwater deployment under test.
+ - `IBCF=<hostname>` - hostname of an IBCF in your deployment. The IBCF must be set up to treat the machine running these tests as a trusted peer.
+ - `ICSCF_HOSTNAME=<hostname>` - hostname of an I-CSCF in your deployment.
 
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
 

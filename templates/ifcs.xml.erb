@@ -19,6 +19,14 @@
         <Extension></Extension>
       </SPT>
       <% end %>
+      <% unless ifc[:req_uri].nil? %>
+       <SPT>
+        <ConditionNegated>0</ConditionNegated>
+        <Group>0</Group>
+        <RequestURI><%= ifc[:req_uri] %></RequestURI>
+        <Extension></Extension>
+      </SPT>
+      <% end %>
    </TriggerPoint>
     <ApplicationServer>
       <ServerName>sip:<%= ifc[:server_name] %></ServerName>
