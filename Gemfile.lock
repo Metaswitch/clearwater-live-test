@@ -1,14 +1,4 @@
 GIT
-  remote: git@github.com:metaswitch/quaff.git
-  revision: f92372cac3e196085038d75e3ad35698ed3df503
-  branch: master
-  specs:
-    quaff (0.7.3)
-      abnf-parsing (>= 0.2.0)
-      milenage (>= 0.1.0)
-      system-getifaddrs (>= 0.2.1)
-
-GIT
   remote: https://github.com/bossmc/joker.git
   revision: 97ac2b5738b4964a446eec7939859b051d73d839
   branch: use-extension-task
@@ -17,6 +7,14 @@ GIT
       bacon (~> 1)
       rake (~> 10)
       rake-compiler (~> 0)
+
+PATH
+  remote: ./quaff/
+  specs:
+    quaff (0.7.3)
+      abnf-parsing (>= 0.2.0)
+      milenage (>= 0.1.0)
+      system-getifaddrs (>= 0.2.1)
 
 GEM
   remote: https://rubygems.org/
