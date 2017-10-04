@@ -19,7 +19,7 @@ TestDefinition.new("Message - URN URIs") do |t|
 
   # iFC that matches originating MESSAGEs where the Request URI includes
   # cat. This uses session case 3 (originating unregistered).
-  caller.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP",
+  caller.set_ifc [{server_name: "#{ENV['HOST_NAME']}:5070;transport=TCP",
                    priority: 0,
                    session_case: 3,
                    method: "MESSAGE",
@@ -49,7 +49,7 @@ TestDefinition.new("Message - URN URIs to AS") do |t|
 
   # iFC that matches originating MESSAGEs where the Request URI includes
   # sos.
-  caller.set_ifc [{server_name: "#{ENV['HOSTNAME']}:5070;transport=TCP",
+  caller.set_ifc [{server_name: "#{ENV['HOST_NAME']}:5070;transport=TCP",
                    priority: 0,
                    session_case: 3,
                    method: "MESSAGE",
