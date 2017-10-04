@@ -97,6 +97,11 @@ The verification service produces SNMP alarms to indicate the status of the depl
 
 The verification service runs a very cut-down collection of tests, focussing on basic functionality tests. This means that, if the verification service reports that the deployment is OK, then subscribers are capable of registering and making calls.
 
+### Running in a docker container
+
+The test code and dependencies can be built into a docker image using the provided Dockerfile. Simply run `docker build -t clearwater/live-test .` from within the clearwater-live-test/ directory.
+This image can then be used to run the live tests, by running the above test command in the container. e.g. `docker run -it clearwater/live-test rake test[<deployment_name>] SIGNUP_CODE=<code>`
+
 ## Writing A New Test
 
 The test definitions are found in `lib/tests/*.rb` and should be pretty self-explanatory.  A basic test structure is as follows:
