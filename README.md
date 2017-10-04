@@ -64,6 +64,8 @@ There are various modifiers you can use to determine which subset of tests you w
  - `PROXY=<host>` - to force the tests to run against a particular Bono instance. Useful when running against an AIO node, or when the Bono domain isn't DNS resolvable.
  - `ELLIS=<host>` - to override the default FQDN for Ellis.  Useful when running against an AIO node, or when the Ellis domain isn't DNS resolvable.
  - `HOSTNAME=<host>` - publicly accessible hostname of the machine running the tests, used for the dummy AS.
+ - `DUMMY_AS_PORT_1=<port>` - publicly accessible port on the machine running the tests, used for the dummy AS. Defaults to 5070
+ - `DUMMY_AS_PORT_2=<port>` - publicly accessible port on the machine running the tests, used for the dummy AS. Defaults to 5071
  - `EXPIRES=<number>` - maximum Expires header expected from Sprout, used for the dummy AS.
  - `GEMINI=<host>` - hostname of the the Gemini cluster. If the Gemini application server is integrated with Sprout rather than running as a standalone, this should be set to the Sprout cluster.
  - `MEMENTO_SIP=<host>` - hostname of the Memento (SIP) cluster. If the Memento application server is integrated with Sprout rather than running as a standalone, this should be set to the Sprout cluster.
