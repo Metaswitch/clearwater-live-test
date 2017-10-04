@@ -6,7 +6,7 @@ gem 'rest-client'
 gem 'joker', git: "https://github.com/bossmc/joker.git", branch: "use-extension-task"
 gem 'rake'
 gem 'snmp'
-gem 'quaff', git: "git@github.com:metaswitch/quaff.git", branch: "master"
+gem 'quaff', path: './quaff/'
 gem 'facter'
 gem 'nokogiri'
 gem 'barrier'
