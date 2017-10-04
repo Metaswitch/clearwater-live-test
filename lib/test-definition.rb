@@ -287,7 +287,7 @@ class TestDefinition
   end
 
   def skip_unless_hostname
-    raise SkipThisTest.new "No hostname given", "Call with HOSTNAME=<publicly accessible hostname/IP of this machine>" unless ENV['HOSTNAME']
+    raise SkipThisTest.new "No hostname given", "Call with HOST_NAME=<publicly accessible hostname/IP of this machine>" unless ENV['HOST_NAME']
   end
 
   def skip_unless_offnet_tel
