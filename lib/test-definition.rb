@@ -450,7 +450,12 @@ class TestDefinition
       begin
         @quaff_cleanup_blk.call
       rescue => exception
-        puts "WARNING: Exception in quaff_cleanup_blk:\n - #{exception}"
+        if retval
+          retval = false
+          puts RedGreen::Color.red("Failed")
+        end
+
+        puts "Exception in quaff_cleanup_blk:\n - #{exception}"
       end
     end
 
