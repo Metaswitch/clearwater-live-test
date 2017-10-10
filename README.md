@@ -41,7 +41,7 @@ At this point, `ruby --version` should indicate that 1.9.3 is in use.
 
 To prepare a machine to run the tests manually, clone the repository:
 
-    git clone git@github.com:Metaswitch/clearwater-live-test.git
+    git clone git@github.com:Metaswitch/clearwater-live-test.git --recursive
 
 Then type `bundle install` inside the newly-created `clearwater-live-test` folder to install the required gems.
 
