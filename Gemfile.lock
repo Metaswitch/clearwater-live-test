@@ -11,7 +11,7 @@ GIT
 PATH
   remote: ./quaff/
   specs:
-    quaff (0.7.3)
+    quaff (0.7.4)
       abnf-parsing (>= 0.2.0)
       milenage (>= 0.1.0)
       system-getifaddrs (>= 0.2.1)
