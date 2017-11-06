@@ -37,7 +37,7 @@ TestDefinition.new("SUBSCRIBE - reg-event") do |t|
 
     call.send_response("200", "OK")
 
-    # If they registration arrives in the same second as the previous
+    # If the registration arrives in the same second as the previous
     # registration, we won't be notified. Sleep for one second to avoid this
     sleep 1
 

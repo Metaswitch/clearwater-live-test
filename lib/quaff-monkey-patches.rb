@@ -65,7 +65,8 @@ module Quaff
         next_cseq = @last_CSeq
       end
 
-      # Restore the CSeq from the NOTIFY
+      # Restore the CSeq from the NOTIFY so that we can send the 200 OK to the
+      # NOTIFY
       @last_CSeq = next_cseq
 
       notify = resp1.method ? resp1 : resp2
