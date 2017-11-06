@@ -49,9 +49,25 @@ module Quaff
     end
 
     def recv_200_and_notify
+
+      next_cseq = @last_CSeq
+
       # Store the routeset from the 200 OK, not the NOTIFY
       resp1 = recv_any_of [[200, true], ["NOTIFY", false]]
+
+      if resp1.method
+        next_cseq = @last_CSeq
+      end
+
       resp2 = recv_any_of [[200, true], ["NOTIFY", false]]
+
+      if resp2.method
+        next_cseq = @last_CSeq
+      end
+
+      # Restore the CSeq from the NOTIFY so that we can send the 200 OK to the
+      # NOTIFY
+      @last_CSeq = next_cseq
 
       notify = resp1.method ? resp1 : resp2
       return notify
