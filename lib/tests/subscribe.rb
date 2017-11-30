@@ -140,7 +140,7 @@ TestDefinition.new("SUBSCRIBE - Subscription timeout") do |t|
     # Validate that the first NOTIFY was sent as active with the correct expiry.
     # Allow "expires=2" or "expires=1" to cope with timing windows.
     fail "Subscription-State header not indicating active; expiry=x" unless /active;expires=(2|3)/.match(notify1.header('Subscription-State'))
- 
+
     # Validate that the final NOTIFY was sent due to subscription expiry
     fail "Final Subscription-State header not set to terminated" if notify2.header('Subscription-State') != "terminated;reason=timeout"
   end
@@ -209,7 +209,7 @@ first one had '#{notify1.header('CSeq')}', second one had '#{notify2.header('CSe
   end
 
   t.add_quaff_cleanup do
-    # Keeping the unregister here as cleanup. If the register does not timeout correctly, 
+    # Keeping the unregister here as cleanup. If the register does not timeout correctly,
     # we want to remove it, rather than have it affect later tests. This may also fail, as
     # without the register expiring, the subscription will remain active, and this will
     # trigger an unexpected NOTIFY
@@ -244,6 +244,10 @@ TestDefinition.new("Multiple SUBSCRIBErs to one UE's reg-event") do |t|
 
     notify2 = call2.recv_200_and_notify
     call2.send_response("200", "OK")
+
+    # If the registration arrives in the same second as the previous
+    # registration, we won't be notified. Sleep for one second to avoid this
+    sleep 1
 
     ep1.register # Re-registration
     notify3 = call.recv_request("NOTIFY")
