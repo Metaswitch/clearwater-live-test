@@ -23,7 +23,28 @@ TestDefinition.new("Basic Registration") do |t|
   t.add_quaff_cleanup do
     caller.unregister
   end
+end
 
+TestDefinition.new("Emergency Registration") do |t|
+  caller = t.add_endpoint
+  caller.add_contact_uri_param "sos", true
+
+  t.add_quaff_scenario do
+    call = caller.outgoing_call(caller.uri)
+    call.send_request("REGISTER", "", { "Expires" => "3600" })
+    # The sos parameter means that this request should be accepted immediately
+    # without being challenged / authenticated.
+    response_data = call.recv_response("200")
+
+    # Try to deregister -- this should be rejected (as it is explicitly not
+    # supported by the S-CSCF).
+    call.send_request("REGISTER", "", { "Expires" => "0" })
+    response_data = call.recv_response("501")
+  end
+
+  t.add_quaff_cleanup do
+    # Don't de-register.  It won't work.
+  end
 end
 
 TestDefinition.new("Multiple Identities") do |t|
