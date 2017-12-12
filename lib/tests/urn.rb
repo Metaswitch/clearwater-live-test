@@ -26,11 +26,11 @@ TestDefinition.new("Message - URN URIs") do |t|
                    req_uri: "cat"}]
 
   t.add_quaff_scenario do
-    # The message has the Request URI set to urn:services:sos.
-    call = caller.outgoing_call("urn:services:sos")
+    # The message has the Request URI set to urn:service:sos.
+    call = caller.outgoing_call("urn:service:sos")
 
     # This message doesn't trigger any iFCs, so it fails cleanly on the
-    # terminating side as 'urn:services:sos' isn't a subscriber.
+    # terminating side as 'urn:service:sos' isn't a subscriber.
     call.send_request("MESSAGE", "", {"P-Asserted-Identity" => "#{caller.sip_uri}",
                                       "Route" => "sip:#{ENV['ICSCF_HOSTNAME']};transport=TCP;lr;orig"})
     call.recv_response("480")
@@ -56,8 +56,8 @@ TestDefinition.new("Message - URN URIs to AS") do |t|
                    req_uri: "sos"}]
 
   t.add_quaff_scenario do
-    # The message has the Request URI set to urn:services:sos.
-    call = caller.outgoing_call("urn:services:sos")
+    # The message has the Request URI set to urn:service:sos.
+    call = caller.outgoing_call("urn:service:sos")
 
     # This message does trigger the iFCs, so the request is routed to the AS,
     # which returns 200.
@@ -70,8 +70,8 @@ TestDefinition.new("Message - URN URIs to AS") do |t|
   t.add_quaff_scenario do
     incoming_call = as.incoming_call
     message_data = incoming_call.recv_request("MESSAGE")
-    fail unless message_data.requri == "urn:services:sos"
-    incoming_call.send_response("200", "OK", "", nil, {"To" => "urn:services:sos"})
+    fail unless message_data.requri == "urn:service:sos"
+    incoming_call.send_response("200", "OK", "", nil, {"To" => "urn:service:sos"})
     incoming_call.end_call
   end
 
