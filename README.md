@@ -27,16 +27,16 @@ The test framework requires Ruby 1.9.3 and bundler to be installed.
 
     sudo apt-get install build-essential bundler git --yes
     curl -L https://get.rvm.io | bash -s stable
-    
+
 This step may fail due to missing GPG signatures. If this happens it will suggest a command to run to resolve the problem (e.g. `gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3`). Run the command suggested, then run the above command again, which should now succeed).
 
 Next install the required ruby version.
-    
+
     source ~/.rvm/scripts/rvm
     rvm autolibs enable
     rvm install 1.9.3
     rvm use 1.9.3
-    
+
 At this point, `ruby --version` should indicate that 1.9.3 is in use.
 
 To prepare a machine to run the tests manually, clone the repository:
@@ -76,6 +76,8 @@ There are various modifiers you can use to determine which subset of tests you w
  - `NONCE_COUNT=Y` - to enable nonce-count tests - only possible if `nonce_count_supported=Y` is set on the Clearwater deployment under test.
  - `IBCF=<hostname>` - hostname of an IBCF in your deployment. The IBCF must be set up to treat the machine running these tests as a trusted peer.
  - `ICSCF_HOSTNAME=<hostname>` - hostname of an I-CSCF in your deployment.
+ - `EMERGENCY_REG=Y` - include tests that use emergency registrations. These will only work against Bono if Bono is run with the --allow-emergency-registration option enabled (which should not be enabled for live deployments as it represents a security risk)
+ - `SHORT_REG=Y` - include tests that use short registrations (typically 3s). These tests will fail if your P-CSCF imposes a longer minimum registration interval.
 
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
 
@@ -141,7 +143,7 @@ end
 This example would create two numbers in ellis/homestead, register them, then send a MESSAGE transaction between them before deregistering and destroying the numbers. Because the deregistration takes place in a cleanup block, this happens even if the main scenario fails or hits an exception.
 
 There are different `skip` functions that can be included in a test. These control whether a test case is run, based on the command line options given at run time:
- 
+
  - `skip_unless_pstn`: PSTN test, requires that `PSTN=true` be passed to rake or the test will be skipped.
  - `skip_unless_live`: Live call test, requires that a live number is given to rake as `LIVENUMBER=...`.
  - `skip_unless_<application server>`: Application Server test, requires that a hostname for the particular server is passed to rake as (for example) `GEMINI=...`.
