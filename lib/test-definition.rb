@@ -335,6 +335,10 @@ class TestDefinition
     raise SkipThisTest.new "Not running with emergency registrations", "Call with EMERGENCY_REG=true to run test" unless ENV['EMERGENCY_REG']
   end
 
+  def skip_unless_short_reg_enabled
+    raise SkipThisTest.new "Not running with short registrations", "Call with SHORT_REG=true to run test" unless ENV['SHORT_REG']
+  end
+
   private
 
   def before_run

@@ -27,6 +27,7 @@ end
 
 TestDefinition.new("Emergency Registration") do |t|
   t.skip_unless_emergency_reg_support
+  t.skip_unless_short_reg_enabled
   caller = t.add_endpoint
   caller.add_contact_uri_param "sos", true
 
