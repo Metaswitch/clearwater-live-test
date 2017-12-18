@@ -331,6 +331,10 @@ class TestDefinition
     raise SkipThisTest.new "No I-CSCF in deployment", "Call with ICSCF_HOSTNAME=<hostname>" unless ENV['ICSCF_HOSTNAME']
   end
 
+  def skip_unless_emergency_reg_support
+    raise SkipThisTest.new "Not running with emergency registrations", "Call with EMERGENCY_REG=true to run test" unless ENV['EMERGENCY_REG']
+  end
+
   private
 
   def before_run
@@ -431,7 +435,7 @@ class TestDefinition
 
       # End even though 60 seconds haven't passed
       break if all_threads_finished
-      
+
       sleep 1
     end
 
