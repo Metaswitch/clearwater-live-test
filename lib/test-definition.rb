@@ -320,7 +320,7 @@ class TestDefinition
   end
 
   def skip_unless_nonce_count_supported
-    raise SkipThisTest.new "No nonce-count support", "Call with NONCE_COUNT=true to run test" unless ENV['NONCE_COUNT']
+    raise SkipThisTest.new "No nonce-count support", "Call with NONCE_COUNT=Y to run test" unless ENV['NONCE_COUNT']
   end
 
   def skip_unless_ibcf
@@ -332,11 +332,11 @@ class TestDefinition
   end
 
   def skip_unless_emergency_reg_support
-    raise SkipThisTest.new "Not running with emergency registrations", "Call with EMERGENCY_REG=true to run test" unless ENV['EMERGENCY_REG']
+    raise SkipThisTest.new "Not running with emergency registrations", "Call with EMERGENCY_REG=Y to run test" unless ENV['EMERGENCY_REG']
   end
 
   def skip_unless_short_reg_enabled
-    raise SkipThisTest.new "Not running with short registrations", "Call with SHORT_REG=true to run test" unless ENV['SHORT_REG']
+    raise SkipThisTest.new "Not running with short registrations", "Call with SHORT_REG=Y to run test" unless ENV['SHORT_REG']
   end
 
   private
