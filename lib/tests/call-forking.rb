@@ -26,8 +26,7 @@ TestDefinition.new("Call Forking - Mainline") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_binding1.uri)
 
-    # We only send a plain text body in this INVITE, not full SDP
-    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
+    call.send_request("INVITE")
     call.recv_response("100")
 
     # We expect to get one or two 180 responses, depending on whether the P-CSCF
@@ -63,7 +62,7 @@ TestDefinition.new("Call Forking - Mainline") do |t|
     ringing_barrier.wait
 
     # This binding answers the call
-    call2.send_response("200", "OK", "hello world\r\n", nil, {"Content-Type" => "text/plain"})
+    call2.send_response("200", "OK")
     call2.recv_request("ACK")
     answered_barrier.wait()
 
@@ -122,8 +121,7 @@ TestDefinition.new("Call Forking - Endpoint offline") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_binding1.uri)
 
-    # We only send a plain text body in this INVITE, not full SDP
-    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
+    call.send_request("INVITE")
     call.recv_response("100")
 
     # We expect only one 180 response, as only one binding responds to the caller
@@ -154,7 +152,7 @@ TestDefinition.new("Call Forking - Endpoint offline") do |t|
     ringing_barrier.wait
 
     # This binding answers the call
-    call2.send_response("200", "OK", "hello world\r\n", nil, {"Content-Type" => "text/plain"})
+    call2.send_response("200", "OK")
     call2.recv_request("ACK")
     answered_barrier.wait()
 
@@ -198,8 +196,7 @@ TestDefinition.new("Call Forking - Endpoint offline while ringing") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(callee_binding1.uri)
 
-    # We only send a plain text body in this INVITE, not full SDP
-    call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
+    call.send_request("INVITE")
     call.recv_response("100")
 
     # We expect to get one or two 180 responses, depending on whether the P-CSCF
@@ -235,7 +232,7 @@ TestDefinition.new("Call Forking - Endpoint offline while ringing") do |t|
     ringing_barrier.wait
 
     # This binding answers the call
-    call2.send_response("200", "OK", "hello world\r\n", nil, {"Content-Type" => "text/plain"})
+    call2.send_response("200", "OK")
     call2.recv_request("ACK")
     answered_barrier.wait()
 
