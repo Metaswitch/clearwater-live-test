@@ -30,9 +30,14 @@ TestDefinition.new("Call Forking - Mainline") do |t|
     call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
     call.recv_response("100")
 
-    # We expect to get 2 180 Ringing responses, as the call is forked
+    # We expect to get one or two 180 responses, depending on whether the P-CSCF
+    # acts as a B2BUA or proxy
     call.recv_response("180")
-    call.recv_response("180")
+
+    if ENV['PCSCF'] == "PROXY"
+      call.recv_response("180")
+    end
+
     ringing_barrier.wait
 
     # Save off Contact and routeset
@@ -121,8 +126,9 @@ TestDefinition.new("Call Forking - Endpoint offline") do |t|
     call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
     call.recv_response("100")
 
-    # We expect to get only 1 180 Ringing response, as only one binding responds
+    # We expect only one 180 response, as only one binding responds to the caller
     call.recv_response("180")
+
     ringing_barrier.wait
 
     # Save off Contact and routeset
@@ -196,9 +202,14 @@ TestDefinition.new("Call Forking - Endpoint offline while ringing") do |t|
     call.send_request("INVITE", "hello world\r\n", {"Content-Type" => "text/plain"})
     call.recv_response("100")
 
-    # We expect to get 2 180 Ringing responses
+    # We expect to get one or two 180 responses, depending on whether the P-CSCF
+    # acts as a B2BUA or proxy
     call.recv_response("180")
-    call.recv_response("180")
+
+    if ENV['PCSCF'] == "PROXY"
+      call.recv_response("180")
+    end
+
     ringing_barrier.wait
 
     # Save off Contact and routeset

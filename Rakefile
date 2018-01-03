@@ -10,6 +10,10 @@
 task :default => [:test]
 task :test, :deployment do |t, args|
   require './lib/live-test'
+
+  # If no PCSCF is specified, assume it acts as a Proxy
+  ENV['PCSCF'] ||= "PROXY"
+
   ENV['TESTS'] ||= "*"
   run_tests(args.deployment, ENV['TESTS'])
 end
