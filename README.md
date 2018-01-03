@@ -78,6 +78,7 @@ There are various modifiers you can use to determine which subset of tests you w
  - `ICSCF_HOSTNAME=<hostname>` - hostname of an I-CSCF in your deployment.
  - `EMERGENCY_REG=Y` - include tests that use emergency registrations. These will only work against Bono if Bono is run with the --allow-emergency-registration option enabled (which should not be enabled for live deployments as it represents a security risk)
  - `SHORT_REG=Y` - include tests that use short registrations (typically 3s). These tests will fail if your P-CSCF imposes a longer minimum registration interval.
+ - `PCSCF=<PROXY or B2BUA>` - whether the P-CSCF acts as a Proxy or a B2BUA. This affects the number of 180 Ringing responses seen in the Call Forking tests. Defaults to `PROXY`, as that's how Bono behaves.
 
 For example, to run all the call barring tests (including the international number barring tests) on the test deployment, run:
 
