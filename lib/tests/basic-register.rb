@@ -34,12 +34,16 @@ TestDefinition.new("Emergency Registration") do |t|
   t.add_quaff_scenario do
     call = caller.outgoing_call(caller.uri)
     call.send_request("REGISTER", "", { "Expires" => "3" })
-    # The sos parameter means that this request should be accepted immediately
-    # without being challenged / authenticated.
+
+    # Emergency Registrations are challenged like normal
+    response_data = call.recv_response("401")
+    auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), caller.private_id, caller.password, "REGISTER", caller.uri
+    call.update_branch
+    call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3"})
     response_data = call.recv_response("200")
 
-    # Try to deregister -- this should be rejected (as it is explicitly not
-    # supported by the S-CSCF).
+    # Try to deregister -- this should be rejected because the S-CSCF does not
+    # allow emergency registrations to be deregistered
     call.send_request("REGISTER", "", { "Expires" => "0" })
     response_data = call.recv_response("501")
 
