@@ -42,9 +42,13 @@ TestDefinition.new("Emergency Registration") do |t|
     call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3"})
     response_data = call.recv_response("200")
 
-    # Try to deregister -- this should be rejected because the S-CSCF does not
-    # allow emergency registrations to be deregistered
+    # Try to deregister -- this should be rejected (after being authenticated)
+    # because the S-CSCF does not allow emergency registrations to be deregistered
     call.send_request("REGISTER", "", { "Expires" => "0" })
+    response_data = call.recv_response("401")
+    auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), caller.private_id, caller.password, "REGISTER", caller.uri
+    call.update_branch
+    call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3"})
     response_data = call.recv_response("501")
 
     # Sleep until the registration expires.   Otherwise it breaks subsequent
