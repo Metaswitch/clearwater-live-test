@@ -151,8 +151,12 @@ TestDefinition.new("SUBSCRIBE - Subscription timeout") do |t|
 
 end
 
-# Test that registrations are actively timed out on expiry
+# Test that registrations are actively timed out on expiry.
 TestDefinition.new("SUBSCRIBE - Registration timeout") do |t|
+  # This test requires that the minimum expires time on registers is 3s or less,
+  # as it will attempt to REGISTER with "Expires: 3"
+  t.skip_unless_short_reg_enabled
+
   ep1 = t.add_endpoint
   ep2 = t.add_public_identity(ep1)
 
@@ -163,28 +167,25 @@ TestDefinition.new("SUBSCRIBE - Registration timeout") do |t|
   t.add_quaff_scenario do
     call = ep1.outgoing_call(ep1.uri)
 
-    call.send_request("REGISTER", "", { "Expires" => "3600", "Authorization" => %Q!Digest username="#{ep1.private_id}"! })
+    call.send_request("REGISTER", "", { "Expires" => "3", "Authorization" => %Q!Digest username="#{ep1.private_id}"! })
     response_data = call.recv_response("401")
     auth_hdr = Quaff::Auth.gen_auth_header response_data.header("WWW-Authenticate"), ep1.private_id, ep1.password, "REGISTER", ep1.uri
     call.update_branch
 
-    # If testing against something with a min-expires set for registers, alter the 'Expires'
-    # value below to be just above it, and the sleep value below this to be just less than it
-    # i.e. if min-expires is set to 300, set Expires => 301, and sleep 295
-    #
-    # If the min-expires value is longer than 60 seconds, also change t.join(60) in lib/test-definition
-    # to be longer than the expires header in the REGISTER sent here.
     call.send_request("REGISTER", "", {"Authorization" => auth_hdr, "Expires" => "3"})
     response_data = call.recv_response("200")
 
     sub = ep2.outgoing_call(ep1.uri)
     sub.send_request("SUBSCRIBE", "", {"Event" => "reg"})
-    # 200 and NOTIFY can come in any order, so expect either of them, twice
+
+    # We expect a 200 OK to the SUBSCRIBE and an immediate NOTIFY giving us the
+    # current state. These can come in any order, so expect either of them in
+    # response to our SUBSCRIBE
     notify1 = sub.recv_200_and_notify
     sub.send_response("200", "OK")
 
-    sleep 2.5
-
+    # Expect a NOTIFY to be generated for ep1's registration expiring after a
+    # few seconds
     notify2 = sub.recv_request("NOTIFY")
     sub.send_response("200", "OK")
 
@@ -209,12 +210,16 @@ first one had '#{notify1.header('CSeq')}', second one had '#{notify2.header('CSe
   end
 
   t.add_quaff_cleanup do
-    # Keeping the unregister here as cleanup. If the register does not timeout correctly,
-    # we want to remove it, rather than have it affect later tests. This may also fail, as
-    # without the register expiring, the subscription will remain active, and this will
-    # trigger an unexpected NOTIFY
-    ep1.unregister
     ep2.unregister
+
+    # Speculatively try to unregister ep1 in case the test failed and the
+    # registration didn't time out correctly, but don't fail the test if this
+    # fails.
+    begin
+      ep1.unregister
+    rescue
+      # Ignore the error
+    end
   end
 
 end
