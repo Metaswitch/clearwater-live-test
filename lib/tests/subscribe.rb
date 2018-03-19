@@ -178,12 +178,14 @@ TestDefinition.new("SUBSCRIBE - Registration timeout") do |t|
     sub = ep2.outgoing_call(ep1.uri)
     sub.send_request("SUBSCRIBE", "", {"Event" => "reg"})
 
-    # 200 and NOTIFY can come in any order, so expect either of them in response
-    # to our SUBSCRIBE
+    # We expect a 200 OK to the SUBSCRIBE and an immediate NOTIFY giving us the
+    # current state. These can come in any order, so expect either of them in
+    # response to our SUBSCRIBE
     notify1 = sub.recv_200_and_notify
     sub.send_response("200", "OK")
 
-    # Expect a NOTIFY to be generated for ep1's registration expiring
+    # Expect a NOTIFY to be generated for ep1's registration expiring after a
+    # few seconds
     notify2 = sub.recv_request("NOTIFY")
     sub.send_response("200", "OK")
 
@@ -209,6 +211,15 @@ first one had '#{notify1.header('CSeq')}', second one had '#{notify2.header('CSe
 
   t.add_quaff_cleanup do
     ep2.unregister
+
+    # Speculatively try to unregister ep1 in case the test failed and the
+    # registration didn't time out correctly, but don't fail the test if this
+    # fails.
+    begin
+      ep1.unregister
+    rescue
+      # Ignore the error
+    end
   end
 
 end
