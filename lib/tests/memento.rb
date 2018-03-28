@@ -102,6 +102,8 @@ TestDefinition.new("Memento - Basic Call") do |t|
   callee = t.add_endpoint
   random_caller_id = SecureRandom::hex
 
+  ringing_barrier = Barrier.new(2)
+
   t.add_quaff_setup do
     caller.register
     callee.register
@@ -127,6 +129,7 @@ TestDefinition.new("Memento - Basic Call") do |t|
     call.send_request("INVITE", "", {"From" => "#{random_caller_id} <#{caller.sip_uri}>;tag=" + SecureRandom::hex})
     call.recv_response("100")
     call.recv_response("180")
+    ringing_barrier.wait
 
     call.recv_response_and_create_dialog("200")
 
@@ -148,6 +151,8 @@ TestDefinition.new("Memento - Basic Call") do |t|
     call2.recv_request("INVITE")
     call2.send_response("100", "Trying")
     call2.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call2.send_response("200", "OK")
     call2.recv_request("ACK")
 
