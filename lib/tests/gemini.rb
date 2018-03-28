@@ -648,6 +648,7 @@ TestDefinition.new("Gemini - INVITE - Successful call with GR") do |t|
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "INVITE"}]
 
+  ringing_barrier = Barrier.new(2)
   end_call_barrier = Barrier.new(2)
 
   t.add_quaff_setup do
@@ -669,6 +670,8 @@ TestDefinition.new("Gemini - INVITE - Successful call with GR") do |t|
 
     call.recv_response("100")
     call.recv_response("180")
+    ringing_barrier.wait
+
     call.recv_response_and_create_dialog("200")
 
     call.new_transaction
@@ -690,6 +693,8 @@ TestDefinition.new("Gemini - INVITE - Successful call with GR") do |t|
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call_voip.send_200_with_sdp
     call_voip.recv_request("ACK")
 
@@ -713,6 +718,8 @@ TestDefinition.new("Gemini - INVITE - Failed call with GR") do |t|
   callee_mobile = t.add_specific_endpoint callee_mobile_id
   callee_mobile.add_contact_param '+g.3gpp.ics', "\"server,principal\""
 
+  ringing_barrier = Barrier.new(2)
+
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "INVITE"}]
 
@@ -735,6 +742,8 @@ TestDefinition.new("Gemini - INVITE - Failed call with GR") do |t|
 
     call.recv_response("100")
     call.recv_response("180")
+    ringing_barrier.wait
+
     call.recv_response("486")
     call.send_request("ACK")
     call.end_call
@@ -749,6 +758,8 @@ TestDefinition.new("Gemini - INVITE - Failed call with GR") do |t|
 
     call_voip.send_response("100", "Trying")
     call_voip.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call_voip.send_response("486", "Busy Here")
     call_voip.recv_request("ACK")
     call_voip.end_call
@@ -771,6 +782,7 @@ TestDefinition.new("Gemini - INVITE - Successful call with Accept-Contact") do |
   # Set iFCs.
   callee_voip.set_ifc [{server_name: GEMINI_MT_SIP_URI + TWIN_PREFIX, session_case: TERM_REG, method: "INVITE"}]
 
+  ringing_barrier = Barrier.new(2)
   end_call_barrier = Barrier.new(2)
 
   t.add_quaff_setup do
@@ -792,6 +804,8 @@ TestDefinition.new("Gemini - INVITE - Successful call with Accept-Contact") do |
 
     call.recv_response("100")
     call.recv_response("180")
+    ringing_barrier.wait
+
     call.recv_response_and_create_dialog("200")
 
     call.new_transaction
@@ -812,6 +826,8 @@ TestDefinition.new("Gemini - INVITE - Successful call with Accept-Contact") do |
 
     call_mobile.send_response("100", "Trying")
     call_mobile.send_response("180", "Ringing")
+    ringing_barrier.wait
+
     call_mobile.send_200_with_sdp
     call_mobile.recv_request("ACK")
 
