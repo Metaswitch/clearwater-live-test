@@ -9,7 +9,7 @@ GIT
       rake-compiler (~> 0)
 
 PATH
-  remote: ./quaff/
+  remote: quaff
   specs:
     quaff (0.7.4)
       abnf-parsing (>= 0.2.0)
@@ -30,7 +30,7 @@ GEM
     erubis (2.7.0)
     facter (2.4.3)
       CFPropertyList (~> 2.2.6)
-    ffi (1.9.8)
+    ffi (1.11.3)
     ffi-rzmq (2.0.4)
       ffi-rzmq-core (>= 1.0.1)
     ffi-rzmq-core (1.0.3)
