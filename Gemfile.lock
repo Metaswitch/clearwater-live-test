@@ -9,7 +9,7 @@ GIT
       rake-compiler (~> 0)
 
 PATH
-  remote: ./quaff/
+  remote: quaff
   specs:
     quaff (0.7.4)
       abnf-parsing (>= 0.2.0)
@@ -52,7 +52,7 @@ GEM
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
       slop (~> 3.4)
-    rack (1.6.0)
+    rack (2.0.7)
     rake (10.4.2)
     rake-compiler (0.9.5)
       rake
